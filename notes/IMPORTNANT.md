@@ -1,0 +1,1 @@
+not every game or game engine needs everything. A tiny library that creates a window, provides minimal 2D graphics, and some build scripts that create a distributable ZIP archive of the game is already a very decent engine! -Lisyarus
