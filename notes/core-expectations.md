@@ -1,0 +1,16 @@
+## Core Expectations
+- Being able to program the logic of your game (duh)
+- Creating a window to display stuff
+- Running a game loop that processes various events
+- Handling user input, like the mouse, keyboard, joystick or touchbar
+- Displaying graphics of some sort, be it 2D sprite-based or something 3D
+- Producing audio like background music and sound effects
+- Managing assets like images, models, audio, prefabs, or full game levels
+- Simulating physics, be it 2D or 3D, position-based or impulse-based or force-based, hard or soft
+- Supporting scripting for rapid prototyping or easy modding
+- Supporting networking for multiplayer, automatically downloading game updates or patches, or enabling downloadable user-generated content
+- Implementing AI for your game's enemies or NPC's
+- Implementing UI for your game's glorious interfaces
+- Imposing an architecture that connects all these parts in a uniform way
+- Providing tools that help you use the engine
+- Taking care of distribution of games made with this engine, ideally on several platforms, ideally by a single button click
