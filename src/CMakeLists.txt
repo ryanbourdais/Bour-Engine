@@ -12,6 +12,8 @@ add_executable(bour_engine
     main.c
     renderer/rendering_engine.c
     external/glad/src/glad.c
+    utils/helpers/file_reader.c
+    utils/data_types/char_array.c
 )
 
 target_include_directories(bour_engine PRIVATE
