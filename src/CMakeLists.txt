@@ -13,7 +13,10 @@ add_executable(bour_engine
     renderer/rendering_engine.c
     external/glad/src/glad.c
     utils/helpers/file_reader.c
-    utils/data_types/char_array.c
+    renderer/window.c
+    renderer/shaders.c
+    renderer/mesh.c
+    renderer/renderer.c
 )
 
 target_include_directories(bour_engine PRIVATE
