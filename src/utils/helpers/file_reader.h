@@ -1,5 +1,6 @@
 #include <stddef.h>
 
+
 struct ShaderBuffer {
     char *data;
     size_t length;

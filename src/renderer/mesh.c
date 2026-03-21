@@ -1,5 +1,6 @@
 #include "mesh.h"
-
+#include <GLFW/glfw3.h>
+#include <stdio.h>
 
 //triangle vertices
 float points[] = {

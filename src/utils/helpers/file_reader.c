@@ -1,7 +1,6 @@
-
+#include "file_reader.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "file_reader.h"
 
 void free_shader_buffer(struct ShaderBuffer *buffer) {
     free(buffer->data);
