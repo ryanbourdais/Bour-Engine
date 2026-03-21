@@ -2,6 +2,5 @@
 
 int main()
 {
-    rendering_engine_entry(false, true);
-    return 0;
+    return rendering_engine_entry(false, true);
 }

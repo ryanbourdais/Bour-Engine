@@ -3,42 +3,27 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include "renderer.h"
 
-
-void create_window_context(GLFWwindow* window)
+static void create_window_context(GLFWwindow* window)
 {
     glfwMakeContextCurrent(window);
 }
 
-void close_window(GLFWwindow* window, bool *windowClosed)
+static void close_window(GLFWwindow* window)
 {
-    *windowClosed = true;
     glfwDestroyWindow(window);
 }
 
-void start_glad()
+static int start_glad()
 {
     int version_glad = gladLoadGL();
     if (version_glad == 0)
     {
         fprintf(stderr, "Failed to initialize GLAD");
-        exit(-1);
+        return 1;
     }
-}
-
-double get_time()
-{
-    double time = glfwGetTime();
-    return time;
-}
-
-void swap_buffers(GLFWwindow* window)
-{
-    //vsync
-    glfwSwapInterval(1);
-    glfwSwapBuffers(window);
+    return 0;
 }
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -50,12 +35,12 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     }
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
 
-void create_window(bool *windowClosed, bool fullscreen, bool fps_enabled)
+int window_run( bool fullscreen, bool fps_enabled)
 {
     GLFWmonitor *mon = NULL;
     int win_w = 800, win_h = 600; // Our window dimensions, in pixels.
@@ -85,12 +70,23 @@ void create_window(bool *windowClosed, bool fullscreen, bool fps_enabled)
     if(!window)
     {
         fprintf(stderr, "Window failed to be created");
-        exit(-1);
+        return 1;
     }
     create_window_context(window);
     glfwSetKeyCallback(window, key_callback);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    start_glad();
-    render(window, fps_enabled);
-    close_window(window, windowClosed);
+    int glad_result = start_glad();
+    if(glad_result != 0) {
+        fprintf(stderr, "Failed to start GLAD");
+        close_window(window);
+        return 1;
+    }
+    int renderer_result = renderer_run(window, fps_enabled);
+    if(renderer_result != 0) {
+        fprintf(stderr, "Failed to run renderer\n");
+        close_window(window);
+        return 1;
+    }
+    close_window(window);
+    return 0;
 }

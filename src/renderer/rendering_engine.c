@@ -7,21 +7,22 @@
 #include <stdbool.h>
 #include "window.h"
 
-void safe_exit() {
+
+static void safe_exit() {
     glfwTerminate();
 }
 
-void error_callback(int error, const char* description)
+static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error: %s\n", description);
 }
 
-void initialize_glfw()
+static void initialize_glfw()
 {
     glfwSetErrorCallback(error_callback);
 }
 
-void set_hints()
+static void set_hints()
 {
     glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 4 );
     glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 1 );
@@ -33,13 +34,19 @@ void set_hints()
 
 int rendering_engine_entry(bool fullscreen, bool fps_enabled) {
     initialize_glfw();
-    bool windowClosed = false;
     if(!glfwInit())
     {
         fprintf(stderr, "GLFW init failed");
+        safe_exit();
+        return 1;
     }
     set_hints();
-    create_window(&windowClosed, fullscreen, fps_enabled);
+    int window_result = window_run(fullscreen, fps_enabled);
+    if(window_result != 0) {
+        fprintf(stderr, "Failed to run window\n");
+        safe_exit();
+        return 1;
+    }
     safe_exit();
     return 0;
 }

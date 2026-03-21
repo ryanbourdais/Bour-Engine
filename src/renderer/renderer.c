@@ -1,13 +1,16 @@
 #include "renderer.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include "shaders.h"
 #include "mesh.h"
 
+struct RendererState {
+    GLuint shader_program;
+    GLuint vao;
+    GLuint vbo;
+};
 
-
-void fps_counter(double *previous_time, double *title_countdown_time, GLFWwindow* window)
+static void fps_counter(double *previous_time, double *title_countdown_time, GLFWwindow* window)
 {
     double current_time = glfwGetTime();
     double elapsed_time = current_time - *previous_time;
@@ -25,7 +28,7 @@ void fps_counter(double *previous_time, double *title_countdown_time, GLFWwindow
     }
 }
 
-void Draw(GLFWwindow* window, GLuint *shader_program, GLuint *vao, bool fps_enabled)
+static void run_render_loop(GLFWwindow* window, GLuint *shader_program, GLuint *vao, bool fps_enabled)
 {
 
     double previous_time = glfwGetTime();
@@ -55,21 +58,41 @@ void Draw(GLFWwindow* window, GLuint *shader_program, GLuint *vao, bool fps_enab
     }
 }
 
-void cleanup(GLuint *vbo, GLuint *vao, GLuint *shader_program)
+static int renderer_init(struct RendererState *renderer)
 {
-    glDeleteBuffers(1, vbo);
-    glDeleteVertexArrays(1, vao);
-    glDeleteProgram(*shader_program);
+    GLuint vs, fs;
+
+    renderer->vbo = create_vbo();
+    renderer->vao = create_vao(&renderer->vbo);
+
+    if (load_shaders(&vs, &fs) != 0) {
+        return 1;
+    }
+
+    if (create_shader_program(&vs, &fs, &renderer->shader_program) != 0) {
+        return 1;
+    }
+
+    return 0;
 }
 
-void render(GLFWwindow* window, bool fps_enabled)
+static void renderer_shutdown(struct RendererState *renderer)
 {
-    GLuint vbo = create_vbo();
-    GLuint vao = create_vao(&vbo);
-    GLuint vs, fs;
-    load_shaders(&vs, &fs);
-    GLuint shader_program;
-    create_shader_program(&vs, &fs, &shader_program);
-    Draw(window, &shader_program, &vao, fps_enabled);
-    cleanup(&vbo, &vao, &shader_program);
+    glDeleteBuffers(1, &renderer->vbo);
+    glDeleteVertexArrays(1, &renderer->vao);
+    glDeleteProgram(renderer->shader_program);
+}
+
+int renderer_run(GLFWwindow* window, bool fps_enabled)
+{
+    struct RendererState renderer = {0};
+
+    if (renderer_init(&renderer) != 0) {
+        renderer_shutdown(&renderer);
+        fprintf(stderr, "Failed to initialize renderer\n");
+        return 1;
+    }
+    run_render_loop(window, &renderer.shader_program, &renderer.vao, fps_enabled);
+    renderer_shutdown(&renderer);
+    return 0;
 }
