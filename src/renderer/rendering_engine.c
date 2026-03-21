@@ -58,6 +58,11 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     }
 }
 
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
+
 GLuint create_vbo()
 {
     GLuint vbo = 0;
@@ -144,14 +149,35 @@ void create_shader_program(GLuint *vs, GLuint *fs, GLuint *shader_program)
     glLinkProgram(*shader_program);
 }
 
-void Draw(GLFWwindow* window, GLuint *shader_program, GLuint *vao)
+void Draw(GLFWwindow* window, GLuint *shader_program, GLuint *vao, bool fps_enabled)
 {
+
+    double previous_time = glfwGetTime();
+    double title_countdown_time = 0.1;
     while(!glfwWindowShouldClose(window))
     {
+        if(fps_enabled)
+        {
+            double current_time = glfwGetTime();
+            double elapsed_time = current_time - previous_time;
+            previous_time = current_time;
+
+            title_countdown_time -= elapsed_time;
+            if ( title_countdown_time <= 0.0 && elapsed_time > 0.0 ) {
+                double fps = 1.0 / elapsed_time;
+
+                // Create a string and put the FPS as the window title.
+                char title[256];
+                sprintf(title, "FPS = %.2lf", fps);
+                glfwSetWindowTitle(window, title);
+                title_countdown_time = 0.1;
+            }
+        }
         // Update window events
         glfwPollEvents();
 
         // Wipe drawing surface clear
+        glClearColor( 0.6f, 0.6f, 0.8f, 1.0f );
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Put the shader program and VAO in focus in OpenGL's state machine
@@ -173,7 +199,7 @@ void cleanup(GLuint *vbo, GLuint *vao, GLuint *shader_program)
     glDeleteProgram(*shader_program);
 }
 
-void render(GLFWwindow* window)
+void render(GLFWwindow* window, int *win_h, int *win_w, bool fps_enabled)
 {
     GLuint vbo = create_vbo();
     GLuint vao = create_vao(&vbo);
@@ -181,7 +207,7 @@ void render(GLFWwindow* window)
     load_shaders(&vs, &fs);
     GLuint shader_program;
     create_shader_program(&vs, &fs, &shader_program);
-    Draw(window, &shader_program, &vao);
+    Draw(window, &shader_program, &vao, fps_enabled);
     cleanup(&vbo, &vao, &shader_program);
 }
 
@@ -198,9 +224,33 @@ void swap_buffers(GLFWwindow* window)
     glfwSwapBuffers(window);
 }
 
-void create_window(bool *windowClosed)
+void create_window(bool *windowClosed, bool fullscreen, bool fps_enabled)
 {
-    GLFWwindow* window = glfwCreateWindow(640, 480, "My window", NULL, NULL);
+    GLFWmonitor *mon = NULL;
+    int win_w = 800, win_h = 600; // Our window dimensions, in pixels.
+
+    if ( fullscreen ) {
+        mon = glfwGetPrimaryMonitor();
+
+        const GLFWvidmode* mode = glfwGetVideoMode( mon );
+
+        // Hinting these properties lets us use "borderless full screen" mode.
+        glfwWindowHint( GLFW_RED_BITS, mode->redBits );
+        glfwWindowHint( GLFW_GREEN_BITS, mode->greenBits );
+        glfwWindowHint( GLFW_BLUE_BITS, mode->blueBits );
+        glfwWindowHint( GLFW_REFRESH_RATE, mode->refreshRate );
+
+        win_w = mode->width;  // Use our 'desktop' resolution for window size
+        win_h = mode->height; // to get a 'full screen borderless' window.
+    }
+
+    GLFWwindow* window = glfwCreateWindow(
+        win_w,
+        win_h,
+        "Extended OpenGL Init",
+        mon,
+        NULL
+    );
     if(!window)
     {
         fprintf(stderr, "Window failed to be created");
@@ -208,8 +258,9 @@ void create_window(bool *windowClosed)
     }
     create_window_context(window);
     glfwSetKeyCallback(window, key_callback);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     start_glad();
-    render(window);
+    render(window, &win_h, &win_w, fps_enabled);
     close_window(window, windowClosed);
 }
 
@@ -219,9 +270,11 @@ void set_hints()
     glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 1 );
     glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
     glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
+    // MSAA 8x
+    glfwWindowHint( GLFW_SAMPLES, 8 );
 }
 
-int rendering_engine_entry() {
+int rendering_engine_entry(bool fullscreen, bool fps_enabled) {
     initialize_glfw();
     bool windowClosed = false;
     if(!glfwInit())
@@ -231,7 +284,7 @@ int rendering_engine_entry() {
     set_hints();
     while(!windowClosed)
     {
-        create_window(&windowClosed);
+        create_window(&windowClosed, fullscreen, fps_enabled);
     }
     safe_exit();
     return 0;

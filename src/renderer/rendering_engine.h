@@ -5,4 +5,4 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-int rendering_engine_entry();
+int rendering_engine_entry(bool fullscreen, bool fps_enabled);
