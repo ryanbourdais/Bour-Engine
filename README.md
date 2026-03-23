@@ -18,6 +18,7 @@ This project is focused on learning low-level graphics programming, engine archi
 
 ## Tech Stack
 - Language: C (C99 or later)
+- Build System: CMake
 - Windowing/Input: GLFW
 - OpenGL Loader: GLAD
 - Graphics API: OpenGL (4.x)
