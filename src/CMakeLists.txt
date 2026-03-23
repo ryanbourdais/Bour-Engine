@@ -17,6 +17,7 @@ add_executable(bour_engine
     renderer/shaders.c
     renderer/mesh.c
     renderer/renderer.c
+    controller/input.c
 )
 
 target_include_directories(bour_engine PRIVATE
