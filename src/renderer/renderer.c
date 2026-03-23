@@ -53,6 +53,8 @@ static void apply_renderer_uniforms(struct RendererState *renderer_state)
     glUniform1f(renderer_state->mov_y_location, renderer_state->location.y);
 }
 
+//TODO: Create MeshPool struct as storage for meshes then contain meshes there in rendererstate
+
 static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct RendererState *renderer_state)
 {
     double previous_time = glfwGetTime();
