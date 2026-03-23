@@ -17,11 +17,11 @@ This project is focused on learning low-level graphics programming, engine archi
 - **Working > Perfect** — every milestone must run
 
 ## Tech Stack
-- Language: C (C99 or later)
-- Build System: CMake
-- Windowing/Input: GLFW
-- OpenGL Loader: GLAD
+- Language: C11
+- Build System: CMake 3.20+
 - Graphics API: OpenGL (4.x)
+- Windowing/Input: GLFW3 (3.4)
+- OpenGL Loader: GLAD (0.1.36)
 
 ## Getting Started
 Getting started docs can be found for both Windows and Macbook systems in [init.md](https://github.com/ryanbourdais/Bour-Engine/blob/main/docs/init.md)
