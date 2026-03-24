@@ -1,3 +1,4 @@
+#pragma once
 #include <glad/glad.h>
 
 int load_shaders(GLuint *vs, GLuint *fs);
