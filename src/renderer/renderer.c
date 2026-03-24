@@ -119,20 +119,24 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
     }
 }
 
+static void configure_renderer_state()
+{
+    glEnable(GL_CULL_FACE); // cull face
+    glCullFace(GL_BACK); // cull back face
+    glFrontFace(GL_CCW); // GL_CCW for counter clock-wise
+}
+
 static int renderer_init(struct RendererState *renderer)
 {
+    configure_renderer_state();
     GLuint vs, fs;
 
-    // renderer->mesh.vbo = create_vbo();
-    // renderer->mesh.vao = create_vao(&renderer->mesh.vbo);
-
-    // create_mesh(&renderer->mesh);
-
-    // create_vbo_list(0,);
-    // create_vbo_list(1, );
-
     int mesh_status = create_mesh_from_vertices(&renderer->mesh, triangle, vertex_count);
-
+    if(mesh_status != 0)
+    {
+        fprintf(stderr, "Mesh failed to be created, exiting!");
+        return 1;
+    }
 
     if (load_shaders(&vs, &fs) != 0) {
         return 1;
@@ -156,6 +160,7 @@ static int renderer_init(struct RendererState *renderer)
 static void renderer_shutdown(struct RendererState *renderer)
 {
     glDeleteBuffers(1, &renderer->mesh.position_vbo);
+    glDeleteBuffers(1, &renderer->mesh.color_vbo);
     glDeleteVertexArrays(1, &renderer->mesh.vao);
     glDeleteProgram(renderer->shader_program);
 }
