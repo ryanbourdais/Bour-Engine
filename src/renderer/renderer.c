@@ -2,18 +2,35 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "shaders.h"
-#include "mesh.h"
+#include "data_types/mesh.h"
 #include "../controller/input.h"
 
 
 struct RendererState {
     GLuint shader_program;
-    GLuint vao;
-    GLuint vbo;
+    Mesh mesh;
     float_vec2 location;
     GLint mov_x_location;
     GLint mov_y_location;
 };
+
+Vertex triangle[] = {
+    {
+        .position = { 0.0f,  0.5f, 0.0f },
+        .color    = { 1.0f,  0.0f, 0.0f }
+    },
+    {
+        .position = { 0.5f, -0.5f, 0.0f },
+        .color    = { 0.0f,  1.0f, 0.0f }
+    },
+    {
+        .position = {-0.5f, -0.5f, 0.0f },
+        .color    = { 0.0f,  0.0f, 1.0f }
+    }
+};
+
+size_t vertex_count = sizeof(triangle) / sizeof(triangle[0]);
+
 
 static void fps_counter(double *delta_time, double *title_countdown_time, GLFWwindow* window)
 {
@@ -90,7 +107,7 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
         
 
         // glUniform1f(time_location, (float)current_time);
-        glBindVertexArray(renderer_state->vao);
+        glBindVertexArray(renderer_state->mesh.vao);
 
         // Draw points 0-3 from currently bound VAO with current in-use shader
         glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -106,8 +123,15 @@ static int renderer_init(struct RendererState *renderer)
 {
     GLuint vs, fs;
 
-    renderer->vbo = create_vbo();
-    renderer->vao = create_vao(&renderer->vbo);
+    // renderer->mesh.vbo = create_vbo();
+    // renderer->mesh.vao = create_vao(&renderer->mesh.vbo);
+
+    // create_mesh(&renderer->mesh);
+
+    // create_vbo_list(0,);
+    // create_vbo_list(1, );
+
+    int mesh_status = create_mesh_from_vertices(&renderer->mesh, triangle, vertex_count);
 
 
     if (load_shaders(&vs, &fs) != 0) {
@@ -131,8 +155,8 @@ static int renderer_init(struct RendererState *renderer)
 
 static void renderer_shutdown(struct RendererState *renderer)
 {
-    glDeleteBuffers(1, &renderer->vbo);
-    glDeleteVertexArrays(1, &renderer->vao);
+    glDeleteBuffers(1, &renderer->mesh.position_vbo);
+    glDeleteVertexArrays(1, &renderer->mesh.vao);
     glDeleteProgram(renderer->shader_program);
 }
 

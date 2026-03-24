@@ -15,9 +15,11 @@ add_executable(bour_engine
     utils/helpers/file_reader.c
     renderer/window.c
     renderer/shaders.c
-    renderer/mesh.c
+    renderer/data_types/mesh.c
     renderer/renderer.c
     controller/input.c
+    renderer/data_types/vertex.c
+    renderer/data_types/vectors.c
 )
 
 target_include_directories(bour_engine PRIVATE
