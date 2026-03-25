@@ -14,9 +14,9 @@ struct RendererState {
     GLint mov_y_location;
 };
 
-Vertex triangle[] = {
+Vertex square[] = {
     {
-        .position = { 0.0f,  0.5f, 0.0f },
+        .position = { 0.5f,  0.5f, 0.0f },
         .color    = { 1.0f,  0.0f, 0.0f }
     },
     {
@@ -26,10 +26,20 @@ Vertex triangle[] = {
     {
         .position = {-0.5f, -0.5f, 0.0f },
         .color    = { 0.0f,  0.0f, 1.0f }
+    },
+        {
+        .position = {-0.5f, 0.5f, 0.0f },
+        .color    = { 0.0f,  0.0f, 0.0f }
     }
 };
 
-size_t vertex_count = sizeof(triangle) / sizeof(triangle[0]);
+unsigned int indices[] = {  // note that we start from 0!
+    0, 1, 3,   // first triangle
+    1, 2, 3    // second triangle
+};
+
+size_t vertex_count = sizeof(square) / sizeof(square[0]);
+
 
 
 static void fps_counter(double *delta_time, double *title_countdown_time, GLFWwindow* window)
@@ -109,8 +119,8 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
         // glUniform1f(time_location, (float)current_time);
         glBindVertexArray(renderer_state->mesh.vao);
 
-        // Draw points 0-3 from currently bound VAO with current in-use shader
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // Draw Elements using the bound EBO
+        glDrawElements(GL_TRIANGLES, renderer_state->mesh.index_count, GL_UNSIGNED_INT, 0);
 
         // Put the drawing into the visible area
         glfwSwapBuffers(window);
@@ -123,7 +133,7 @@ static void configure_renderer_state()
 {
     glEnable(GL_CULL_FACE); // cull face
     glCullFace(GL_BACK); // cull back face
-    glFrontFace(GL_CCW); // GL_CCW for counter clock-wise
+    glFrontFace(GL_CW); // GL_CCW for counter clock-wise
 }
 
 static int renderer_init(struct RendererState *renderer)
@@ -131,7 +141,7 @@ static int renderer_init(struct RendererState *renderer)
     configure_renderer_state();
     GLuint vs, fs;
 
-    int mesh_status = create_mesh_from_vertices(&renderer->mesh, triangle, vertex_count);
+    int mesh_status = create_mesh_from_vertices(&renderer->mesh, square, vertex_count, indices, 6);
     if(mesh_status != 0)
     {
         fprintf(stderr, "Mesh failed to be created, exiting!");
@@ -162,6 +172,7 @@ static void renderer_shutdown(struct RendererState *renderer)
     glDeleteBuffers(1, &renderer->mesh.position_vbo);
     glDeleteBuffers(1, &renderer->mesh.color_vbo);
     glDeleteVertexArrays(1, &renderer->mesh.vao);
+    glDeleteBuffers(1, &renderer->mesh.ebo);
     glDeleteProgram(renderer->shader_program);
 }
 
