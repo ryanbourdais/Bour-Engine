@@ -43,7 +43,7 @@ void create_mesh(Mesh *mesh)
 }
 
 //TODO: implement
-int create_mesh_from_vertices(Mesh *mesh, const Vertex *vertices, size_t vertex_count)
+int create_mesh_from_vertices(Mesh *mesh, const Vertex *vertices, size_t vertex_count, const unsigned int *indices, GLsizei index_count)
 {
     if(mesh == NULL)
     {
@@ -89,10 +89,17 @@ int create_mesh_from_vertices(Mesh *mesh, const Vertex *vertices, size_t vertex_
     glBufferData(GL_ARRAY_BUFFER, colors_arr.count * sizeof(Vec3), colors_arr.items, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL );
+    GLuint ebo = 0;
+    glGenBuffers(1, &ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(indices[0]), indices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     mesh->color_vbo = colors_vbo;
     mesh->position_vbo = positions_vbo;
     mesh->vao = vao;
     mesh->vertex_count = positions_arr.count;
+    mesh->ebo = ebo;
+    mesh->index_count = index_count;
     free_vec3_array(&positions_arr);
     free_vec3_array(&colors_arr);
     return 0;
