@@ -12,6 +12,7 @@ add_executable(bour_engine
     main.c
     renderer/rendering_engine.c
     external/glad/src/glad.c
+    external/stb/stb_image.c
     utils/helpers/file_reader.c
     renderer/window.c
     renderer/shaders.c
@@ -20,6 +21,7 @@ add_executable(bour_engine
     controller/input.c
     renderer/data_types/vertex.c
     renderer/data_types/vectors.c
+    renderer/data_types/texture.c
 )
 
 target_include_directories(bour_engine PRIVATE
