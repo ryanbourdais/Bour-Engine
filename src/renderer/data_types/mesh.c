@@ -66,17 +66,21 @@ int create_mesh_from_vertices(Mesh *mesh, const Vertex *vertices, size_t vertex_
     vec3_array_initialize(&positions_arr);
     Vec3Array colors_arr;
     vec3_array_initialize(&colors_arr);
+    Vec2Array uv_arr;
+    vec2_array_initialize(&uv_arr);
 
     for(size_t i = 0; i < vertex_count; i++)
     {
         vec3_array_append(&positions_arr, vertices[i].position);
         vec3_array_append(&colors_arr, vertices[i].color);
+        vec2_array_append(&uv_arr, vertices[i].uv);
     }
     GLuint vao = 0;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
     GLuint positions_vbo = 0;
     glGenBuffers(1, &positions_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, positions_vbo);
@@ -89,6 +93,11 @@ int create_mesh_from_vertices(Mesh *mesh, const Vertex *vertices, size_t vertex_
     glBufferData(GL_ARRAY_BUFFER, colors_arr.count * sizeof(Vec3), colors_arr.items, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL );
+    GLuint uv_vbo = 0;
+    glGenBuffers(1, &uv_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, uv_vbo);
+    glBufferData(GL_ARRAY_BUFFER, uv_arr.count * sizeof(Vec2), uv_arr.items, GL_STATIC_DRAW);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, NULL);
     GLuint ebo = 0;
     glGenBuffers(1, &ebo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
@@ -100,6 +109,7 @@ int create_mesh_from_vertices(Mesh *mesh, const Vertex *vertices, size_t vertex_
     mesh->vertex_count = positions_arr.count;
     mesh->ebo = ebo;
     mesh->index_count = index_count;
+    mesh->uv_vbo = uv_vbo;
     free_vec3_array(&positions_arr);
     free_vec3_array(&colors_arr);
     return 0;

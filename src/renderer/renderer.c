@@ -4,6 +4,7 @@
 #include "shaders.h"
 #include "data_types/mesh.h"
 #include "../controller/input.h"
+#include "data_types/texture.h"
 
 
 struct RendererState {
@@ -17,19 +18,23 @@ struct RendererState {
 Vertex square[] = {
     {
         .position = { 0.5f,  0.5f, 0.0f },
-        .color    = { 1.0f,  0.0f, 0.0f }
+        .color    = { 1.0f,  0.0f, 0.0f },
+        .uv       = { 1.0f,  1.0f}
     },
     {
         .position = { 0.5f, -0.5f, 0.0f },
-        .color    = { 0.0f,  1.0f, 0.0f }
+        .color    = { 0.0f,  1.0f, 0.0f },
+        .uv       = { 1.0f,  0.0f}
     },
     {
         .position = {-0.5f, -0.5f, 0.0f },
-        .color    = { 0.0f,  0.0f, 1.0f }
+        .color    = { 0.0f,  0.0f, 1.0f },
+        .uv       = { 0.0f,  0.0f}
     },
         {
         .position = {-0.5f, 0.5f, 0.0f },
-        .color    = { 0.0f,  0.0f, 0.0f }
+        .color    = { 0.0f,  0.0f, 0.0f },
+        .uv       = { 0.0f,  1.0f}
     }
 };
 
@@ -39,6 +44,51 @@ unsigned int indices[] = {  // note that we start from 0!
 };
 
 size_t vertex_count = sizeof(square) / sizeof(square[0]);
+GLsizei index_count = sizeof(indices) / sizeof(indices[0]);
+
+Vertex cube[] = {
+    { .position = { -0.5f, -0.5f,  0.5f }, .color = { 1.0f, 0.0f, 0.0f }, .uv = { 0.0f, 0.0f } },
+    { .position = {  0.5f, -0.5f,  0.5f }, .color = { 0.0f, 1.0f, 0.0f }, .uv = { 1.0f, 0.0f } },
+    { .position = {  0.5f,  0.5f,  0.5f }, .color = { 0.0f, 0.0f, 1.0f }, .uv = { 1.0f, 1.0f } },
+    { .position = { -0.5f,  0.5f,  0.5f }, .color = { 1.0f, 1.0f, 0.0f }, .uv = { 0.0f, 1.0f } },
+
+    { .position = {  0.5f, -0.5f,  0.5f }, .color = { 0.0f, 1.0f, 1.0f }, .uv = { 0.0f, 0.0f } },
+    { .position = {  0.5f, -0.5f, -0.5f }, .color = { 1.0f, 0.0f, 1.0f }, .uv = { 1.0f, 0.0f } },
+    { .position = {  0.5f,  0.5f, -0.5f }, .color = { 1.0f, 1.0f, 1.0f }, .uv = { 1.0f, 1.0f } },
+    { .position = {  0.5f,  0.5f,  0.5f }, .color = { 0.2f, 0.2f, 0.2f }, .uv = { 0.0f, 1.0f } },
+
+    { .position = {  0.5f, -0.5f, -0.5f }, .color = { 1.0f, 0.5f, 0.0f }, .uv = { 0.0f, 0.0f } },
+    { .position = { -0.5f, -0.5f, -0.5f }, .color = { 0.5f, 1.0f, 0.0f }, .uv = { 1.0f, 0.0f } },
+    { .position = { -0.5f,  0.5f, -0.5f }, .color = { 0.0f, 0.5f, 1.0f }, .uv = { 1.0f, 1.0f } },
+    { .position = {  0.5f,  0.5f, -0.5f }, .color = { 1.0f, 0.0f, 0.5f }, .uv = { 0.0f, 1.0f } },
+
+    { .position = { -0.5f, -0.5f, -0.5f }, .color = { 0.7f, 0.2f, 0.2f }, .uv = { 0.0f, 0.0f } },
+    { .position = { -0.5f, -0.5f,  0.5f }, .color = { 0.2f, 0.7f, 0.2f }, .uv = { 1.0f, 0.0f } },
+    { .position = { -0.5f,  0.5f,  0.5f }, .color = { 0.2f, 0.2f, 0.7f }, .uv = { 1.0f, 1.0f } },
+    { .position = { -0.5f,  0.5f, -0.5f }, .color = { 0.7f, 0.7f, 0.2f }, .uv = { 0.0f, 1.0f } },
+
+    { .position = { -0.5f,  0.5f,  0.5f }, .color = { 0.7f, 0.2f, 0.7f }, .uv = { 0.0f, 0.0f } },
+    { .position = {  0.5f,  0.5f,  0.5f }, .color = { 0.2f, 0.7f, 0.7f }, .uv = { 1.0f, 0.0f } },
+    { .position = {  0.5f,  0.5f, -0.5f }, .color = { 0.8f, 0.8f, 0.8f }, .uv = { 1.0f, 1.0f } },
+    { .position = { -0.5f,  0.5f, -0.5f }, .color = { 0.3f, 0.3f, 0.3f }, .uv = { 0.0f, 1.0f } },
+
+    { .position = { -0.5f, -0.5f, -0.5f }, .color = { 0.9f, 0.4f, 0.4f }, .uv = { 0.0f, 0.0f } },
+    { .position = {  0.5f, -0.5f, -0.5f }, .color = { 0.4f, 0.9f, 0.4f }, .uv = { 1.0f, 0.0f } },
+    { .position = {  0.5f, -0.5f,  0.5f }, .color = { 0.4f, 0.4f, 0.9f }, .uv = { 1.0f, 1.0f } },
+    { .position = { -0.5f, -0.5f,  0.5f }, .color = { 0.9f, 0.9f, 0.4f }, .uv = { 0.0f, 1.0f } }
+};
+
+unsigned int cube_indices[] = {
+    0, 1, 2,   0, 2, 3,
+    4, 5, 6,   4, 6, 7,
+    8, 9, 10,  8, 10, 11,
+    12, 13, 14, 12, 14, 15,
+    16, 17, 18, 16, 18, 19,
+    20, 21, 22, 20, 22, 23
+};
+
+size_t cube_vertex_count = sizeof(cube) / sizeof(cube[0]);
+GLsizei cube_index_count = sizeof(cube_indices) / sizeof(cube_indices[0]);
 
 
 
@@ -78,6 +128,7 @@ static void apply_renderer_uniforms(struct RendererState *renderer_state)
 {
     glUniform1f(renderer_state->mov_x_location, renderer_state->location.x);
     glUniform1f(renderer_state->mov_y_location, renderer_state->location.y);
+    
 }
 
 //TODO: Create MeshPool struct as storage for meshes then contain meshes there in rendererstate
@@ -88,6 +139,7 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
     double title_countdown_time = 0.1;
     double delta_time = 0.0;
     bool render_state_updated = false;
+    
     while(!glfwWindowShouldClose(window))
     {
         double current_time = glfwGetTime();
@@ -111,13 +163,17 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
 
         // Put the shader program and VAO in focus in OpenGL's state machine
         glUseProgram(renderer_state->shader_program);
+        glUniform1i(glGetUniformLocation(renderer_state->shader_program, "texture1"), 0);
+        glUniform1i(glGetUniformLocation(renderer_state->shader_program, "texture2"), 1);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, renderer_state->mesh.texture);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, renderer_state->mesh.texture2);
+        // glUniform1f(time_location, (float)current_time);
+        glBindVertexArray(renderer_state->mesh.vao);
 
         // Set shader uniforms
         if(render_state_updated) {apply_renderer_uniforms(renderer_state);}
-        
-
-        // glUniform1f(time_location, (float)current_time);
-        glBindVertexArray(renderer_state->mesh.vao);
 
         // Draw Elements using the bound EBO
         glDrawElements(GL_TRIANGLES, renderer_state->mesh.index_count, GL_UNSIGNED_INT, 0);
@@ -133,20 +189,22 @@ static void configure_renderer_state()
 {
     glEnable(GL_CULL_FACE); // cull face
     glCullFace(GL_BACK); // cull back face
-    glFrontFace(GL_CW); // GL_CCW for counter clock-wise
+    glFrontFace(GL_CCW); // GL_CCW for counter clock-wise
 }
 
 static int renderer_init(struct RendererState *renderer)
 {
-    configure_renderer_state();
+    // configure_renderer_state();
     GLuint vs, fs;
 
-    int mesh_status = create_mesh_from_vertices(&renderer->mesh, square, vertex_count, indices, 6);
+    int mesh_status = create_mesh_from_vertices(&renderer->mesh, cube, cube_vertex_count, cube_indices, cube_index_count);
     if(mesh_status != 0)
     {
         fprintf(stderr, "Mesh failed to be created, exiting!");
         return 1;
     }
+    if(create_texture(&renderer->mesh, cube_vertex_count, "assets/textures/container.png") != 0){return 1;}
+    if(create_texture(&renderer->mesh, cube_vertex_count, "assets/textures/awesomeface.png") != 0){return 1;}
 
     if (load_shaders(&vs, &fs) != 0) {
         return 1;

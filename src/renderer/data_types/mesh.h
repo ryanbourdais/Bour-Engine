@@ -7,9 +7,13 @@ typedef struct Mesh {
     GLuint vao;
     GLuint position_vbo;
     GLuint color_vbo;
+    GLuint uv_vbo;
     GLsizei vertex_count;
     GLuint ebo;
     GLsizei index_count;
+    GLuint texture;
+    GLuint texture2;
+    GLuint texture_count;
 } Mesh;
 
 typedef struct MeshPool {
