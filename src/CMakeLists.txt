@@ -24,6 +24,9 @@ add_executable(bour_engine
     renderer/data_types/texture.c
 )
 
+add_subdirectory(external/cglm EXCLUDE_FROM_ALL)
+
+
 target_include_directories(bour_engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
 )
@@ -31,4 +34,5 @@ target_include_directories(bour_engine PRIVATE
 target_link_libraries(bour_engine PRIVATE
     glfw
     OpenGL::GL
+    cglm_headers
 )
