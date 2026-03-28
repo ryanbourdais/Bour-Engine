@@ -5,9 +5,9 @@
 
 
 typedef struct Vertex {
-    Vec3 position;
-    Vec3 color;
-    Vec2 uv;
+    vec3s position;
+    vec3s color;
+    vec2s uv;
     // Vec3 normal;
 } Vertex;
 

@@ -4,7 +4,7 @@
 
 void vec3_array_initialize(struct Vec3Array *arr)
 {
-    arr->items = malloc(4 * sizeof(Vec3)); // Initial capacity of 4
+    arr->items = malloc(4 * sizeof(vec3s)); // Initial capacity of 4
     if(arr->items == NULL) {
         fprintf(stderr, "Memory allocation failed\n");
         exit(1);
@@ -12,11 +12,11 @@ void vec3_array_initialize(struct Vec3Array *arr)
     arr->count = 0;
     arr->capacity = 4;
 }
-void vec3_array_append(struct Vec3Array *arr, Vec3 value)
+void vec3_array_append(struct Vec3Array *arr, vec3s value)
 {
     if(arr->count == arr->capacity) {
             arr->capacity *= 2;
-            arr->items = realloc(arr->items, arr->capacity * sizeof(Vec3));
+            arr->items = realloc(arr->items, arr->capacity * sizeof(vec3s));
             if(arr->items == NULL) {
                 fprintf(stderr, "Memory allocation failed\n");
                 exit(1);
@@ -24,7 +24,7 @@ void vec3_array_append(struct Vec3Array *arr, Vec3 value)
         }
         if(arr->capacity == 0) {
             arr->capacity = 4; // Initial capacity
-            arr->items = malloc(arr->capacity * sizeof(Vec3));
+            arr->items = malloc(arr->capacity * sizeof(vec3s));
             if(arr->items == NULL) {
                 fprintf(stderr, "Memory allocation failed\n");
                 exit(1);
@@ -44,7 +44,7 @@ void free_vec3_array(struct Vec3Array *arr)
 
 void vec2_array_initialize(struct Vec2Array *arr)
 {
-    arr->items = malloc(4 * sizeof(Vec2)); // Initial capacity of 4
+    arr->items = malloc(4 * sizeof(vec2s)); // Initial capacity of 4
     if(arr->items == NULL) {
         fprintf(stderr, "Memory allocation failed\n");
         exit(1);
@@ -52,11 +52,11 @@ void vec2_array_initialize(struct Vec2Array *arr)
     arr->count = 0;
     arr->capacity = 4;
 }
-void vec2_array_append(struct Vec2Array *arr, Vec2 value)
+void vec2_array_append(struct Vec2Array *arr, vec2s value)
 {
     if(arr->count == arr->capacity) {
             arr->capacity *= 2;
-            arr->items = realloc(arr->items, arr->capacity * sizeof(Vec2));
+            arr->items = realloc(arr->items, arr->capacity * sizeof(vec2s));
             if(arr->items == NULL) {
                 fprintf(stderr, "Memory allocation failed\n");
                 exit(1);
@@ -64,7 +64,7 @@ void vec2_array_append(struct Vec2Array *arr, Vec2 value)
         }
         if(arr->capacity == 0) {
             arr->capacity = 4; // Initial capacity
-            arr->items = malloc(arr->capacity * sizeof(Vec2));
+            arr->items = malloc(arr->capacity * sizeof(vec2s));
             if(arr->items == NULL) {
                 fprintf(stderr, "Memory allocation failed\n");
                 exit(1);
@@ -80,48 +80,4 @@ void free_vec2_array(struct Vec2Array *arr)
     arr->items = NULL;
     arr->count = 0;
     arr->capacity = 0;
-}
-
-
-void vec3_scalar_add(Vec3 *vertex, float addenda)
-{
-    vertex->x = vertex->x + addenda;
-    vertex->y = vertex->y + addenda;
-    vertex->z = vertex->z + addenda;
-}
-
-
-void vec3_scalar_subtraction(Vec3 *vertex, float minuend)
-{
-    vertex->x = vertex->x - minuend;
-    vertex->y = vertex->y - minuend;
-    vertex->z = vertex->z - minuend;
-}
-
-Vec3 vec3_add(Vec3 vertex, Vec3 addenda_vertex)
-{
-    Vec3 new_vec3;
-    new_vec3.x = vertex.x + addenda_vertex.x;
-    new_vec3.y = vertex.y + addenda_vertex.y;
-    new_vec3.z = vertex.z + addenda_vertex.z;
-    return new_vec3;
-}
-
-Vec3 vec3_subtraction(Vec3 vertex, Vec3 minuend_vertex)
-{
-    Vec3 new_vec3;
-    new_vec3.x = vertex.x - minuend_vertex.x;
-    new_vec3.y = vertex.y - minuend_vertex.y;
-    new_vec3.z = vertex.z - minuend_vertex.z;
-    return new_vec3;
-}
-
-float vec3_dot_product(Vec3 vertex, Vec3 mulitplier_vertex)
-{
-    Vec3 new_vec3;
-    new_vec3.x = vertex.x * mulitplier_vertex.x;
-    new_vec3.y = vertex.y * mulitplier_vertex.y;
-    new_vec3.z = vertex.z * mulitplier_vertex.z;
-    float dot_product = new_vec3.x + new_vec3.y + new_vec3.z;
-    return dot_product;
 }
