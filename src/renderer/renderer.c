@@ -1,18 +1,21 @@
 #include "renderer.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <cglm/struct.h>
 #include "shaders.h"
 #include "data_types/mesh.h"
 #include "../controller/input.h"
 #include "data_types/texture.h"
+#include "data_types/renderObject.h"
 
 
 struct RendererState {
     GLuint shader_program;
-    Mesh mesh;
-    float_vec2 location;
-    GLint mov_x_location;
-    GLint mov_y_location;
+    // float_vec2 location;
+    // GLint mov_x_location;
+    // GLint mov_y_location;
+    RenderObjectArray render_objects;
+    GLint model_location;
 };
 
 Vertex square[] = {
@@ -112,26 +115,32 @@ static void update_frame_time(double current_time, double *previous_time, double
     *previous_time = current_time;
 }
 
-static void update_renderer_location(struct RendererState *renderer_state, double delta_time, bool *render_state_updated)
-{
-    float_vec2 movement_axis = input_get_movement_axis_smooth(5.0f, (float)delta_time);
-    float movement_x = movement_axis.x;
-    float movement_y = movement_axis.y;
+// static void update_renderer_location(struct RendererState *renderer_state, double delta_time, bool *render_state_updated)
+// {
+//     float_vec2 movement_axis = input_get_movement_axis_smooth(5.0f, (float)delta_time);
+//     float movement_x = movement_axis.x;
+//     float movement_y = movement_axis.y;
 
-    if(movement_x != 0 || movement_y != 0) {*render_state_updated = true;}
+//     if(movement_x != 0 || movement_y != 0) {*render_state_updated = true;}
     
-    renderer_state->location.x += movement_x;
-    renderer_state->location.y += movement_y;
-}
+//     renderer_state->position.x += movement_x;
+//     renderer_state->position.y += movement_y;
+// }
 
-static void apply_renderer_uniforms(struct RendererState *renderer_state)
-{
-    glUniform1f(renderer_state->mov_x_location, renderer_state->location.x);
-    glUniform1f(renderer_state->mov_y_location, renderer_state->location.y);
+// static void apply_renderer_uniforms(struct RendererState *renderer_state)
+// {
+//     glUniform1f(renderer_state->mov_x_location, renderer_state->location.x);
+//     glUniform1f(renderer_state->mov_y_location, renderer_state->location.y);
     
-}
+// }
 
-//TODO: Create MeshPool struct as storage for meshes then contain meshes there in rendererstate
+static void update_model_matrix(struct RenderObject *render_object)
+{
+    glm_mat4_identity(render_object->model);
+    glm_translate(render_object->model, render_object->position.raw);
+    glm_rotate(render_object->model, (float)glfwGetTime(), (vec3){0.0f, 0.0f, 1.0f});
+    glm_scale(render_object->model, render_object->scale.raw);
+}
 
 static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct RendererState *renderer_state)
 {
@@ -152,7 +161,7 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
         }
 
         // Update location based on input
-        update_renderer_location(renderer_state, delta_time, &render_state_updated);
+        // update_renderer_location(renderer_state, delta_time, &render_state_updated);
 
         // Update window events
         glfwPollEvents();
@@ -166,17 +175,20 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
         glUniform1i(glGetUniformLocation(renderer_state->shader_program, "texture1"), 0);
         glUniform1i(glGetUniformLocation(renderer_state->shader_program, "texture2"), 1);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, renderer_state->mesh.texture);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, renderer_state->mesh.texture2);
-        // glUniform1f(time_location, (float)current_time);
-        glBindVertexArray(renderer_state->mesh.vao);
+       
 
-        // Set shader uniforms
-        if(render_state_updated) {apply_renderer_uniforms(renderer_state);}
+        for(int i = 0; i < renderer_state->render_objects.count; i++)
+        {
+            glBindTexture(GL_TEXTURE_2D, renderer_state->render_objects.items[i].mesh.texture);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, renderer_state->render_objects.items[i].mesh.texture2);
+            glBindVertexArray(renderer_state->render_objects.items[i].mesh.vao);
+            update_model_matrix(&renderer_state->render_objects.items[i]);
+            glUniformMatrix4fv(renderer_state->model_location, 1,GL_FALSE, (float *)renderer_state->render_objects.items[i].model);
+            glDrawElements(GL_TRIANGLES, renderer_state->render_objects.items[i].mesh.index_count, GL_UNSIGNED_INT, 0);
+        }
+        
 
-        // Draw Elements using the bound EBO
-        glDrawElements(GL_TRIANGLES, renderer_state->mesh.index_count, GL_UNSIGNED_INT, 0);
 
         // Put the drawing into the visible area
         glfwSwapBuffers(window);
@@ -197,14 +209,21 @@ static int renderer_init(struct RendererState *renderer)
     // configure_renderer_state();
     GLuint vs, fs;
 
-    int mesh_status = create_mesh_from_vertices(&renderer->mesh, cube, cube_vertex_count, cube_indices, cube_index_count);
-    if(mesh_status != 0)
-    {
-        fprintf(stderr, "Mesh failed to be created, exiting!");
-        return 1;
+    renderobject_array_initialize(&renderer->render_objects);
+    for(int i = 0; i < 10; i++)
+    { 
+        RenderObject new_render_object = {0};
+        
+        int mesh_status = create_mesh_from_vertices(&new_render_object.mesh, cube, cube_vertex_count, cube_indices, cube_index_count);
+        if(mesh_status != 0)
+        {
+            fprintf(stderr, "Mesh failed to be created, exiting!");
+            return 1;
+        }
+        if(create_texture(&new_render_object.mesh, cube_vertex_count, "assets/textures/container.png") != 0){return 1;}
+        if(create_texture(&new_render_object.mesh, cube_vertex_count, "assets/textures/awesomeface.png") != 0){return 1;}
+        renderobject_array_append(&renderer->render_objects, new_render_object);
     }
-    if(create_texture(&renderer->mesh, cube_vertex_count, "assets/textures/container.png") != 0){return 1;}
-    if(create_texture(&renderer->mesh, cube_vertex_count, "assets/textures/awesomeface.png") != 0){return 1;}
 
     if (load_shaders(&vs, &fs) != 0) {
         return 1;
@@ -213,24 +232,44 @@ static int renderer_init(struct RendererState *renderer)
     if (create_shader_program(&vs, &fs, &renderer->shader_program) != 0) {
         return 1;
     }
-    
-    renderer->mov_x_location = glGetUniformLocation(renderer->shader_program, "mov_x");
-    renderer->mov_y_location = glGetUniformLocation(renderer->shader_program, "mov_y");
 
-    if (renderer->mov_x_location < 0 || renderer->mov_y_location < 0) {
-        fprintf(stderr, "Failed to get uniform locations\n");
+    renderer->model_location = glGetUniformLocation(renderer->shader_program, "model");
+    if(renderer->model_location < 0)
+    {
+        fprintf(stderr, "Failed to get uniform location");
         return 1;
     }
+
+            for(int i = 0; i < renderer->render_objects.count; i++)
+        {
+        renderer->render_objects.items[i].position = (vec3s){{0.0f, 0.0f, 0.0f}};
+        renderer->render_objects.items[i].rotation_angle = 0.0f;
+        renderer->render_objects.items[i].scale = (vec3s){{1.0f, 1.0f, 1.0f}};
+        }
+
+    // renderer->mov_x_location = glGetUniformLocation(renderer->shader_program, "mov_x");
+    // renderer->mov_y_location = glGetUniformLocation(renderer->shader_program, "mov_y");
+
+    // if (renderer->mov_x_location < 0 || renderer->mov_y_location < 0) {
+    //     fprintf(stderr, "Failed to get uniform locations\n");
+    //     return 1;
+    // }
 
     return 0;
 }
 
 static void renderer_shutdown(struct RendererState *renderer)
 {
-    glDeleteBuffers(1, &renderer->mesh.position_vbo);
-    glDeleteBuffers(1, &renderer->mesh.color_vbo);
-    glDeleteVertexArrays(1, &renderer->mesh.vao);
-    glDeleteBuffers(1, &renderer->mesh.ebo);
+    for(int i = 0; i < renderer->render_objects.count; i++)
+    {
+        glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.position_vbo);
+        glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.color_vbo);
+        glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.uv_vbo);
+        glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.texture);
+        glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.texture2);
+        glDeleteVertexArrays(1, &renderer->render_objects.items[i].mesh.vao);
+        glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.ebo);
+    }
     glDeleteProgram(renderer->shader_program);
 }
 
