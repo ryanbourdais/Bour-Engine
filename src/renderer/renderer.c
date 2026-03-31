@@ -11,13 +11,11 @@
 
 struct RendererState {
     GLuint shader_program;
-    // float_vec2 location;
-    // GLint mov_x_location;
-    // GLint mov_y_location;
     RenderObjectArray render_objects;
     GLint model_location;
 };
 
+// TODO: Move to RenderObject objects in a separate file.
 Vertex square[] = {
     {
         .position = { 0.5f,  0.5f, 0.0f },
@@ -115,25 +113,7 @@ static void update_frame_time(double current_time, double *previous_time, double
     *previous_time = current_time;
 }
 
-// static void update_renderer_location(struct RendererState *renderer_state, double delta_time, bool *render_state_updated)
-// {
-//     float_vec2 movement_axis = input_get_movement_axis_smooth(5.0f, (float)delta_time);
-//     float movement_x = movement_axis.x;
-//     float movement_y = movement_axis.y;
-
-//     if(movement_x != 0 || movement_y != 0) {*render_state_updated = true;}
-    
-//     renderer_state->position.x += movement_x;
-//     renderer_state->position.y += movement_y;
-// }
-
-// static void apply_renderer_uniforms(struct RendererState *renderer_state)
-// {
-//     glUniform1f(renderer_state->mov_x_location, renderer_state->location.x);
-//     glUniform1f(renderer_state->mov_y_location, renderer_state->location.y);
-    
-// }
-
+TODO: Move to multiple functions for rotation, position, and scale that take an argument for the translation.
 static void update_model_matrix(struct RenderObject *render_object)
 {
     glm_mat4_identity(render_object->model);
@@ -160,9 +140,6 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
             fps_counter(&delta_time, &title_countdown_time, window);
         }
 
-        // Update location based on input
-        // update_renderer_location(renderer_state, delta_time, &render_state_updated);
-
         // Update window events
         glfwPollEvents();
 
@@ -188,8 +165,6 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
             glDrawElements(GL_TRIANGLES, renderer_state->render_objects.items[i].mesh.index_count, GL_UNSIGNED_INT, 0);
         }
         
-
-
         // Put the drawing into the visible area
         glfwSwapBuffers(window);
 
@@ -246,15 +221,6 @@ static int renderer_init(struct RendererState *renderer)
         renderer->render_objects.items[i].rotation_angle = 0.0f;
         renderer->render_objects.items[i].scale = (vec3s){{1.0f, 1.0f, 1.0f}};
         }
-
-    // renderer->mov_x_location = glGetUniformLocation(renderer->shader_program, "mov_x");
-    // renderer->mov_y_location = glGetUniformLocation(renderer->shader_program, "mov_y");
-
-    // if (renderer->mov_x_location < 0 || renderer->mov_y_location < 0) {
-    //     fprintf(stderr, "Failed to get uniform locations\n");
-    //     return 1;
-    // }
-
     return 0;
 }
 
