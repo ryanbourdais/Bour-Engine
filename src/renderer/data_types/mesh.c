@@ -42,7 +42,6 @@ void create_mesh(Mesh *mesh)
     mesh->vao = create_vao(&mesh->position_vbo);
 }
 
-//TODO: implement
 int create_mesh_from_vertices(Mesh *mesh, const Vertex *vertices, size_t vertex_count, const unsigned int *indices, GLsizei index_count)
 {
     if(mesh == NULL)

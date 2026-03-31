@@ -22,6 +22,7 @@ add_executable(bour_engine
     renderer/data_types/vertex.c
     renderer/data_types/vectors.c
     renderer/data_types/texture.c
+    renderer/data_types/renderObject.c
 )
 
 add_subdirectory(external/cglm EXCLUDE_FROM_ALL)
