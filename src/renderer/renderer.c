@@ -113,13 +113,24 @@ static void update_frame_time(double current_time, double *previous_time, double
     *previous_time = current_time;
 }
 
-TODO: Move to multiple functions for rotation, position, and scale that take an argument for the translation.
-static void update_model_matrix(struct RenderObject *render_object)
+static void identity_model(struct RenderObject *render_object)
 {
     glm_mat4_identity(render_object->model);
-    glm_translate(render_object->model, render_object->position.raw);
-    glm_rotate(render_object->model, (float)glfwGetTime(), (vec3){0.0f, 0.0f, 1.0f});
-    glm_scale(render_object->model, render_object->scale.raw);
+}
+
+static void translate_model_matrix(struct RenderObject *render_object, vec3s translate_vector)
+{
+    glm_translate(render_object->model, translate_vector);
+}
+
+static void rotate_model(struct RenderObject *render_object, float angle, vec3s axis)
+{
+    glm_rotate(render_object->model, angle, axis);
+}
+
+static void scale_model(struct RenderObject *render_object, vec3s scale_vector)
+{
+    glm_scale(render_object->model, scale_vector);
 }
 
 static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct RendererState *renderer_state)
