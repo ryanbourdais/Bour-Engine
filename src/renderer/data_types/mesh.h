@@ -18,16 +18,4 @@ typedef struct Mesh {
     GLuint texture_count;
 } Mesh;
 
-typedef struct MeshPool {
-    Mesh* items;
-    size_t count;
-    size_t capacity;
-} MeshPool;
-
-GLuint create_vao(GLuint *vbo);
-GLuint create_vbo();
-void create_mesh(Mesh *mesh);
 int create_mesh_from_vertices(Mesh *mesh, const Vertex *vertices, size_t vertex_count, const unsigned int *indices, GLsizei index_count);
-void mesh_pool_initialize(struct MeshPool *arr);
-void mesh_pool_append(struct MeshPool *arr, Mesh value);
-void free_mesh_pool(struct MeshPool *arr);

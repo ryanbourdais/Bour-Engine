@@ -117,26 +117,6 @@ static void update_frame_time(double current_time, double *previous_time, double
     *previous_time = current_time;
 }
 
-static void identity_model(struct RenderObject *render_object)
-{
-    glm_mat4_identity(render_object->model);
-}
-
-static void translate_model_matrix(struct RenderObject *render_object, vec3s translate_vector)
-{
-    glm_translate(render_object->model, translate_vector.raw);
-}
-
-static void rotate_model(struct RenderObject *render_object, float angle, vec3s axis)
-{
-    glm_rotate(render_object->model, angle, axis.raw);
-}
-
-static void scale_model(struct RenderObject *render_object, vec3s scale_vector)
-{
-    glm_scale(render_object->model, scale_vector.raw);
-}
-
 static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct RendererState *renderer_state)
 {
     double previous_time = glfwGetTime();
@@ -160,13 +140,11 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
 
         // Wipe drawing surface clear
         glClearColor( 0.6f, 0.6f, 0.8f, 1.0f );
-        glEnable(GL_DEPTH_TEST);  
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Put the shader program and VAO in focus in OpenGL's state machine
         glUseProgram(renderer_state->shader_program);
-        glUniform1i(glGetUniformLocation(renderer_state->shader_program, "texture1"), 0);
-        glUniform1i(glGetUniformLocation(renderer_state->shader_program, "texture2"), 1);
+
         glActiveTexture(GL_TEXTURE0);
        
 
@@ -181,7 +159,7 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
             identity_model(&renderer_state->render_objects.items[i]);
             translate_model_matrix(&renderer_state->render_objects.items[i], renderer_state->render_objects.items[i].position);
             rotate_model(&renderer_state->render_objects.items[i], glm_rad(20.0f * (i + 1) * (float)glfwGetTime()), translation_vec);
-            scale_model(&renderer_state->render_objects.items[i],  scale_vec);
+            // scale_model(&renderer_state->render_objects.items[i],  scale_vec);
             glUniformMatrix4fv(renderer_state->model_location, 1,GL_FALSE, (float *)renderer_state->render_objects.items[i].model);
             glDrawElements(GL_TRIANGLES, renderer_state->render_objects.items[i].mesh.index_count, GL_UNSIGNED_INT, 0);
         }
@@ -216,8 +194,8 @@ static int renderer_init(struct RendererState *renderer)
             fprintf(stderr, "Mesh failed to be created, exiting!");
             return 1;
         }
-        if(create_texture(&new_render_object.mesh, cube_vertex_count, "assets/textures/container.png") != 0){return 1;}
-        if(create_texture(&new_render_object.mesh, cube_vertex_count, "assets/textures/awesomeface.png") != 0){return 1;}
+        if(create_texture(&new_render_object.mesh, "assets/textures/container.png") != 0){return 1;}
+        if(create_texture(&new_render_object.mesh, "assets/textures/awesomeface.png") != 0){return 1;}
         renderobject_array_append(&renderer->render_objects, new_render_object);
     }
 
@@ -240,8 +218,10 @@ static int renderer_init(struct RendererState *renderer)
     glUniformMatrix4fv(renderer->view_location, 1, GL_FALSE, (float *)renderer->view);
 
 
-
+    glEnable(GL_DEPTH_TEST);  
     renderer->model_location = glGetUniformLocation(renderer->shader_program, "model");
+    glUniform1i(glGetUniformLocation(renderer->shader_program, "texture1"), 0);
+    glUniform1i(glGetUniformLocation(renderer->shader_program, "texture2"), 1);
     if(renderer->model_location < 0)
     {
         fprintf(stderr, "Failed to get uniform location");
@@ -277,11 +257,12 @@ static void renderer_shutdown(struct RendererState *renderer)
         glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.position_vbo);
         glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.color_vbo);
         glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.uv_vbo);
-        glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.texture);
-        glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.texture2);
+        glDeleteTextures(1, &renderer->render_objects.items[i].mesh.texture);
+        glDeleteTextures(1, &renderer->render_objects.items[i].mesh.texture2);
         glDeleteVertexArrays(1, &renderer->render_objects.items[i].mesh.vao);
         glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.ebo);
     }
+    free_renderobject_array(&renderer->render_objects);
     glDeleteProgram(renderer->shader_program);
 }
 

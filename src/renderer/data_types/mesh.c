@@ -3,45 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-//triangle vertices
-float default_points[] = {
-    0.0f, 0.5f, 0.0f, //top x,y,z
-    0.5f, -0.5f, 0.0f, //bottom right x,y,z
-    -0.5f, -0.5f, 0.0f //bottom left x,y,z
-};
-
-float default_colours[] = {
-  1.0f, 0.0f,  0.0f,
-  0.0f, 1.0f,  0.0f,
-  0.0f, 0.0f,  1.0f
-};
-
-GLuint create_vbo()
-{
-    GLuint vbo = 0;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float), default_points, GL_STATIC_DRAW);
-    return vbo;
-}
-
-GLuint create_vao(GLuint *vbo)
-{
-    GLuint vao = 0;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, *vbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL );
-    return vao;
-}
-
-void create_mesh(Mesh *mesh)
-{
-    mesh->position_vbo = create_vbo();
-    mesh->vao = create_vao(&mesh->position_vbo);
-}
-
 int create_mesh_from_vertices(Mesh *mesh, const Vertex *vertices, size_t vertex_count, const unsigned int *indices, GLsizei index_count)
 {
     if(mesh == NULL)
@@ -113,45 +74,4 @@ int create_mesh_from_vertices(Mesh *mesh, const Vertex *vertices, size_t vertex_
     free_vec3_array(&colors_arr);
     free_vec2_array(&uv_arr);
     return 0;
-}
-
-void mesh_pool_initialize(struct MeshPool *arr)
-{
-    arr->items = malloc(4 * sizeof(Mesh)); // Initial capacity of 4
-    if(arr->items == NULL) {
-        fprintf(stderr, "Memory allocation failed\n");
-        exit(1);
-    }
-    arr->count = 0;
-    arr->capacity = 4;
-}
-
-void mesh_pool_append(struct MeshPool *arr, Mesh value)
-{
-    if(arr->count == arr->capacity) {
-            arr->capacity *= 2;
-            arr->items = realloc(arr->items, arr->capacity * sizeof(Mesh));
-            if(arr->items == NULL) {
-                fprintf(stderr, "Memory allocation failed\n");
-                exit(1);
-            }
-        }
-        if(arr->capacity == 0) {
-            arr->capacity = 4; // Initial capacity
-            arr->items = malloc(arr->capacity * sizeof(Mesh));
-            if(arr->items == NULL) {
-                fprintf(stderr, "Memory allocation failed\n");
-                exit(1);
-            }
-        }
-        arr->items[arr->count] = value;
-        arr->count++;
-}
-
-void free_mesh_pool(struct MeshPool *arr)
-{
-    free(arr->items);
-    arr->items = NULL;
-    arr->count = 0;
-    arr->capacity = 0;
 }

@@ -12,7 +12,7 @@ static int init_textures()
     return 0;
 }
 
-int create_texture(Mesh *mesh, size_t vertex_count, char* file_location)
+int create_texture(Mesh *mesh, char* file_location)
 {
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(1);  
