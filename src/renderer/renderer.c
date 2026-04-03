@@ -13,6 +13,10 @@ struct RendererState {
     GLuint shader_program;
     RenderObjectArray render_objects;
     GLint model_location;
+    GLint projection_location;
+    mat4 projection;
+    mat4 view;
+    GLint view_location;
 };
 
 // TODO: Move to RenderObject objects in a separate file.
@@ -120,17 +124,17 @@ static void identity_model(struct RenderObject *render_object)
 
 static void translate_model_matrix(struct RenderObject *render_object, vec3s translate_vector)
 {
-    glm_translate(render_object->model, translate_vector);
+    glm_translate(render_object->model, translate_vector.raw);
 }
 
 static void rotate_model(struct RenderObject *render_object, float angle, vec3s axis)
 {
-    glm_rotate(render_object->model, angle, axis);
+    glm_rotate(render_object->model, angle, axis.raw);
 }
 
 static void scale_model(struct RenderObject *render_object, vec3s scale_vector)
 {
-    glm_scale(render_object->model, scale_vector);
+    glm_scale(render_object->model, scale_vector.raw);
 }
 
 static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct RendererState *renderer_state)
@@ -156,6 +160,7 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
 
         // Wipe drawing surface clear
         glClearColor( 0.6f, 0.6f, 0.8f, 1.0f );
+        glEnable(GL_DEPTH_TEST);  
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Put the shader program and VAO in focus in OpenGL's state machine
@@ -167,11 +172,16 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
 
         for(int i = 0; i < renderer_state->render_objects.count; i++)
         {
+            vec3s translation_vec = {1.0f, 0.3f, 0.5f};
+            vec3s scale_vec = {glm_rad((2.0f * (i + 1) * (float)glfwGetTime())),glm_rad((2.0f * (i + 1) * (float)glfwGetTime())),glm_rad(2.0f * (i + 1) * (float)glfwGetTime())};
             glBindTexture(GL_TEXTURE_2D, renderer_state->render_objects.items[i].mesh.texture);
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, renderer_state->render_objects.items[i].mesh.texture2);
             glBindVertexArray(renderer_state->render_objects.items[i].mesh.vao);
-            update_model_matrix(&renderer_state->render_objects.items[i]);
+            identity_model(&renderer_state->render_objects.items[i]);
+            translate_model_matrix(&renderer_state->render_objects.items[i], renderer_state->render_objects.items[i].position);
+            rotate_model(&renderer_state->render_objects.items[i], glm_rad(20.0f * (i + 1) * (float)glfwGetTime()), translation_vec);
+            scale_model(&renderer_state->render_objects.items[i],  scale_vec);
             glUniformMatrix4fv(renderer_state->model_location, 1,GL_FALSE, (float *)renderer_state->render_objects.items[i].model);
             glDrawElements(GL_TRIANGLES, renderer_state->render_objects.items[i].mesh.index_count, GL_UNSIGNED_INT, 0);
         }
@@ -219,6 +229,18 @@ static int renderer_init(struct RendererState *renderer)
         return 1;
     }
 
+    renderer->projection_location = glGetUniformLocation(renderer->shader_program, "projection");
+    glm_perspective(glm_rad(45.0f), 800.0f/600.0f, 0.1f, 100.0f, renderer->projection);
+    glm_mat4_identity(renderer->view);
+    glm_translate(renderer->view, (vec3){0.0f, 0.0f, -3.0f});
+    glUseProgram(renderer->shader_program);
+    glUniformMatrix4fv(renderer->projection_location, 1, GL_FALSE, (float *)renderer->projection);
+    renderer->view_location = glGetUniformLocation(renderer->shader_program, "view");
+    glUseProgram(renderer->shader_program);
+    glUniformMatrix4fv(renderer->view_location, 1, GL_FALSE, (float *)renderer->view);
+
+
+
     renderer->model_location = glGetUniformLocation(renderer->shader_program, "model");
     if(renderer->model_location < 0)
     {
@@ -226,9 +248,22 @@ static int renderer_init(struct RendererState *renderer)
         return 1;
     }
 
-            for(int i = 0; i < renderer->render_objects.count; i++)
+    vec3s cubePositions[] = {
+        (vec3s){{ 0.0f,  0.0f,  0.0f }},
+        (vec3s){{ 2.0f,  5.0f, -15.0f }},
+        (vec3s){{-1.5f, -2.2f, -2.5f }},
+        (vec3s){{-3.8f, -2.0f, -12.3f }},
+        (vec3s){{ 2.4f, -0.4f, -3.5f }},
+        (vec3s){{-1.7f,  3.0f, -7.5f }},
+        (vec3s){{ 1.3f, -2.0f, -2.5f }},
+        (vec3s){{ 1.5f,  2.0f, -2.5f }},
+        (vec3s){{ 1.5f,  0.2f, -1.5f }},
+        (vec3s){{-1.3f,  1.0f, -1.5f }}
+    };
+
+    for(int i = 0; i < renderer->render_objects.count; i++)
         {
-        renderer->render_objects.items[i].position = (vec3s){{0.0f, 0.0f, 0.0f}};
+        renderer->render_objects.items[i].position = cubePositions[i];
         renderer->render_objects.items[i].rotation_angle = 0.0f;
         renderer->render_objects.items[i].scale = (vec3s){{1.0f, 1.0f, 1.0f}};
         }
