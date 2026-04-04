@@ -7,6 +7,7 @@
 #include "../controller/input.h"
 #include "data_types/texture.h"
 #include "data_types/renderObject.h"
+#include "camera.h"
 
 
 struct RendererState {
@@ -17,6 +18,7 @@ struct RendererState {
     mat4 projection;
     mat4 view;
     GLint view_location;
+    Camera camera;
 };
 
 // TODO: Move to RenderObject objects in a separate file.
@@ -142,12 +144,20 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
         glClearColor( 0.6f, 0.6f, 0.8f, 1.0f );
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        camera_update(&renderer_state->camera);
+
         // Put the shader program and VAO in focus in OpenGL's state machine
         glUseProgram(renderer_state->shader_program);
 
-        glActiveTexture(GL_TEXTURE0);
-       
+        glUniformMatrix4fv(
+            renderer_state->view_location,
+            1,
+            GL_FALSE,
+            (float *)renderer_state->camera.view.raw
+        );
 
+        glActiveTexture(GL_TEXTURE0);
+        
         for(int i = 0; i < renderer_state->render_objects.count; i++)
         {
             vec3s translation_vec = {1.0f, 0.3f, 0.5f};
@@ -163,7 +173,7 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
             glUniformMatrix4fv(renderer_state->model_location, 1,GL_FALSE, (float *)renderer_state->render_objects.items[i].model);
             glDrawElements(GL_TRIANGLES, renderer_state->render_objects.items[i].mesh.index_count, GL_UNSIGNED_INT, 0);
         }
-        
+
         // Put the drawing into the visible area
         glfwSwapBuffers(window);
 
@@ -207,15 +217,18 @@ static int renderer_init(struct RendererState *renderer)
         return 1;
     }
 
+    camera_init(&renderer->camera);
+    mat4s view_location = renderer->camera.view;
+
     renderer->projection_location = glGetUniformLocation(renderer->shader_program, "projection");
     glm_perspective(glm_rad(45.0f), 800.0f/600.0f, 0.1f, 100.0f, renderer->projection);
-    glm_mat4_identity(renderer->view);
-    glm_translate(renderer->view, (vec3){0.0f, 0.0f, -3.0f});
+    glm_mat4_identity(renderer->camera.view.raw);
+    glm_translate(renderer->camera.view.raw, (vec3){0.0f, 0.0f, -3.0f});
     glUseProgram(renderer->shader_program);
     glUniformMatrix4fv(renderer->projection_location, 1, GL_FALSE, (float *)renderer->projection);
     renderer->view_location = glGetUniformLocation(renderer->shader_program, "view");
     glUseProgram(renderer->shader_program);
-    glUniformMatrix4fv(renderer->view_location, 1, GL_FALSE, (float *)renderer->view);
+    glUniformMatrix4fv(renderer->view_location, 1, GL_FALSE, (float *)renderer->camera.view.raw);
 
 
     glEnable(GL_DEPTH_TEST);  
@@ -242,11 +255,12 @@ static int renderer_init(struct RendererState *renderer)
     };
 
     for(int i = 0; i < renderer->render_objects.count; i++)
-        {
+    {
         renderer->render_objects.items[i].position = cubePositions[i];
         renderer->render_objects.items[i].rotation_angle = 0.0f;
         renderer->render_objects.items[i].scale = (vec3s){{1.0f, 1.0f, 1.0f}};
-        }
+    }
+    
     return 0;
 }
 
