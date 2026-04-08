@@ -20,6 +20,16 @@ void camera_init(Camera* camera)
     camera->cameraSensitivity = 0.1f;
     camera->cameraYaw = -90.0f;
     camera->cameraPitch = 0.0f;
+    camera->cameraFOV = 45.0f;
+}
+
+void update_camera_settings(Camera* camera, mat4 projection, GLint projection_location, float speed, float sensitivity, float fov)
+{
+    camera->cameraSpeed = speed;
+    camera->cameraSensitivity = sensitivity;
+    camera->cameraFOV = fov;
+    glm_perspective(glm_rad(camera->cameraFOV), 800.0f/600.0f, 0.1f, 100.0f, projection);
+    glUniformMatrix4fv(projection_location, 1, GL_FALSE, (float *)projection);
 }
 
 void camera_update(Camera* camera)

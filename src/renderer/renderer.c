@@ -158,7 +158,6 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
         //TODO: Camera movement
         vec2s movement_axis = input_get_movement_axis();
         camera_movement(&renderer_state->camera, movement_axis, delta_time);
-
         camera_update(&renderer_state->camera);
 
         // Put the shader program and VAO in focus in OpenGL's state machine
@@ -236,7 +235,7 @@ static int renderer_init(struct RendererState *renderer)
     mat4s view_location = renderer->camera.view;
 
     renderer->projection_location = glGetUniformLocation(renderer->shader_program, "projection");
-    glm_perspective(glm_rad(45.0f), 800.0f/600.0f, 0.1f, 100.0f, renderer->projection);
+    glm_perspective(glm_rad(renderer->camera.cameraFOV), 800.0f/600.0f, 0.1f, 100.0f, renderer->projection);
     // glm_mat4_identity(renderer->camera.view.raw);
     // glm_translate(renderer->camera.view.raw, (vec3){0.0f, 0.0f, -3.0f});
     glUseProgram(renderer->shader_program);
