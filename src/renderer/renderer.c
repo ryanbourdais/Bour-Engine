@@ -21,6 +21,8 @@ struct RendererState {
     Camera camera;
 };
 
+struct RendererState renderer = {0};
+
 // TODO: Move to RenderObject objects in a separate file.
 Vertex square[] = {
     {
@@ -118,6 +120,15 @@ static void update_frame_time(double current_time, double *previous_time, double
     *delta_time = current_time - *previous_time;
     *previous_time = current_time;
 }
+
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+    float xpos = (float)xposIn;
+    float ypos = (float)yposIn;
+
+    vec2s offsets = input_get_mouse_offsets(xpos,ypos);
+    handle_mouse(&renderer.camera, offsets, true);
+} 
 
 static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct RendererState *renderer_state)
 {
@@ -286,7 +297,6 @@ static void renderer_shutdown(struct RendererState *renderer)
 
 int renderer_run(GLFWwindow* window, bool fps_enabled)
 {
-    struct RendererState renderer = {0};
 
     if (renderer_init(&renderer) != 0) {
         renderer_shutdown(&renderer);
