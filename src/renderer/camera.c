@@ -83,7 +83,11 @@ void handle_mouse(Camera* camera, vec2s offsets, bool constrainPitch)
             camera->cameraPitch = -89.0f;
     }
 
-    //TODO: implement updating camera vectors
+    vec3s direction;
+    direction.x = cos(glm_rad(camera->cameraYaw)) * cos(glm_rad(camera->cameraPitch));
+    direction.y = sin(glm_rad(camera->cameraPitch));
+    direction.z = sin(glm_rad(camera->cameraYaw)) * cos(glm_rad(camera->cameraPitch));
+    camera->cameraFront = glms_normalize(direction);
 }
 /* Spin camera:
 const float radius = 10.0f;
