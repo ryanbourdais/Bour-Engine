@@ -75,6 +75,7 @@ int window_run( bool fullscreen, bool fps_enabled)
     create_window_context(window);
     glfwSetKeyCallback(window, key_callback);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
     int glad_result = start_glad();
     if(glad_result != 0) {
         fprintf(stderr, "Failed to start GLAD");
