@@ -2,17 +2,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cglm/struct.h>
-#include "shaders.h"
-#include "data_types/mesh.h"
+
 #include "../controller/input.h"
+#include "data_types/mesh.h"
+
 #include "data_types/texture.h"
 #include "data_types/renderObject.h"
+#include "data_types/lightObject.h"
+
+#include "shaders.h"
 #include "camera.h"
 
 
 struct RendererState {
     GLuint shader_program;
     RenderObjectArray render_objects;
+    LightObject light_object;
     GLint model_location;
     GLint projection_location;
     mat4 projection;
@@ -130,6 +135,23 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     handle_mouse(&renderer.camera, offsets, true);
 } 
 
+void draw_render_object(struct RenderObject *render_object, GLint model_location, float time, int i)
+{
+    vec3s rotation_axis = {1.0f, 0.3f, 0.5f};
+    // vec3s scale_vec = {glm_rad((2.0f * (i + 1) * time)),glm_rad((2.0f * (i + 1) * time)),glm_rad(2.0f * (i + 1) * time)};
+    glBindTexture(GL_TEXTURE_2D, render_object->mesh.texture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, render_object->mesh.texture2);
+    glBindVertexArray(render_object->mesh.vao);
+    identity_model(render_object);
+    translate_model_matrix(render_object, render_object->position);
+    rotate_model(render_object, glm_rad(20.0f * (i + 1) * time), rotation_axis);
+
+    // scale_model(&renderer_state->render_objects.items[i],  scale_vec);
+    glUniformMatrix4fv(model_location, 1,GL_FALSE, (float *)render_object->model);
+    glDrawElements(GL_TRIANGLES, render_object->mesh.index_count, GL_UNSIGNED_INT, 0);    
+}
+
 static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct RendererState *renderer_state)
 {
     double previous_time = glfwGetTime();
@@ -174,18 +196,7 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
         
         for(int i = 0; i < renderer_state->render_objects.count; i++)
         {
-            vec3s translation_vec = {1.0f, 0.3f, 0.5f};
-            vec3s scale_vec = {glm_rad((2.0f * (i + 1) * (float)glfwGetTime())),glm_rad((2.0f * (i + 1) * (float)glfwGetTime())),glm_rad(2.0f * (i + 1) * (float)glfwGetTime())};
-            glBindTexture(GL_TEXTURE_2D, renderer_state->render_objects.items[i].mesh.texture);
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, renderer_state->render_objects.items[i].mesh.texture2);
-            glBindVertexArray(renderer_state->render_objects.items[i].mesh.vao);
-            identity_model(&renderer_state->render_objects.items[i]);
-            translate_model_matrix(&renderer_state->render_objects.items[i], renderer_state->render_objects.items[i].position);
-            rotate_model(&renderer_state->render_objects.items[i], glm_rad(20.0f * (i + 1) * (float)glfwGetTime()), translation_vec);
-            // scale_model(&renderer_state->render_objects.items[i],  scale_vec);
-            glUniformMatrix4fv(renderer_state->model_location, 1,GL_FALSE, (float *)renderer_state->render_objects.items[i].model);
-            glDrawElements(GL_TRIANGLES, renderer_state->render_objects.items[i].mesh.index_count, GL_UNSIGNED_INT, 0);
+           draw_render_object(&renderer_state->render_objects.items[i], renderer_state->model_location, (float)glfwGetTime(), i);
         }
 
         // Put the drawing into the visible area
@@ -222,6 +233,9 @@ static int renderer_init(struct RendererState *renderer)
         if(create_texture(&new_render_object.mesh, "assets/textures/awesomeface.png") != 0){return 1;}
         renderobject_array_append(&renderer->render_objects, new_render_object);
     }
+
+    point_light_object_init(&renderer->light_object, (vec3s){1.2f, 1.0f, 2.0f}, (vec3s){1.0f, 1.0f, 1.0f});
+
 
     if (load_shaders(&vs, &fs) != 0) {
         return 1;
