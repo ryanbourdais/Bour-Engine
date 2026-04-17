@@ -8,6 +8,7 @@ typedef struct Mesh {
     GLuint position_vbo;
     GLuint color_vbo;
     GLuint uv_vbo;
+    GLuint normal_vbo;
     GLsizei vertex_count;
     GLuint ebo;
     GLsizei index_count;

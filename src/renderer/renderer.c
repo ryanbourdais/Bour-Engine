@@ -24,6 +24,10 @@ struct RendererState {
     mat4 view;
     GLint view_location;
     Camera camera;
+    LightObject light;
+    GLint light_pos_location;
+    GLint light_color_location;
+    GLint object_color_location;
 };
 
 struct RendererState renderer = {0};
@@ -61,35 +65,35 @@ size_t vertex_count = sizeof(square) / sizeof(square[0]);
 GLsizei index_count = sizeof(indices) / sizeof(indices[0]);
 
 Vertex cube[] = {
-    { .position = { -0.5f, -0.5f,  0.5f }, .color = { 1.0f, 0.0f, 0.0f }, .uv = { 0.0f, 0.0f } },
-    { .position = {  0.5f, -0.5f,  0.5f }, .color = { 0.0f, 1.0f, 0.0f }, .uv = { 1.0f, 0.0f } },
-    { .position = {  0.5f,  0.5f,  0.5f }, .color = { 0.0f, 0.0f, 1.0f }, .uv = { 1.0f, 1.0f } },
-    { .position = { -0.5f,  0.5f,  0.5f }, .color = { 1.0f, 1.0f, 0.0f }, .uv = { 0.0f, 1.0f } },
+    { .position = { -0.5f, -0.5f,  0.5f }, .color = { 1.0f, 0.0f, 0.0f }, .uv = { 0.0f, 0.0f }, .normal = {  0.0f,  0.0f,  1.0f } },
+    { .position = {  0.5f, -0.5f,  0.5f }, .color = { 0.0f, 1.0f, 0.0f }, .uv = { 1.0f, 0.0f }, .normal = {  0.0f,  0.0f,  1.0f } },
+    { .position = {  0.5f,  0.5f,  0.5f }, .color = { 0.0f, 0.0f, 1.0f }, .uv = { 1.0f, 1.0f }, .normal = {  0.0f,  0.0f,  1.0f } },
+    { .position = { -0.5f,  0.5f,  0.5f }, .color = { 1.0f, 1.0f, 0.0f }, .uv = { 0.0f, 1.0f }, .normal = {  0.0f,  0.0f,  1.0f } },
 
-    { .position = {  0.5f, -0.5f,  0.5f }, .color = { 0.0f, 1.0f, 1.0f }, .uv = { 0.0f, 0.0f } },
-    { .position = {  0.5f, -0.5f, -0.5f }, .color = { 1.0f, 0.0f, 1.0f }, .uv = { 1.0f, 0.0f } },
-    { .position = {  0.5f,  0.5f, -0.5f }, .color = { 1.0f, 1.0f, 1.0f }, .uv = { 1.0f, 1.0f } },
-    { .position = {  0.5f,  0.5f,  0.5f }, .color = { 0.2f, 0.2f, 0.2f }, .uv = { 0.0f, 1.0f } },
+    { .position = {  0.5f, -0.5f,  0.5f }, .color = { 0.0f, 1.0f, 1.0f }, .uv = { 0.0f, 0.0f }, .normal = {  1.0f,  0.0f,  0.0f } },
+    { .position = {  0.5f, -0.5f, -0.5f }, .color = { 1.0f, 0.0f, 1.0f }, .uv = { 1.0f, 0.0f }, .normal = {  1.0f,  0.0f,  0.0f } },
+    { .position = {  0.5f,  0.5f, -0.5f }, .color = { 1.0f, 1.0f, 1.0f }, .uv = { 1.0f, 1.0f }, .normal = {  1.0f,  0.0f,  0.0f } },
+    { .position = {  0.5f,  0.5f,  0.5f }, .color = { 0.2f, 0.2f, 0.2f }, .uv = { 0.0f, 1.0f }, .normal = {  1.0f,  0.0f,  0.0f } },
 
-    { .position = {  0.5f, -0.5f, -0.5f }, .color = { 1.0f, 0.5f, 0.0f }, .uv = { 0.0f, 0.0f } },
-    { .position = { -0.5f, -0.5f, -0.5f }, .color = { 0.5f, 1.0f, 0.0f }, .uv = { 1.0f, 0.0f } },
-    { .position = { -0.5f,  0.5f, -0.5f }, .color = { 0.0f, 0.5f, 1.0f }, .uv = { 1.0f, 1.0f } },
-    { .position = {  0.5f,  0.5f, -0.5f }, .color = { 1.0f, 0.0f, 0.5f }, .uv = { 0.0f, 1.0f } },
+    { .position = {  0.5f, -0.5f, -0.5f }, .color = { 1.0f, 0.5f, 0.0f }, .uv = { 0.0f, 0.0f }, .normal = {  0.0f,  0.0f, -1.0f } },
+    { .position = { -0.5f, -0.5f, -0.5f }, .color = { 0.5f, 1.0f, 0.0f }, .uv = { 1.0f, 0.0f }, .normal = {  0.0f,  0.0f, -1.0f } },
+    { .position = { -0.5f,  0.5f, -0.5f }, .color = { 0.0f, 0.5f, 1.0f }, .uv = { 1.0f, 1.0f }, .normal = {  0.0f,  0.0f, -1.0f } },
+    { .position = {  0.5f,  0.5f, -0.5f }, .color = { 1.0f, 0.0f, 0.5f }, .uv = { 0.0f, 1.0f }, .normal = {  0.0f,  0.0f, -1.0f } },
 
-    { .position = { -0.5f, -0.5f, -0.5f }, .color = { 0.7f, 0.2f, 0.2f }, .uv = { 0.0f, 0.0f } },
-    { .position = { -0.5f, -0.5f,  0.5f }, .color = { 0.2f, 0.7f, 0.2f }, .uv = { 1.0f, 0.0f } },
-    { .position = { -0.5f,  0.5f,  0.5f }, .color = { 0.2f, 0.2f, 0.7f }, .uv = { 1.0f, 1.0f } },
-    { .position = { -0.5f,  0.5f, -0.5f }, .color = { 0.7f, 0.7f, 0.2f }, .uv = { 0.0f, 1.0f } },
+    { .position = { -0.5f, -0.5f, -0.5f }, .color = { 0.7f, 0.2f, 0.2f }, .uv = { 0.0f, 0.0f }, .normal = { -1.0f,  0.0f,  0.0f } },
+    { .position = { -0.5f, -0.5f,  0.5f }, .color = { 0.2f, 0.7f, 0.2f }, .uv = { 1.0f, 0.0f }, .normal = { -1.0f,  0.0f,  0.0f } },
+    { .position = { -0.5f,  0.5f,  0.5f }, .color = { 0.2f, 0.2f, 0.7f }, .uv = { 1.0f, 1.0f }, .normal = { -1.0f,  0.0f,  0.0f } },
+    { .position = { -0.5f,  0.5f, -0.5f }, .color = { 0.7f, 0.7f, 0.2f }, .uv = { 0.0f, 1.0f }, .normal = { -1.0f,  0.0f,  0.0f } },
 
-    { .position = { -0.5f,  0.5f,  0.5f }, .color = { 0.7f, 0.2f, 0.7f }, .uv = { 0.0f, 0.0f } },
-    { .position = {  0.5f,  0.5f,  0.5f }, .color = { 0.2f, 0.7f, 0.7f }, .uv = { 1.0f, 0.0f } },
-    { .position = {  0.5f,  0.5f, -0.5f }, .color = { 0.8f, 0.8f, 0.8f }, .uv = { 1.0f, 1.0f } },
-    { .position = { -0.5f,  0.5f, -0.5f }, .color = { 0.3f, 0.3f, 0.3f }, .uv = { 0.0f, 1.0f } },
+    { .position = { -0.5f,  0.5f,  0.5f }, .color = { 0.7f, 0.2f, 0.7f }, .uv = { 0.0f, 0.0f }, .normal = {  0.0f,  1.0f,  0.0f } },
+    { .position = {  0.5f,  0.5f,  0.5f }, .color = { 0.2f, 0.7f, 0.7f }, .uv = { 1.0f, 0.0f }, .normal = {  0.0f,  1.0f,  0.0f } },
+    { .position = {  0.5f,  0.5f, -0.5f }, .color = { 0.8f, 0.8f, 0.8f }, .uv = { 1.0f, 1.0f }, .normal = {  0.0f,  1.0f,  0.0f } },
+    { .position = { -0.5f,  0.5f, -0.5f }, .color = { 0.3f, 0.3f, 0.3f }, .uv = { 0.0f, 1.0f }, .normal = {  0.0f,  1.0f,  0.0f } },
 
-    { .position = { -0.5f, -0.5f, -0.5f }, .color = { 0.9f, 0.4f, 0.4f }, .uv = { 0.0f, 0.0f } },
-    { .position = {  0.5f, -0.5f, -0.5f }, .color = { 0.4f, 0.9f, 0.4f }, .uv = { 1.0f, 0.0f } },
-    { .position = {  0.5f, -0.5f,  0.5f }, .color = { 0.4f, 0.4f, 0.9f }, .uv = { 1.0f, 1.0f } },
-    { .position = { -0.5f, -0.5f,  0.5f }, .color = { 0.9f, 0.9f, 0.4f }, .uv = { 0.0f, 1.0f } }
+    { .position = { -0.5f, -0.5f, -0.5f }, .color = { 0.9f, 0.4f, 0.4f }, .uv = { 0.0f, 0.0f }, .normal = {  0.0f, -1.0f,  0.0f } },
+    { .position = {  0.5f, -0.5f, -0.5f }, .color = { 0.4f, 0.9f, 0.4f }, .uv = { 1.0f, 0.0f }, .normal = {  0.0f, -1.0f,  0.0f } },
+    { .position = {  0.5f, -0.5f,  0.5f }, .color = { 0.4f, 0.4f, 0.9f }, .uv = { 1.0f, 1.0f }, .normal = {  0.0f, -1.0f,  0.0f } },
+    { .position = { -0.5f, -0.5f,  0.5f }, .color = { 0.9f, 0.9f, 0.4f }, .uv = { 0.0f, 1.0f }, .normal = {  0.0f, -1.0f,  0.0f } }
 };
 
 unsigned int cube_indices[] = {
@@ -185,6 +189,23 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
         // Put the shader program and VAO in focus in OpenGL's state machine
         glUseProgram(renderer_state->shader_program);
 
+        glUniform3fv(
+            renderer_state->light_pos_location,
+            1,
+            renderer_state->light_object.position.raw
+        );
+
+        glUniform3fv(
+            renderer_state->light_color_location,
+            1,
+            renderer_state->light_object.color.raw
+        );
+
+        glUniform3f(
+            renderer_state->object_color_location,
+            1.0f, 0.5f, 0.31f
+        );
+
         glUniformMatrix4fv(
             renderer_state->view_location,
             1,
@@ -236,7 +257,6 @@ static int renderer_init(struct RendererState *renderer)
 
     point_light_object_init(&renderer->light_object, (vec3s){1.2f, 1.0f, 2.0f}, (vec3s){1.0f, 1.0f, 1.0f});
 
-
     if (load_shaders(&vs, &fs) != 0) {
         return 1;
     }
@@ -268,6 +288,15 @@ static int renderer_init(struct RendererState *renderer)
         fprintf(stderr, "Failed to get uniform location");
         return 1;
     }
+
+    renderer->light_pos_location =
+    glGetUniformLocation(renderer->shader_program, "lightPos");
+
+    renderer->light_color_location =
+        glGetUniformLocation(renderer->shader_program, "lightColor");
+
+    renderer->object_color_location =
+        glGetUniformLocation(renderer->shader_program, "objectColor");
 
     vec3s cubePositions[] = {
         (vec3s){{ 0.0f,  0.0f,  0.0f }},
