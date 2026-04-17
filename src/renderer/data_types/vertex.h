@@ -8,7 +8,7 @@ typedef struct Vertex {
     vec3s position;
     vec3s color;
     vec2s uv;
-    // Vec3 normal;
+    vec3s normal;
 } Vertex;
 
 typedef struct VertexArray {
