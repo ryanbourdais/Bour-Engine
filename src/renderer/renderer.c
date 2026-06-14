@@ -16,6 +16,7 @@
 
 struct RendererState {
     GLuint shader_program;
+    GLuint lamp_shader_program;
     RenderObjectArray render_objects;
     LightObject light_object;
     GLint model_location;
@@ -28,6 +29,11 @@ struct RendererState {
     GLint light_pos_location;
     GLint light_color_location;
     GLint object_color_location;
+    GLint view_pos_location;
+    GLint lamp_model_location;
+    GLint lamp_view_location;
+    GLint lamp_projection_location;
+    GLint lamp_light_color_location;
 };
 
 struct RendererState renderer = {0};
@@ -213,11 +219,57 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
             (float *)renderer_state->camera.view.raw
         );
 
+        glUniform3fv(
+            renderer_state->view_pos_location,
+            1,
+            renderer_state->camera.cameraPos.raw
+        );
+
         glActiveTexture(GL_TEXTURE0);
         
         for(int i = 0; i < renderer_state->render_objects.count; i++)
         {
            draw_render_object(&renderer_state->render_objects.items[i], renderer_state->model_location, (float)glfwGetTime(), i);
+        }
+
+        if (renderer_state->light_object.has_visual) {
+            glUseProgram(renderer_state->lamp_shader_program);
+
+            identity_model(&renderer_state->light_object.visual);
+            translate_model_matrix(&renderer_state->light_object.visual, renderer_state->light_object.position);
+            scale_model(&renderer_state->light_object.visual, renderer_state->light_object.visual.scale);
+
+            glUniformMatrix4fv(
+                renderer_state->lamp_model_location,
+                1,
+                GL_FALSE,
+                (float *)renderer_state->light_object.visual.model
+            );
+            glUniformMatrix4fv(
+                renderer_state->lamp_view_location,
+                1,
+                GL_FALSE,
+                (float *)renderer_state->camera.view.raw
+            );
+            glUniformMatrix4fv(
+                renderer_state->lamp_projection_location,
+                1,
+                GL_FALSE,
+                (float *)renderer_state->projection
+            );
+            glUniform3fv(
+                renderer_state->lamp_light_color_location,
+                1,
+                renderer_state->light_object.color.raw
+            );
+
+            glBindVertexArray(renderer_state->light_object.visual.mesh.vao);
+            glDrawElements(
+                GL_TRIANGLES,
+                renderer_state->light_object.visual.mesh.index_count,
+                GL_UNSIGNED_INT,
+                0
+            );
         }
 
         // Put the drawing into the visible area
@@ -255,15 +307,39 @@ static int renderer_init(struct RendererState *renderer)
         renderobject_array_append(&renderer->render_objects, new_render_object);
     }
 
-    point_light_object_init(&renderer->light_object, (vec3s){1.2f, 1.0f, 2.0f}, (vec3s){1.0f, 1.0f, 1.0f});
+    RenderObject lamp_visual = {0};
+    create_mesh_from_vertices(&lamp_visual.mesh, cube, cube_vertex_count, cube_indices, cube_index_count);
+    lamp_visual.position = (vec3s){0.0f, 0.0f, 1.5f};
+    lamp_visual.scale = (vec3s){{0.2f, 0.2f, 0.2f}};
+    vec3s lamp_color = (vec3s){1.0f, 1.0f, 1.0f};
 
-    if (load_shaders(&vs, &fs) != 0) {
+    light_object_init_with_visual(&renderer->light_object, lamp_visual.position, lamp_color, lamp_visual);
+
+    if (load_shaders(&vs, &fs, "src/renderer/shaders/light.vert" ,"src/renderer/shaders/light.frag") != 0) {
         return 1;
     }
 
     if (create_shader_program(&vs, &fs, &renderer->shader_program) != 0) {
         return 1;
     }
+
+    if (load_shaders(&vs, &fs, "src/renderer/shaders/lamp.vert", "src/renderer/shaders/lamp.frag") != 0)
+    {
+        return 1;
+    }
+    if (create_shader_program(&vs, &fs, &renderer->lamp_shader_program) != 0)
+    {
+        return 1;
+    }
+
+    renderer->lamp_model_location =
+        glGetUniformLocation(renderer->lamp_shader_program, "model");
+    renderer->lamp_view_location =
+        glGetUniformLocation(renderer->lamp_shader_program, "view");
+    renderer->lamp_projection_location =
+        glGetUniformLocation(renderer->lamp_shader_program, "projection");
+    renderer->lamp_light_color_location =
+        glGetUniformLocation(renderer->lamp_shader_program, "lightColor");
 
     camera_init(&renderer->camera);
     mat4s view_location = renderer->camera.view;
@@ -297,6 +373,9 @@ static int renderer_init(struct RendererState *renderer)
 
     renderer->object_color_location =
         glGetUniformLocation(renderer->shader_program, "objectColor");
+
+    renderer->view_pos_location =
+        glGetUniformLocation(renderer->shader_program, "viewPos");
 
     vec3s cubePositions[] = {
         (vec3s){{ 0.0f,  0.0f,  0.0f }},
