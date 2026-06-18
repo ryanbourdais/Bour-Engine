@@ -156,9 +156,8 @@ void draw_render_object(struct RenderObject *render_object, GLint model_location
 {
     vec3s rotation_axis = {1.0f, 0.3f, 0.5f};
     // vec3s scale_vec = {glm_rad((2.0f * (i + 1) * time)),glm_rad((2.0f * (i + 1) * time)),glm_rad(2.0f * (i + 1) * time)};
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, render_object->mesh.texture);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, render_object->mesh.texture2);
     glBindVertexArray(render_object->mesh.vao);
     identity_model(render_object);
     translate_model_matrix(render_object, render_object->position);
@@ -214,8 +213,6 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
             renderer_state->light_object.color.raw
         );
 
-        glUniform3f(renderer_state->material_ambient_location, 1.0f, 0.5f, 0.31f);
-        glUniform3f(renderer_state->material_diffuse_location, 1.0f, 0.5f, 0.31f);
         glUniform3f(renderer_state->material_specular_location, 0.5f, 0.5f, 0.5f);
         glUniform1f(renderer_state->material_shininess_location, 32.0f);
 
@@ -322,7 +319,7 @@ static int renderer_init(struct RendererState *renderer)
             fprintf(stderr, "Mesh failed to be created, exiting!");
             return 1;
         }
-        if(create_texture(&new_render_object.mesh, "assets/textures/container.png") != 0){return 1;}
+        if(create_texture(&new_render_object.mesh, "assets/diffuse maps/container2.png") != 0){return 1;}
         if(create_texture(&new_render_object.mesh, "assets/textures/awesomeface.png") != 0){return 1;}
         renderobject_array_append(&renderer->render_objects, new_render_object);
     }
@@ -391,10 +388,9 @@ static int renderer_init(struct RendererState *renderer)
     renderer->light_color_location =
         glGetUniformLocation(renderer->shader_program, "lightColor");
 
-    renderer->material_ambient_location =
-        glGetUniformLocation(renderer->shader_program, "material.ambient");
     renderer->material_diffuse_location =
         glGetUniformLocation(renderer->shader_program, "material.diffuse");
+    glUniform1i(renderer->material_diffuse_location, 0);
     renderer->material_specular_location =
         glGetUniformLocation(renderer->shader_program, "material.specular");
     renderer->material_shininess_location =
