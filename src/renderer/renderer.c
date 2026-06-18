@@ -34,6 +34,13 @@ struct RendererState {
     GLint lamp_view_location;
     GLint lamp_projection_location;
     GLint lamp_light_color_location;
+    GLint material_ambient_location;
+    GLint material_diffuse_location;
+    GLint material_specular_location;
+    GLint material_shininess_location;
+    GLint light_ambient_location;
+    GLint light_diffuse_location;
+    GLint light_specular_location;
 };
 
 struct RendererState renderer = {0};
@@ -184,7 +191,7 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
         glfwPollEvents();
 
         // Wipe drawing surface clear
-        glClearColor( 0.6f, 0.6f, 0.8f, 1.0f );
+        glClearColor( 0.1f, 0.1f, 0.1f, 1.0f );
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //TODO: Camera movement
@@ -207,15 +214,28 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
             renderer_state->light_object.color.raw
         );
 
-        glUniform3f(
-            renderer_state->object_color_location,
-            1.0f, 0.5f, 0.31f
-        );
+        glUniform3f(renderer_state->material_ambient_location, 1.0f, 0.5f, 0.31f);
+        glUniform3f(renderer_state->material_diffuse_location, 1.0f, 0.5f, 0.31f);
+        glUniform3f(renderer_state->material_specular_location, 0.5f, 0.5f, 0.5f);
+        glUniform1f(renderer_state->material_shininess_location, 32.0f);
+
+        vec3s lightColor;
+        lightColor.x = sin(glfwGetTime() * 2.0f);
+        lightColor.y = sin(glfwGetTime() * 0.7f);
+        lightColor.z = sin(glfwGetTime() * 1.3f);
+        
+        vec3s diffuseColor = glms_vec3_scale(lightColor, 0.5f);
+        vec3s ambientColor = glms_vec3_scale(diffuseColor, 0.2f);
+
+        glUniform3fv(renderer_state->light_ambient_location,  1, ambientColor.raw);
+        glUniform3fv(renderer_state->light_diffuse_location,  1, diffuseColor.raw); // darken diffuse light a bit
+        glUniform3f(renderer_state->light_specular_location, 1.0f, 1.0f, 1.0f); 
+
 
         glUniformMatrix4fv(
             renderer_state->view_location,
             1,
-            GL_FALSE,
+            GL_FALSE, 
             (float *)renderer_state->camera.view.raw
         );
 
@@ -371,8 +391,20 @@ static int renderer_init(struct RendererState *renderer)
     renderer->light_color_location =
         glGetUniformLocation(renderer->shader_program, "lightColor");
 
-    renderer->object_color_location =
-        glGetUniformLocation(renderer->shader_program, "objectColor");
+    renderer->material_ambient_location =
+        glGetUniformLocation(renderer->shader_program, "material.ambient");
+    renderer->material_diffuse_location =
+        glGetUniformLocation(renderer->shader_program, "material.diffuse");
+    renderer->material_specular_location =
+        glGetUniformLocation(renderer->shader_program, "material.specular");
+    renderer->material_shininess_location =
+        glGetUniformLocation(renderer->shader_program, "material.shininess");
+    renderer->light_ambient_location =
+        glGetUniformLocation(renderer->shader_program, "light.ambient");
+    renderer->light_diffuse_location =
+        glGetUniformLocation(renderer->shader_program, "light.diffuse");
+    renderer->light_specular_location =
+        glGetUniformLocation(renderer->shader_program, "light.specular");
 
     renderer->view_pos_location =
         glGetUniformLocation(renderer->shader_program, "viewPos");
