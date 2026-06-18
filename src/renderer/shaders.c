@@ -31,11 +31,11 @@ static int check_shader_compile_status(GLuint shader, const char* shader_name)
     return 0;
 }
 
-int load_shaders(GLuint *vs, GLuint *fs)
+int load_shaders(GLuint *vs, GLuint *fs, const char *vertex_path, const char *fragment_path)
 {
     
-    struct ShaderBuffer vertex_shader_buffer = read_shader_file("src/renderer/shaders/light.vert");
-    struct ShaderBuffer fragment_shader_buffer = read_shader_file("src/renderer/shaders/light.frag");
+    struct ShaderBuffer vertex_shader_buffer = read_shader_file(vertex_path);
+    struct ShaderBuffer fragment_shader_buffer = read_shader_file(fragment_path);
     if(vertex_shader_buffer.data == NULL || fragment_shader_buffer.data == NULL) {
         free_shader_buffer(&vertex_shader_buffer);
         free_shader_buffer(&fragment_shader_buffer);
