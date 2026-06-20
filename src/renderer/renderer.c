@@ -25,7 +25,6 @@ struct RendererState {
     mat4 view;
     GLint view_location;
     Camera camera;
-    LightObject light;
     GLint light_pos_location;
     GLint light_color_location;
     GLint object_color_location;

@@ -43,7 +43,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 int window_run( bool fullscreen, bool fps_enabled)
 {
     GLFWmonitor *mon = NULL;
-    int win_w = 800, win_h = 600; // Our window dimensions, in pixels.
+    int win_w = 1024, win_h = 768; // Our window dimensions, in pixels.
 
     if ( fullscreen ) {
         mon = glfwGetPrimaryMonitor();
