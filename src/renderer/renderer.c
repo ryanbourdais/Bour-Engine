@@ -20,8 +20,10 @@ struct RendererState {
     mat4 view;
     Camera camera;
     DirectionalLight directional_light;
+    PointLight point_light;
+    
     DirectionalLightUniforms directional_light_uniforms;
-
+    PointLightUniforms point_light_uniforms;
 
     GLuint shader_program;
     GLuint lamp_shader_program;
@@ -129,7 +131,11 @@ LightColor sunlight = {
     .specular = {{0.5f, 0.5f, 0.5f}}
 };
 
-
+LightColor point_light_color = {
+    .ambient  = {{0.05f, 0.05f, 0.05f}},
+    .diffuse  = {{0.8f,  0.8f,  0.8f}},
+    .specular = {{1.0f,  1.0f,  1.0f}}
+};
 
 
 static void fps_counter(double *delta_time, double *title_countdown_time, GLFWwindow* window)
@@ -248,6 +254,62 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
 
         glActiveTexture(GL_TEXTURE0);
         
+        DirectionalLight *light = &renderer_state->directional_light;
+
+        DirectionalLightUniforms *uniforms = &renderer_state->directional_light_uniforms;
+
+        glUniform3fv(
+            uniforms->direction,
+            1,
+            light->direction.raw
+        );
+        
+        glUniform3fv(
+            uniforms->ambient,
+            1,
+            light->color.ambient.raw
+        );
+        glUniform3fv(
+            uniforms->diffuse,
+            1,
+            light->color.diffuse.raw
+        );
+        glUniform3fv(
+            uniforms->specular,
+            1,
+            light->color.specular.raw
+        );
+
+        PointLight *point = &renderer_state->point_light;
+        PointLightUniforms *point_uniforms = &renderer_state->point_light_uniforms;
+
+
+        glUniform3fv(
+            point_uniforms->position,
+            1,
+            point->position.raw
+        );
+
+        glUniform3fv(
+            point_uniforms->ambient,
+            1,
+            point->color.ambient.raw
+        );
+        glUniform3fv(
+            point_uniforms->diffuse,
+            1,
+            point->color.diffuse.raw
+        );
+        glUniform3fv(
+            point_uniforms->specular,
+            1,
+            point->color.specular.raw
+        );
+
+        glUniform1f(point_uniforms->constant, point->constant);
+        glUniform1f(point_uniforms->linear, point->linear);
+        glUniform1f(point_uniforms->quadratic, point->quadratic);
+
         for(int i = 0; i < renderer_state->render_objects.count; i++)
         {
            draw_render_object(&renderer_state->render_objects.items[i], renderer_state->model_location, (float)glfwGetTime(), i);
@@ -292,34 +354,6 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
                 0
             );
         }
-
-        DirectionalLight *light = &renderer_state->directional_light;
-
-        DirectionalLightUniforms *uniforms = &renderer_state->directional_light_uniforms;
-
-        glUniform3fv(
-            uniforms->direction,
-            1,
-            light->direction.raw
-        );
-        
-        glUniform3fv(
-            uniforms->ambient,
-            1,
-            light->color.ambient.raw
-        );
-        glUniform3fv(
-            uniforms->diffuse,
-            1,
-            light->color.diffuse.raw
-        );
-        glUniform3fv(
-            uniforms->specular,
-            1,
-            light->color.specular.raw
-        );
-
-
         // Put the drawing into the visible area
         glfwSwapBuffers(window);
 
@@ -403,6 +437,33 @@ static int renderer_init(struct RendererState *renderer)
     renderer->directional_light_uniforms.specular =
         glGetUniformLocation(renderer->shader_program, "directionalLight.specular");
 
+    
+    point_light_init(&renderer->point_light, lamp_visual.position, point_light_color, 1.0f, 0.09f, 0.032f);
+    point_light_set_visual(&renderer->point_light, lamp_visual); 
+
+    PointLightUniforms *point_uniforms = &renderer->point_light_uniforms;
+
+    point_uniforms->position =
+        glGetUniformLocation(renderer->shader_program, "pointLight.position");
+    
+    point_uniforms->ambient =
+        glGetUniformLocation(renderer->shader_program, "pointLight.ambient");
+
+    point_uniforms->diffuse =
+        glGetUniformLocation(renderer->shader_program, "pointLight.diffuse");
+        
+    point_uniforms->specular =
+        glGetUniformLocation(renderer->shader_program, "pointLight.specular");
+    
+    point_uniforms->constant =
+        glGetUniformLocation(renderer->shader_program, "pointLight.constant");
+
+    point_uniforms->linear =
+        glGetUniformLocation(renderer->shader_program, "pointLight.linear");
+        
+    point_uniforms->quadratic =
+        glGetUniformLocation(renderer->shader_program, "pointLight.quadratic");
+    
     camera_init(&renderer->camera);
     mat4s view_location = renderer->camera.view;
 
@@ -427,11 +488,11 @@ static int renderer_init(struct RendererState *renderer)
         return 1;
     }
 
-    renderer->light_pos_location =
-    glGetUniformLocation(renderer->shader_program, "light.position");
+    // renderer->light_pos_location =
+    // glGetUniformLocation(renderer->shader_program, "light.position");
 
-    renderer->light_color_location =
-        glGetUniformLocation(renderer->shader_program, "lightColor");
+    // renderer->light_color_location =
+    //     glGetUniformLocation(renderer->shader_program, "lightColor");
 
     renderer->material_diffuse_location =
         glGetUniformLocation(renderer->shader_program, "material.diffuse");
