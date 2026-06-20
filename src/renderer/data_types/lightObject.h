@@ -33,6 +33,34 @@ typedef struct DirectionalLightUniforms
     GLint specular;
 } DirectionalLightUniforms;
 
+typedef struct PointLight
+{
+    vec3s position;
+    LightColor color;
+
+    float constant;
+    float linear;
+    float quadratic;
+
+    bool has_visual;
+    RenderObject visual;
+} PointLight;
+
+typedef struct PointLightUniforms
+{
+    GLint position;
+
+    GLint ambient;
+    GLint diffuse;
+    GLint specular;
+
+    GLint constant;
+    GLint linear;
+    GLint quadratic;
+} PointLightUniforms;
+
 void point_light_object_init(LightObject *light, vec3s position, vec3s color);
 void light_object_init_with_visual(LightObject *light, vec3s position, vec3s color, RenderObject visual);
 void directional_light_init(DirectionalLight *light, vec3s direction, LightColor color);
+void point_light_init(PointLight *light, vec3s position, LightColor color, float constant, float linear, float quadratic);
+void point_light_set_visual(PointLight* light, RenderObject visual);

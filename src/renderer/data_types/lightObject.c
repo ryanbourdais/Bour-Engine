@@ -21,3 +21,18 @@ void directional_light_init(DirectionalLight *light, vec3s direction, LightColor
 }
 
 
+void point_light_init(PointLight *light, vec3s position, LightColor color, float constant, float linear, float quadratic)
+{
+    light->position = position;
+    light->color = color;
+    light->constant = constant;
+    light->linear = linear;
+    light->quadratic = quadratic;
+    light->has_visual = false;
+}
+
+void point_light_set_visual(PointLight *light, RenderObject visual)
+{
+    light->visual = visual;
+    light->has_visual = true;
+}
