@@ -13,3 +13,11 @@ void light_object_init_with_visual(LightObject *light, vec3s position, vec3s col
     light->has_visual = true;
     light->visual = visual;
 }
+
+void directional_light_init(DirectionalLight *light, vec3s direction, LightColor color)
+{
+    light->direction = direction;
+    light->color = color;
+}
+
+

@@ -13,18 +13,21 @@
 #include "shaders.h"
 #include "camera.h"
 
-
 struct RendererState {
-    GLuint shader_program;
-    GLuint lamp_shader_program;
     RenderObjectArray render_objects;
     LightObject light_object;
-    GLint model_location;
-    GLint projection_location;
     mat4 projection;
     mat4 view;
-    GLint view_location;
     Camera camera;
+    DirectionalLight directional_light;
+    DirectionalLightUniforms directional_light_uniforms;
+
+
+    GLuint shader_program;
+    GLuint lamp_shader_program;
+    GLint model_location;
+    GLint projection_location;
+    GLint view_location;
     GLint light_pos_location;
     GLint light_color_location;
     GLint object_color_location;
@@ -119,6 +122,13 @@ unsigned int cube_indices[] = {
 
 size_t cube_vertex_count = sizeof(cube) / sizeof(cube[0]);
 GLsizei cube_index_count = sizeof(cube_indices) / sizeof(cube_indices[0]);
+
+LightColor sunlight = {
+    .ambient = {{0.05f, 0.05f, 0.05f}},
+    .diffuse = {{0.4f, 0.4f, 0.4f}},
+    .specular = {{0.5f, 0.5f, 0.5f}}
+};
+
 
 
 
@@ -243,7 +253,7 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
            draw_render_object(&renderer_state->render_objects.items[i], renderer_state->model_location, (float)glfwGetTime(), i);
         }
 
-        if (renderer_state->light_object.has_visual) {
+        if (!renderer_state->light_object.has_visual) {
             glUseProgram(renderer_state->lamp_shader_program);
 
             identity_model(&renderer_state->light_object.visual);
@@ -282,6 +292,33 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
                 0
             );
         }
+
+        DirectionalLight *light = &renderer_state->directional_light;
+
+        DirectionalLightUniforms *uniforms = &renderer_state->directional_light_uniforms;
+
+        glUniform3fv(
+            uniforms->direction,
+            1,
+            light->direction.raw
+        );
+        
+        glUniform3fv(
+            uniforms->ambient,
+            1,
+            light->color.ambient.raw
+        );
+        glUniform3fv(
+            uniforms->diffuse,
+            1,
+            light->color.diffuse.raw
+        );
+        glUniform3fv(
+            uniforms->specular,
+            1,
+            light->color.specular.raw
+        );
+
 
         // Put the drawing into the visible area
         glfwSwapBuffers(window);
@@ -325,7 +362,7 @@ static int renderer_init(struct RendererState *renderer)
     vec3s lamp_color = (vec3s){1.0f, 1.0f, 1.0f};
 
     light_object_init_with_visual(&renderer->light_object, lamp_visual.position, lamp_color, lamp_visual);
-
+    
     if (load_shaders(&vs, &fs, "src/renderer/shaders/light.vert" ,"src/renderer/shaders/light.frag") != 0) {
         return 1;
     }
@@ -351,6 +388,20 @@ static int renderer_init(struct RendererState *renderer)
         glGetUniformLocation(renderer->lamp_shader_program, "projection");
     renderer->lamp_light_color_location =
         glGetUniformLocation(renderer->lamp_shader_program, "lightColor");
+
+    directional_light_init(&renderer->directional_light, (vec3s){{-0.2f, -1.0f, -0.3f}},sunlight);
+
+    renderer->directional_light_uniforms.direction =
+        glGetUniformLocation(renderer->shader_program, "directionalLight.direction");
+    
+    renderer->directional_light_uniforms.ambient =
+        glGetUniformLocation(renderer->shader_program, "directionalLight.ambient");
+
+    renderer->directional_light_uniforms.diffuse =
+        glGetUniformLocation(renderer->shader_program, "directionalLight.diffuse");
+
+    renderer->directional_light_uniforms.specular =
+        glGetUniformLocation(renderer->shader_program, "directionalLight.specular");
 
     camera_init(&renderer->camera);
     mat4s view_location = renderer->camera.view;
