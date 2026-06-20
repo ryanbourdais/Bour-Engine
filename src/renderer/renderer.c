@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <cglm/struct.h>
 
+#include <math.h>
+
 #include "../controller/input.h"
 #include "data_types/mesh.h"
 
@@ -15,15 +17,16 @@
 
 struct RendererState {
     RenderObjectArray render_objects;
-    LightObject light_object;
     mat4 projection;
     mat4 view;
     Camera camera;
     DirectionalLight directional_light;
     PointLight point_light;
+    SpotLight spot_light;
     
     DirectionalLightUniforms directional_light_uniforms;
     PointLightUniforms point_light_uniforms;
+    SpotLightUniforms spot_light_uniforms;
 
     GLuint shader_program;
     GLuint lamp_shader_program;
@@ -137,6 +140,12 @@ LightColor point_light_color = {
     .specular = {{1.0f,  1.0f,  1.0f}}
 };
 
+LightColor spotlight_color = {
+    //255, 197, 143
+    .ambient  = {{0.02f, 0.0154f, 0.0112f}},
+    .diffuse  = {{1.0f,  0.77f,   0.56f}},
+    .specular = {{1.0f,  0.77f,   0.56f}}
+};
 
 static void fps_counter(double *delta_time, double *title_countdown_time, GLFWwindow* window)
 {
@@ -217,12 +226,6 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
 
         // Put the shader program and VAO in focus in OpenGL's state machine
         glUseProgram(renderer_state->shader_program);
-
-        glUniform3fv(
-            renderer_state->light_pos_location,
-            1,
-            renderer_state->light_object.position.raw
-        );
 
         glUniform1f(renderer_state->material_shininess_location, 32.0f);
 
@@ -310,50 +313,60 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
         glUniform1f(point_uniforms->linear, point->linear);
         glUniform1f(point_uniforms->quadratic, point->quadratic);
 
+        SpotLight *spot = &renderer_state->spot_light;
+        SpotLightUniforms *spot_uniforms = &renderer_state->spot_light_uniforms;
+
+        glUniform3fv(
+            spot_uniforms->position,
+            1,
+            spot->position.raw
+        );
+        glUniform3fv(
+            spot_uniforms->direction,
+            1,
+            spot->direction.raw
+        );
+        glUniform3fv(
+            spot_uniforms->ambient,
+            1,
+            spot->color.ambient.raw
+        );
+        glUniform3fv(
+            spot_uniforms->diffuse,
+            1,
+            spot->color.diffuse.raw
+        );
+        glUniform3fv(
+            spot_uniforms->specular,
+            1,
+            spot->color.specular.raw
+        );
+        glUniform1f(
+            spot_uniforms->constant,
+            spot->constant
+        );
+        glUniform1f(
+            spot_uniforms->linear,
+            spot->linear
+        );
+        glUniform1f(
+            spot_uniforms->quadratic,
+            spot->quadratic
+        );
+        glUniform1f(
+            spot_uniforms->inner_cuttoff,
+            cosf(glm_rad(spot->inner_cutoff_degrees))
+        );
+        glUniform1f(
+            spot_uniforms->outer_cutoff,
+            cosf(glm_rad(spot->outer_cuttoff_degrees))
+        );
+
         for(int i = 0; i < renderer_state->render_objects.count; i++)
         {
            draw_render_object(&renderer_state->render_objects.items[i], renderer_state->model_location, (float)glfwGetTime(), i);
         }
 
-        if (!renderer_state->light_object.has_visual) {
-            glUseProgram(renderer_state->lamp_shader_program);
-
-            identity_model(&renderer_state->light_object.visual);
-            translate_model_matrix(&renderer_state->light_object.visual, renderer_state->light_object.position);
-            scale_model(&renderer_state->light_object.visual, renderer_state->light_object.visual.scale);
-
-            glUniformMatrix4fv(
-                renderer_state->lamp_model_location,
-                1,
-                GL_FALSE,
-                (float *)renderer_state->light_object.visual.model
-            );
-            glUniformMatrix4fv(
-                renderer_state->lamp_view_location,
-                1,
-                GL_FALSE,
-                (float *)renderer_state->camera.view.raw
-            );
-            glUniformMatrix4fv(
-                renderer_state->lamp_projection_location,
-                1,
-                GL_FALSE,
-                (float *)renderer_state->projection
-            );
-            glUniform3fv(
-                renderer_state->lamp_light_color_location,
-                1,
-                renderer_state->light_object.color.raw
-            );
-
-            glBindVertexArray(renderer_state->light_object.visual.mesh.vao);
-            glDrawElements(
-                GL_TRIANGLES,
-                renderer_state->light_object.visual.mesh.index_count,
-                GL_UNSIGNED_INT,
-                0
-            );
-        }
         // Put the drawing into the visible area
         glfwSwapBuffers(window);
 
@@ -395,8 +408,6 @@ static int renderer_init(struct RendererState *renderer)
     lamp_visual.scale = (vec3s){{0.2f, 0.2f, 0.2f}};
     vec3s lamp_color = (vec3s){1.0f, 1.0f, 1.0f};
 
-    light_object_init_with_visual(&renderer->light_object, lamp_visual.position, lamp_color, lamp_visual);
-    
     if (load_shaders(&vs, &fs, "src/renderer/shaders/light.vert" ,"src/renderer/shaders/light.frag") != 0) {
         return 1;
     }
@@ -463,6 +474,31 @@ static int renderer_init(struct RendererState *renderer)
         
     point_uniforms->quadratic =
         glGetUniformLocation(renderer->shader_program, "pointLight.quadratic");
+
+    spot_light_init(&renderer->spot_light, (vec3s){{0.0f, 15.0f, -7.5f}}, (vec3s){{0.0f, -1.0f, 0.0f}}, spotlight_color, 1.0f, 0.045f, 0.0075f, 30.0f, 40.0f);
+
+    SpotLightUniforms *spot_uniforms = &renderer->spot_light_uniforms;
+
+    spot_uniforms->position =
+        glGetUniformLocation(renderer->shader_program, "spotLight.position");
+    spot_uniforms->direction =
+        glGetUniformLocation(renderer->shader_program, "spotLight.direction");
+    spot_uniforms->ambient =
+        glGetUniformLocation(renderer->shader_program, "spotLight.ambient");
+    spot_uniforms->diffuse =
+        glGetUniformLocation(renderer->shader_program, "spotLight.diffuse");
+    spot_uniforms->specular =
+        glGetUniformLocation(renderer->shader_program, "spotLight.specular");
+    spot_uniforms->constant =
+        glGetUniformLocation(renderer->shader_program, "spotLight.constant");
+    spot_uniforms->linear =
+        glGetUniformLocation(renderer->shader_program, "spotLight.linear");
+    spot_uniforms->quadratic =
+        glGetUniformLocation(renderer->shader_program, "spotLight.quadratic");
+    spot_uniforms->inner_cuttoff =
+        glGetUniformLocation(renderer->shader_program, "spotLight.innerCutoff");
+    spot_uniforms->outer_cutoff =
+        glGetUniformLocation(renderer->shader_program, "spotLight.outerCutoff");
     
     camera_init(&renderer->camera);
     mat4s view_location = renderer->camera.view;

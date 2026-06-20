@@ -41,6 +41,24 @@ struct DirectionalLight {
 
 uniform DirectionalLight directionalLight;
 
+struct SpotLight {
+    vec3 position;
+    vec3 direction;
+
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+
+    float constant;
+    float linear;
+    float quadratic;
+
+    float innerCutoff;
+    float outerCutoff;
+};
+
+uniform SpotLight spotLight;
+
 vec3 calculateDirectionalLight(
     DirectionalLight light,
     vec3 normal,
@@ -107,6 +125,47 @@ vec3 calculatePointLight(
     return ambient + diffuse + specular;
 }
 
+vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 fragmentPosition, vec3 viewDirection)
+{
+    vec3 lightDirection = normalize(light.position - fragmentPosition);
+
+    float diffuseStrength = max(dot(normal, lightDirection), 0.0);
+
+    vec3 reflectionDirection = reflect(-lightDirection, normal);
+    
+    float specularStrength = pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
+
+    float distance = length(light.position - fragmentPosition);
+
+    float attenuation = 1.0 / (
+        light.constant +
+        light.linear * distance +
+        light.quadratic * distance * distance
+    );
+
+    float theta = dot(lightDirection, normalize(-light.direction));
+
+    float epsilon = light.innerCutoff - light.outerCutoff;
+
+    float coneIntensity = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
+
+    vec3 diffuseTexture = vec3(texture(material.diffuse, TexCoords));
+
+    vec3 specularTexture = vec3(texture(material.specular, TexCoords));
+
+    vec3 ambient = light.ambient * diffuseTexture;
+
+    vec3 diffuse = light.diffuse * diffuseStrength * diffuseTexture;
+
+    vec3 specular = light.specular * specularStrength * specularTexture;
+
+    ambient *= attenuation * coneIntensity;
+    diffuse *= attenuation * coneIntensity;
+    specular *= attenuation * coneIntensity;
+
+    return ambient + diffuse + specular;
+}
+
 void main()
 {
     vec3 normal = normalize(Normal);
@@ -120,6 +179,13 @@ void main()
 
     result += calculatePointLight(
         pointLight,
+        normal,
+        FragPos,
+        viewDirection
+    );
+
+    result += calculateSpotLight(
+        spotLight,
         normal,
         FragPos,
         viewDirection
