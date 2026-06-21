@@ -14,6 +14,7 @@ struct Material {
   
 uniform Material material;
 
+#define MAX_POINT_LIGHTS 4
 struct PointLight {
     vec3 position;
   
@@ -26,7 +27,8 @@ struct PointLight {
     float quadratic;
 };
 
-uniform PointLight pointLight;  
+uniform PointLight pointLights[MAX_POINT_LIGHTS];
+uniform int pointLightCount;
 // uniform vec3 objectColor;
 uniform vec3 viewPos;
 
@@ -177,12 +179,15 @@ void main()
         viewDirection
     );
 
-    result += calculatePointLight(
-        pointLight,
-        normal,
-        FragPos,
-        viewDirection
-    );
+    for (int i = 0; i < pointLightCount; i++)
+    {
+        result += calculatePointLight(
+            pointLights[i],
+            normal,
+            FragPos,
+            viewDirection
+        );
+    }
 
     result += calculateSpotLight(
         spotLight,

@@ -37,6 +37,24 @@ void point_light_set_visual(PointLight *light, RenderObject visual)
     light->has_visual = true;
 }
 
+void point_light_collection_init(PointLightCollection *lights)
+{
+    lights->count = 0;
+}
+
+bool point_light_collection_add(PointLightCollection *lights, PointLight light)
+{
+    if(lights->count >= MAX_POINT_LIGHTS)
+    {
+        return false;
+    }
+
+    lights->items[lights->count] = light;
+    lights->count++;
+
+    return true;
+}
+
 void spot_light_init(SpotLight *light, vec3s position, vec3s direction, LightColor color, float constant, float linear, float quadratic, float inner_cutoff_degrees, float outer_cutoff_degrees)
 {
     light->position = position;
@@ -48,5 +66,5 @@ void spot_light_init(SpotLight *light, vec3s position, vec3s direction, LightCol
     light->quadratic = quadratic;
 
     light->inner_cutoff_degrees = inner_cutoff_degrees;
-    light->outer_cuttoff_degrees = outer_cutoff_degrees;
+    light->outer_cutoff_degrees = outer_cutoff_degrees;
 }

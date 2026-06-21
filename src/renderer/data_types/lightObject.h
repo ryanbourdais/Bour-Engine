@@ -4,14 +4,6 @@
 #include <stddef.h>
 #include "renderObject.h"
 
-// typedef struct LightObject
-// {
-//     vec3s position;
-//     vec3s color;
-//     bool has_visual;
-//     RenderObject visual;
-// } LightObject;
-
 typedef struct LightColor
 {
     vec3s ambient;
@@ -19,6 +11,7 @@ typedef struct LightColor
     vec3s specular;
 } LightColor;
 
+#define MAX_POINT_LIGHTS 4
 typedef struct PointLight
 {
     vec3s position;
@@ -45,6 +38,12 @@ typedef struct PointLightUniforms
     GLint quadratic;
 } PointLightUniforms;
 
+typedef struct PointLightCollection
+{
+    PointLight items[MAX_POINT_LIGHTS];
+    size_t count;
+} PointLightCollection;
+
 typedef struct DirectionalLight
 {
     vec3s direction;
@@ -70,7 +69,7 @@ typedef struct SpotLight
     float quadratic;
 
     float inner_cutoff_degrees;
-    float outer_cuttoff_degrees;
+    float outer_cutoff_degrees;
 } SpotLight;
 
 typedef struct SpotLightUniforms
@@ -86,13 +85,13 @@ typedef struct SpotLightUniforms
     GLint linear;
     GLint quadratic;
 
-    GLint inner_cuttoff;
+    GLint inner_cutoff;
     GLint outer_cutoff;
 } SpotLightUniforms;
 
-// void point_light_object_init(LightObject *light, vec3s position, vec3s color);
-// void light_object_init_with_visual(LightObject *light, vec3s position, vec3s color, RenderObject visual);
 void directional_light_init(DirectionalLight *light, vec3s direction, LightColor color);
 void point_light_init(PointLight *light, vec3s position, LightColor color, float constant, float linear, float quadratic);
 void point_light_set_visual(PointLight* light, RenderObject visual);
+void point_light_collection_init(PointLightCollection *lights);
+bool point_light_collection_add(PointLightCollection *lights, PointLight light);
 void spot_light_init(SpotLight *light, vec3s position, vec3s direction, LightColor color, float constant, float linear, float quadratic, float inner_cutoff_degrees, float outer_cutoff_degrees);
