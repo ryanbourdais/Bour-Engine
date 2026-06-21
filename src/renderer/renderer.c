@@ -135,10 +135,27 @@ LightColor sunlight = {
     .specular = {{0.5f, 0.5f, 0.5f}}
 };
 
-LightColor point_light_color = {
-    .ambient  = {{0.05f, 0.05f, 0.05f}},
-    .diffuse  = {{0.8f,  0.8f,  0.8f}},
-    .specular = {{1.0f,  1.0f,  1.0f}}
+LightColor point_light_colors[MAX_POINT_LIGHTS] = {
+    {
+        .ambient  = {{0.02f, 0.002f, 0.002f}},
+        .diffuse  = {{1.0f,  0.1f,   0.1f}},
+        .specular = {{1.0f,  0.3f,   0.3f}}
+    },
+    {
+        .ambient  = {{0.002f, 0.02f, 0.002f}},
+        .diffuse  = {{0.1f,   1.0f,  0.1f}},
+        .specular = {{0.3f,   1.0f,  0.3f}}
+    },
+    {
+        .ambient  = {{0.002f, 0.002f, 0.02f}},
+        .diffuse  = {{0.1f,   0.1f,   1.0f}},
+        .specular = {{0.3f,   0.3f,   1.0f}}
+    },
+    {
+        .ambient  = {{0.02f, 0.0154f, 0.0112f}},
+        .diffuse  = {{1.0f,  0.77f,   0.56f}},
+        .specular = {{1.0f,  0.77f,   0.56f}}
+    }
 };
 
 vec3s point_light_positions[] = {
@@ -461,7 +478,7 @@ static int renderer_init(struct RendererState *renderer)
     {
         PointLight light = {0};
 
-        point_light_init(&light, point_light_positions[i], point_light_color, 1.0f, 0.09f, 0.032f);
+        point_light_init(&light, point_light_positions[i], point_light_colors[i], 1.0f, 0.09f, 0.032f);
 
         point_light_collection_add(&renderer->point_lights, light);
     }
