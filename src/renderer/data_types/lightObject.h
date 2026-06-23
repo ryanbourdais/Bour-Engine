@@ -58,6 +58,7 @@ typedef struct DirectionalLightUniforms
     GLint specular;
 } DirectionalLightUniforms;
 
+#define MAX_SPOT_LIGHTS 4
 typedef struct SpotLight
 {
     vec3s position;
@@ -89,9 +90,17 @@ typedef struct SpotLightUniforms
     GLint outer_cutoff;
 } SpotLightUniforms;
 
+typedef struct SpotLightCollection
+{
+    SpotLight items[MAX_SPOT_LIGHTS];
+    size_t count;
+} SpotLightCollection;
+
 void directional_light_init(DirectionalLight *light, vec3s direction, LightColor color);
 void point_light_init(PointLight *light, vec3s position, LightColor color, float constant, float linear, float quadratic);
 void point_light_set_visual(PointLight* light, RenderObject visual);
 void point_light_collection_init(PointLightCollection *lights);
 bool point_light_collection_add(PointLightCollection *lights, PointLight light);
 void spot_light_init(SpotLight *light, vec3s position, vec3s direction, LightColor color, float constant, float linear, float quadratic, float inner_cutoff_degrees, float outer_cutoff_degrees);
+void spot_light_collection_init(SpotLightCollection *lights);
+bool spot_light_collection_add(SpotLightCollection *lights, SpotLight light);

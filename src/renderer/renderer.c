@@ -22,15 +22,17 @@ struct RendererState {
     Camera camera;
     DirectionalLight directional_light;
     PointLightCollection point_lights;
-    SpotLight spot_light;
+    SpotLightCollection spot_lights;
+    
     
     DirectionalLightUniforms directional_light_uniforms;
     PointLightUniforms point_light_uniforms[MAX_POINT_LIGHTS];
-    SpotLightUniforms spot_light_uniforms;
+    SpotLightUniforms spot_light_uniforms[MAX_SPOT_LIGHTS];
 
     GLuint shader_program;
     GLuint lamp_shader_program;
     GLint point_light_count_location;
+    GLint spot_light_count_location;
     GLint model_location;
     GLint projection_location;
     GLint view_location;
@@ -165,11 +167,29 @@ vec3s point_light_positions[] = {
     {{ 0.0f,  0.0f,  -3.0f}}
 };
 
-LightColor spotlight_color = {
-    //255, 197, 143
-    .ambient  = {{0.02f, 0.0154f, 0.0112f}},
-    .diffuse  = {{1.0f,  0.77f,   0.56f}},
-    .specular = {{1.0f,  0.77f,   0.56f}}
+LightColor spot_light_colors[MAX_SPOT_LIGHTS] = {
+    {
+        // Hot magenta/pink
+        .ambient  = {{0.0f, 0.0f, 0.0f}},
+        .diffuse  = {{4.0f, 0.0f, 2.5f}},
+        .specular = {{4.0f, 0.0f, 2.5f}}
+    },
+    {
+        // Electric cyan/blue
+        .ambient  = {{0.0f, 0.0f, 0.0f}},
+        .diffuse  = {{0.0f, 3.0f, 4.0f}},
+        .specular = {{0.0f, 3.0f, 4.0f}}
+    }
+};
+
+vec3s spot_light_positions[] = {
+    {{ 0.0f, 15.0f, -7.5f}},
+    {{ 4.0f, 12.0f, -3.0f}}
+};
+
+vec3s spot_light_directions[] = {
+    {{ 0.0f, -1.0f,  0.0f}},
+    {{-0.3f, -1.0f, -0.2f}}
 };
 
 static void fps_counter(double *delta_time, double *title_countdown_time, GLFWwindow* window)
@@ -337,54 +357,34 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
             );
         }
 
-        SpotLight *spot = &renderer_state->spot_light;
-        SpotLightUniforms *spot_uniforms = &renderer_state->spot_light_uniforms;
+        glUniform1i(renderer_state->spot_light_count_location, (GLint)renderer_state->spot_lights.count);
 
-        glUniform3fv(
-            spot_uniforms->position,
-            1,
-            spot->position.raw
-        );
-        glUniform3fv(
-            spot_uniforms->direction,
-            1,
-            spot->direction.raw
-        );
-        glUniform3fv(
-            spot_uniforms->ambient,
-            1,
-            spot->color.ambient.raw
-        );
-        glUniform3fv(
-            spot_uniforms->diffuse,
-            1,
-            spot->color.diffuse.raw
-        );
-        glUniform3fv(
-            spot_uniforms->specular,
-            1,
-            spot->color.specular.raw
-        );
-        glUniform1f(
-            spot_uniforms->constant,
-            spot->constant
-        );
-        glUniform1f(
-            spot_uniforms->linear,
-            spot->linear
-        );
-        glUniform1f(
-            spot_uniforms->quadratic,
-            spot->quadratic
-        );
-        glUniform1f(
-            spot_uniforms->inner_cutoff,
-            cosf(glm_rad(spot->inner_cutoff_degrees))
-        );
-        glUniform1f(
-            spot_uniforms->outer_cutoff,
-            cosf(glm_rad(spot->outer_cutoff_degrees))
-        );
+        for (size_t i = 0; i < renderer_state->spot_lights.count; i++)
+        {
+            SpotLight *spot = &renderer_state->spot_lights.items[i];
+            SpotLightUniforms *spot_uniforms = &renderer_state->spot_light_uniforms[i];
+
+            glUniform3fv(spot_uniforms->position, 1, spot->position.raw);
+            glUniform3fv(spot_uniforms->direction, 1, spot->direction.raw);
+
+            glUniform3fv(spot_uniforms->ambient, 1, spot->color.ambient.raw);
+            glUniform3fv(spot_uniforms->diffuse, 1, spot->color.diffuse.raw);
+            glUniform3fv(spot_uniforms->specular, 1, spot->color.specular.raw);
+
+            glUniform1f(spot_uniforms->constant, spot->constant);
+            glUniform1f(spot_uniforms->linear, spot->linear);
+            glUniform1f(spot_uniforms->quadratic, spot->quadratic);
+
+            glUniform1f(
+                spot_uniforms->inner_cutoff,
+                cosf(glm_rad(spot->inner_cutoff_degrees))
+            );
+
+            glUniform1f(
+                spot_uniforms->outer_cutoff,
+                cosf(glm_rad(spot->outer_cutoff_degrees))
+            );
+        }
 
         for(int i = 0; i < renderer_state->render_objects.count; i++)
         {
@@ -515,30 +515,56 @@ static int renderer_init(struct RendererState *renderer)
         uniforms->quadratic = glGetUniformLocation(renderer->shader_program, name);
     }
 
-    spot_light_init(&renderer->spot_light, (vec3s){{0.0f, 15.0f, -7.5f}}, (vec3s){{0.0f, -1.0f, 0.0f}}, spotlight_color, 1.0f, 0.045f, 0.0075f, 30.0f, 40.0f);
+    spot_light_collection_init(&renderer->spot_lights);
 
-    SpotLightUniforms *spot_uniforms = &renderer->spot_light_uniforms;
+    for (size_t i = 0; i < 2; i++)
+    {
+        SpotLight light = {0};
 
-    spot_uniforms->position =
-        glGetUniformLocation(renderer->shader_program, "spotLight.position");
-    spot_uniforms->direction =
-        glGetUniformLocation(renderer->shader_program, "spotLight.direction");
-    spot_uniforms->ambient =
-        glGetUniformLocation(renderer->shader_program, "spotLight.ambient");
-    spot_uniforms->diffuse =
-        glGetUniformLocation(renderer->shader_program, "spotLight.diffuse");
-    spot_uniforms->specular =
-        glGetUniformLocation(renderer->shader_program, "spotLight.specular");
-    spot_uniforms->constant =
-        glGetUniformLocation(renderer->shader_program, "spotLight.constant");
-    spot_uniforms->linear =
-        glGetUniformLocation(renderer->shader_program, "spotLight.linear");
-    spot_uniforms->quadratic =
-        glGetUniformLocation(renderer->shader_program, "spotLight.quadratic");
-    spot_uniforms->inner_cutoff =
-        glGetUniformLocation(renderer->shader_program, "spotLight.innerCutoff");
-    spot_uniforms->outer_cutoff =
-        glGetUniformLocation(renderer->shader_program, "spotLight.outerCutoff");
+        spot_light_init(&light, spot_light_positions[i], spot_light_directions[i], spot_light_colors[i], 1.0f, 0.045f, 0.0075f, 30.0f, 40.0f);
+        
+        spot_light_collection_add(&renderer->spot_lights, light);
+    }
+
+    renderer->spot_light_count_location =
+    glGetUniformLocation(renderer->shader_program, "spotLightCount");
+
+    for (size_t i = 0; i < MAX_SPOT_LIGHTS; i++)
+    {
+        SpotLightUniforms *uniforms = &renderer->spot_light_uniforms[i];
+
+        char name[64];
+
+        snprintf(name, sizeof(name), "spotLights[%zu].position", i);
+        uniforms->position = glGetUniformLocation(renderer->shader_program, name);
+
+        snprintf(name, sizeof(name), "spotLights[%zu].direction", i);
+        uniforms->direction = glGetUniformLocation(renderer->shader_program, name);
+
+        snprintf(name, sizeof(name), "spotLights[%zu].ambient", i);
+        uniforms->ambient = glGetUniformLocation(renderer->shader_program, name);
+
+        snprintf(name, sizeof(name), "spotLights[%zu].diffuse", i);
+        uniforms->diffuse = glGetUniformLocation(renderer->shader_program, name);
+
+        snprintf(name, sizeof(name), "spotLights[%zu].specular", i);
+        uniforms->specular = glGetUniformLocation(renderer->shader_program, name);
+
+        snprintf(name, sizeof(name), "spotLights[%zu].constant", i);
+        uniforms->constant = glGetUniformLocation(renderer->shader_program, name);
+
+        snprintf(name, sizeof(name), "spotLights[%zu].linear", i);
+        uniforms->linear = glGetUniformLocation(renderer->shader_program, name);
+
+        snprintf(name, sizeof(name), "spotLights[%zu].quadratic", i);
+        uniforms->quadratic = glGetUniformLocation(renderer->shader_program, name);
+
+        snprintf(name, sizeof(name), "spotLights[%zu].innerCutoff", i);
+        uniforms->inner_cutoff = glGetUniformLocation(renderer->shader_program, name);
+
+        snprintf(name, sizeof(name), "spotLights[%zu].outerCutoff", i);
+        uniforms->outer_cutoff = glGetUniformLocation(renderer->shader_program, name);
+    }
     
     camera_init(&renderer->camera);
     mat4s view_location = renderer->camera.view;
