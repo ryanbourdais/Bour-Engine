@@ -2,14 +2,14 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
-void camera_init(Camera* camera)
+void camera_init(Camera *camera)
 {
     camera->cameraPos = (vec3s){0.0f, 0.0f, 3.0f};
 
     camera->cameraTarget = (vec3s){0.0f, 0.0f, 0.0f};
 
-    camera->cameraDirection = glms_vec3_normalize(glms_vec3_sub(camera->cameraPos,camera->cameraTarget));
-    
+    camera->cameraDirection = glms_vec3_normalize(glms_vec3_sub(camera->cameraPos, camera->cameraTarget));
+
     vec3s up = (vec3s){0.0f, 1.0f, 0.0f};
     camera->cameraRight = glms_vec3_normalize(glms_vec3_cross(up, camera->cameraDirection));
 
@@ -23,58 +23,71 @@ void camera_init(Camera* camera)
     camera->cameraFOV = 45.0f;
 }
 
-void update_camera_settings(Camera* camera, mat4 projection, GLint projection_location, float speed, float sensitivity, float fov)
+void draw_camera(GLint view_location, GLint view_pos_location, Camera camera)
+{
+    glUniformMatrix4fv(
+        view_location,
+        1,
+        GL_FALSE,
+        (float *)camera.view.raw);
+
+    glUniform3fv(
+        view_pos_location,
+        1,
+        camera.cameraPos.raw);
+}
+
+void update_camera_settings(Camera *camera, mat4 projection, GLint projection_location, float speed, float sensitivity, float fov)
 {
     camera->cameraSpeed = speed;
     camera->cameraSensitivity = sensitivity;
     camera->cameraFOV = fov;
-    glm_perspective(glm_rad(camera->cameraFOV), 800.0f/600.0f, 0.1f, 100.0f, projection);
+    glm_perspective(glm_rad(camera->cameraFOV), 800.0f / 600.0f, 0.1f, 100.0f, projection);
     glUniformMatrix4fv(projection_location, 1, GL_FALSE, (float *)projection);
 }
 
-void camera_update(Camera* camera)
+void camera_update(Camera *camera)
 {
     camera->view = glms_lookat(
         camera->cameraPos,
         glms_vec3_add(camera->cameraPos, camera->cameraFront),
-        camera->cameraUp
-    );
+        camera->cameraUp);
 }
 
-void camera_movement(Camera* camera, vec2s movement_axis, float delta_time)
+void camera_movement(Camera *camera, vec2s movement_axis, float delta_time)
 {
     float velocity = camera->cameraSpeed * delta_time;
     vec3s right = glms_vec3_normalize(glms_vec3_cross(camera->cameraFront, camera->cameraUp));
-    if (movement_axis.y > 0.0f) {
+    if (movement_axis.y > 0.0f)
+    {
         camera->cameraPos = glms_vec3_add(
             camera->cameraPos,
-            glms_vec3_scale(camera->cameraFront, velocity)
-        );
+            glms_vec3_scale(camera->cameraFront, velocity));
     }
 
-    if (movement_axis.y < 0.0f) {
+    if (movement_axis.y < 0.0f)
+    {
         camera->cameraPos = glms_vec3_sub(
             camera->cameraPos,
-            glms_vec3_scale(camera->cameraFront, velocity)
-        );
+            glms_vec3_scale(camera->cameraFront, velocity));
     }
 
-    if (movement_axis.x < 0.0f) {
+    if (movement_axis.x < 0.0f)
+    {
         camera->cameraPos = glms_vec3_sub(
             camera->cameraPos,
-            glms_vec3_scale(right, velocity)
-        );
+            glms_vec3_scale(right, velocity));
     }
 
-    if (movement_axis.x > 0.0f) {
+    if (movement_axis.x > 0.0f)
+    {
         camera->cameraPos = glms_vec3_add(
             camera->cameraPos,
-            glms_vec3_scale(right, velocity)
-        );
+            glms_vec3_scale(right, velocity));
     }
 }
 
-void handle_mouse(Camera* camera, vec2s offsets, bool constrainPitch)
+void handle_mouse(Camera *camera, vec2s offsets, bool constrainPitch)
 {
     float xOffset = offsets.x;
     float yOffset = offsets.y;
@@ -85,11 +98,11 @@ void handle_mouse(Camera* camera, vec2s offsets, bool constrainPitch)
     camera->cameraYaw += xOffset;
     camera->cameraPitch += yOffset;
 
-    if(constrainPitch)
+    if (constrainPitch)
     {
-        if(camera->cameraPitch > 89.0f)
+        if (camera->cameraPitch > 89.0f)
             camera->cameraPitch = 89.0f;
-        if(camera->cameraPitch < -89.0f)
+        if (camera->cameraPitch < -89.0f)
             camera->cameraPitch = -89.0f;
     }
 
@@ -105,6 +118,6 @@ const float radius = 10.0f;
     float camZ = cos(glfwGetTime()) * radius;
 
     camera->cameraPos = (vec3s){camX, 0.0f, camZ};
-    camera->view = glms_lookat((vec3s){camX, 0.0, camZ}, 
-  		                      (vec3s){0.0f, 0.0f, 0.0f}, 
-  		                      (vec3s){0.0f, 1.0f, 0.0f});*/
+    camera->view = glms_lookat((vec3s){camX, 0.0, camZ},
+                              (vec3s){0.0f, 0.0f, 0.0f},
+                              (vec3s){0.0f, 1.0f, 0.0f});*/

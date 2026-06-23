@@ -18,6 +18,7 @@ typedef struct Camera {
 } Camera;
 
 void camera_init(Camera* camera);
+void draw_camera(GLint view_location, GLint view_pos_location, Camera camera);
 void camera_update(Camera* camera);
 void camera_movement(Camera* camera, vec2s movement_axis, float delta_time);
 void handle_mouse(Camera* camera, vec2s offsets, bool constrainPitch);
