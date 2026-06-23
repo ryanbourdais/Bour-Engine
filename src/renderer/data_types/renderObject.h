@@ -17,6 +17,7 @@ typedef struct RenderObjectArray {
     size_t capacity;
 } RenderObjectArray;
 
+void draw_render_object(struct RenderObject *render_object, GLint model_location);
 void identity_model(struct RenderObject *render_object);
 void translate_model_matrix(struct RenderObject *render_object, vec3s translate_vector);
 void rotate_model(struct RenderObject *render_object, float angle, vec3s axis);

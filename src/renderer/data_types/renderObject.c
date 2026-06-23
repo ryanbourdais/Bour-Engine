@@ -2,6 +2,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
+void draw_render_object(struct RenderObject *render_object, GLint model_location)
+{
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, render_object->mesh.texture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, render_object->mesh.texture2);
+    glBindVertexArray(render_object->mesh.vao);
+    glUniformMatrix4fv(model_location, 1,GL_FALSE, (float *)render_object->model);
+    glDrawElements(GL_TRIANGLES, render_object->mesh.index_count, GL_UNSIGNED_INT, 0);    
+}
+
 void identity_model(struct RenderObject *render_object)
 {
     glm_mat4_identity(render_object->model);
