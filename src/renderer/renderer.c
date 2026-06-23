@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <cglm/struct.h>
 
-#include <math.h>
-
 #include "../controller/input.h"
 #include "data_types/mesh.h"
 
@@ -226,7 +224,6 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
     double previous_time = glfwGetTime();
     double title_countdown_time = 0.1;
     double delta_time = 0.0;
-    bool render_state_updated = false;
     
     while(!glfwWindowShouldClose(window))
     {
@@ -256,40 +253,26 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
 
         glUniform1f(renderer_state->material_shininess_location, 32.0f);
 
-        draw_camera(renderer_state->view_location, renderer_state->view_pos_location, renderer_state->camera);
+        upload_camera(renderer_state->view_location, renderer_state->view_pos_location, &renderer_state->camera);
 
-        glActiveTexture(GL_TEXTURE0);
+        upload_directional_light(&renderer_state->directional_light, &renderer_state->directional_light_uniforms);
 
-        draw_directional_light(&renderer_state->directional_light, &renderer_state->directional_light_uniforms);
+        upload_point_light_collection(&renderer_state->point_lights, &renderer_state->point_light_uniforms, renderer_state->point_light_count_location);
 
-        glUniform1i(renderer_state->point_light_count_location, (GLint)renderer_state->point_lights.count);
-
-        for (size_t i = 0; i < renderer_state->point_lights.count; i++)
-        {
-            draw_point_light(&renderer_state->point_lights.items[i], &renderer_state->point_light_uniforms[i]);
-        }
-
-        glUniform1i(renderer_state->spot_light_count_location, (GLint)renderer_state->spot_lights.count);
-
-        for (size_t i = 0; i < renderer_state->spot_lights.count; i++)
-        {
-            draw_spot_light(&renderer_state->spot_lights.items[i], &renderer_state->spot_light_uniforms[i]);
-        }
+        upload_spot_light_collection(&renderer_state->spot_lights, &renderer_state->spot_light_uniforms, renderer_state->spot_light_count_location);
 
         for(int i = 0; i < renderer_state->render_objects.count; i++)
         {
             vec3s rotation_axis = {1.0f, 0.3f, 0.5f};
             identity_model(&renderer_state->render_objects.items[i]);
             translate_model_matrix(&renderer_state->render_objects.items[i], renderer_state->render_objects.items[i].position);
-            rotate_model(&renderer_state->render_objects.items[i], glm_rad(20.0f * (i + 1) * (float)glfwGetTime()), rotation_axis);
+            rotate_model(&renderer_state->render_objects.items[i], glm_rad(20.0f * (i + 1) * current_time), rotation_axis);
             
             draw_render_object(&renderer_state->render_objects.items[i], renderer_state->model_location);
         }
 
         // Put the drawing into the visible area
         glfwSwapBuffers(window);
-
-        render_state_updated = false;
     }
 }
 
