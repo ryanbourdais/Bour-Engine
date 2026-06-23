@@ -256,116 +256,24 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
 
         glUniform1f(renderer_state->material_shininess_location, 32.0f);
 
-        glUniformMatrix4fv(
-            renderer_state->view_location,
-            1,
-            GL_FALSE, 
-            (float *)renderer_state->camera.view.raw
-        );
-
-        glUniform3fv(
-            renderer_state->view_pos_location,
-            1,
-            renderer_state->camera.cameraPos.raw
-        );
+        draw_camera(renderer_state->view_location, renderer_state->view_pos_location, renderer_state->camera);
 
         glActiveTexture(GL_TEXTURE0);
-        
-        DirectionalLight *light = &renderer_state->directional_light;
 
-        DirectionalLightUniforms *uniforms = &renderer_state->directional_light_uniforms;
-
-        glUniform3fv(
-            uniforms->direction,
-            1,
-            light->direction.raw
-        );
-        
-        glUniform3fv(
-            uniforms->ambient,
-            1,
-            light->color.ambient.raw
-        );
-        glUniform3fv(
-            uniforms->diffuse,
-            1,
-            light->color.diffuse.raw
-        );
-        glUniform3fv(
-            uniforms->specular,
-            1,
-            light->color.specular.raw
-        );
+        draw_directional_light(&renderer_state->directional_light, &renderer_state->directional_light_uniforms);
 
         glUniform1i(renderer_state->point_light_count_location, (GLint)renderer_state->point_lights.count);
 
         for (size_t i = 0; i < renderer_state->point_lights.count; i++)
         {
-            PointLight *light = &renderer_state->point_lights.items[i];
-
-            PointLightUniforms *uniforms = &renderer_state->point_light_uniforms[i];
-
-            glUniform3fv(
-                uniforms->position,
-                1,
-                light->position.raw
-            );
-            glUniform3fv(
-                uniforms->ambient,
-                1,
-                light->color.ambient.raw
-            );
-            glUniform3fv(
-                uniforms->diffuse,
-                1,
-                light->color.diffuse.raw
-            );
-            glUniform3fv(
-                uniforms->specular,
-                1,
-                light->color.specular.raw
-            );
-            glUniform1f(
-                uniforms->constant,
-                light->constant
-            );
-            glUniform1f(
-                uniforms->linear,
-                light->linear
-            );
-            glUniform1f(
-                uniforms->quadratic,
-                light->quadratic
-            );
+            draw_point_light(&renderer_state->point_lights.items[i], &renderer_state->point_light_uniforms[i]);
         }
 
         glUniform1i(renderer_state->spot_light_count_location, (GLint)renderer_state->spot_lights.count);
 
         for (size_t i = 0; i < renderer_state->spot_lights.count; i++)
         {
-            SpotLight *spot = &renderer_state->spot_lights.items[i];
-            SpotLightUniforms *spot_uniforms = &renderer_state->spot_light_uniforms[i];
-
-            glUniform3fv(spot_uniforms->position, 1, spot->position.raw);
-            glUniform3fv(spot_uniforms->direction, 1, spot->direction.raw);
-
-            glUniform3fv(spot_uniforms->ambient, 1, spot->color.ambient.raw);
-            glUniform3fv(spot_uniforms->diffuse, 1, spot->color.diffuse.raw);
-            glUniform3fv(spot_uniforms->specular, 1, spot->color.specular.raw);
-
-            glUniform1f(spot_uniforms->constant, spot->constant);
-            glUniform1f(spot_uniforms->linear, spot->linear);
-            glUniform1f(spot_uniforms->quadratic, spot->quadratic);
-
-            glUniform1f(
-                spot_uniforms->inner_cutoff,
-                cosf(glm_rad(spot->inner_cutoff_degrees))
-            );
-
-            glUniform1f(
-                spot_uniforms->outer_cutoff,
-                cosf(glm_rad(spot->outer_cutoff_degrees))
-            );
+            draw_spot_light(&renderer_state->spot_lights.items[i], &renderer_state->spot_light_uniforms[i]);
         }
 
         for(int i = 0; i < renderer_state->render_objects.count; i++)

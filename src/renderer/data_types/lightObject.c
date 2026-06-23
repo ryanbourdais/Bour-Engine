@@ -1,25 +1,59 @@
 #include "lightObject.h"
 
-// void point_light_object_init(LightObject *light, vec3s position, vec3s color)
-// {
-//     light->position = position;
-//     light->color = color;
-//     light->has_visual = false;
-// }
-// void light_object_init_with_visual(LightObject *light, vec3s position, vec3s color, RenderObject visual)
-// {
-//     light->position = position;
-//     light->color = color;
-//     light->has_visual = true;
-//     light->visual = visual;
-// }
+void draw_directional_light(DirectionalLight *light, DirectionalLightUniforms *uniform)
+{
+    glUniform3fv(
+        uniform->direction,
+        1,
+        light->direction.raw);
 
+    glUniform3fv(
+        uniform->ambient,
+        1,
+        light->color.ambient.raw);
+    glUniform3fv(
+        uniform->diffuse,
+        1,
+        light->color.diffuse.raw);
+    glUniform3fv(
+        uniform->specular,
+        1,
+        light->color.specular.raw);
+}
 void directional_light_init(DirectionalLight *light, vec3s direction, LightColor color)
 {
     light->direction = direction;
     light->color = color;
 }
 
+void draw_point_light(PointLight *light, PointLightUniforms *uniforms)
+{
+    glUniform3fv(
+        uniforms->position,
+        1,
+        light->position.raw);
+    glUniform3fv(
+        uniforms->ambient,
+        1,
+        light->color.ambient.raw);
+    glUniform3fv(
+        uniforms->diffuse,
+        1,
+        light->color.diffuse.raw);
+    glUniform3fv(
+        uniforms->specular,
+        1,
+        light->color.specular.raw);
+    glUniform1f(
+        uniforms->constant,
+        light->constant);
+    glUniform1f(
+        uniforms->linear,
+        light->linear);
+    glUniform1f(
+        uniforms->quadratic,
+        light->quadratic);
+}
 
 void point_light_init(PointLight *light, vec3s position, LightColor color, float constant, float linear, float quadratic)
 {
@@ -44,7 +78,7 @@ void point_light_collection_init(PointLightCollection *lights)
 
 bool point_light_collection_add(PointLightCollection *lights, PointLight light)
 {
-    if(lights->count >= MAX_POINT_LIGHTS)
+    if (lights->count >= MAX_POINT_LIGHTS)
     {
         return false;
     }
@@ -53,6 +87,28 @@ bool point_light_collection_add(PointLightCollection *lights, PointLight light)
     lights->count++;
 
     return true;
+}
+
+void draw_spot_light(SpotLight *spot, SpotLightUniforms *uniform)
+{
+    glUniform3fv(uniform->position, 1, spot->position.raw);
+    glUniform3fv(uniform->direction, 1, spot->direction.raw);
+
+    glUniform3fv(uniform->ambient, 1, spot->color.ambient.raw);
+    glUniform3fv(uniform->diffuse, 1, spot->color.diffuse.raw);
+    glUniform3fv(uniform->specular, 1, spot->color.specular.raw);
+
+    glUniform1f(uniform->constant, spot->constant);
+    glUniform1f(uniform->linear, spot->linear);
+    glUniform1f(uniform->quadratic, spot->quadratic);
+
+    glUniform1f(
+        uniform->inner_cutoff,
+        cosf(glm_rad(spot->inner_cutoff_degrees)));
+
+    glUniform1f(
+        uniform->outer_cutoff,
+        cosf(glm_rad(spot->outer_cutoff_degrees)));
 }
 
 void spot_light_init(SpotLight *light, vec3s position, vec3s direction, LightColor color, float constant, float linear, float quadratic, float inner_cutoff_degrees, float outer_cutoff_degrees)
@@ -76,7 +132,7 @@ void spot_light_collection_init(SpotLightCollection *lights)
 
 bool spot_light_collection_add(SpotLightCollection *lights, SpotLight light)
 {
-    if(lights->count >= MAX_SPOT_LIGHTS)
+    if (lights->count >= MAX_SPOT_LIGHTS)
     {
         return false;
     }
