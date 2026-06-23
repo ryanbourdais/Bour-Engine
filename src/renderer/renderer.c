@@ -221,24 +221,6 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     handle_mouse(&renderer.camera, offsets, true);
 } 
 
-void draw_render_object(struct RenderObject *render_object, GLint model_location, float time, int i)
-{
-    vec3s rotation_axis = {1.0f, 0.3f, 0.5f};
-    // vec3s scale_vec = {glm_rad((2.0f * (i + 1) * time)),glm_rad((2.0f * (i + 1) * time)),glm_rad(2.0f * (i + 1) * time)};
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, render_object->mesh.texture);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, render_object->mesh.texture2);
-    glBindVertexArray(render_object->mesh.vao);
-    identity_model(render_object);
-    translate_model_matrix(render_object, render_object->position);
-    rotate_model(render_object, glm_rad(20.0f * (i + 1) * time), rotation_axis);
-
-    // scale_model(&renderer_state->render_objects.items[i],  scale_vec);
-    glUniformMatrix4fv(model_location, 1,GL_FALSE, (float *)render_object->model);
-    glDrawElements(GL_TRIANGLES, render_object->mesh.index_count, GL_UNSIGNED_INT, 0);    
-}
-
 static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct RendererState *renderer_state)
 {
     double previous_time = glfwGetTime();
@@ -388,7 +370,12 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
 
         for(int i = 0; i < renderer_state->render_objects.count; i++)
         {
-           draw_render_object(&renderer_state->render_objects.items[i], renderer_state->model_location, (float)glfwGetTime(), i);
+            vec3s rotation_axis = {1.0f, 0.3f, 0.5f};
+            identity_model(&renderer_state->render_objects.items[i]);
+            translate_model_matrix(&renderer_state->render_objects.items[i], renderer_state->render_objects.items[i].position);
+            rotate_model(&renderer_state->render_objects.items[i], glm_rad(20.0f * (i + 1) * (float)glfwGetTime()), rotation_axis);
+            
+            draw_render_object(&renderer_state->render_objects.items[i], renderer_state->model_location);
         }
 
         // Put the drawing into the visible area
