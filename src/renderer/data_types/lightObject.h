@@ -11,7 +11,7 @@ typedef struct LightColor
     vec3s specular;
 } LightColor;
 
-#define MAX_POINT_LIGHTS 4
+#define MAX_SHADER_POINT_LIGHTS 4
 typedef struct PointLight
 {
     vec3s position;
@@ -40,7 +40,7 @@ typedef struct PointLightUniforms
 
 typedef struct PointLightCollection
 {
-    PointLight items[MAX_POINT_LIGHTS];
+    PointLight items[MAX_SHADER_POINT_LIGHTS];
     size_t count;
 } PointLightCollection;
 
@@ -58,7 +58,7 @@ typedef struct DirectionalLightUniforms
     GLint specular;
 } DirectionalLightUniforms;
 
-#define MAX_SPOT_LIGHTS 4
+#define MAX_SHADER_SPOT_LIGHTS 4
 typedef struct SpotLight
 {
     vec3s position;
@@ -92,7 +92,7 @@ typedef struct SpotLightUniforms
 
 typedef struct SpotLightCollection
 {
-    SpotLight items[MAX_SPOT_LIGHTS];
+    SpotLight items[MAX_SHADER_SPOT_LIGHTS];
     size_t count;
 } SpotLightCollection;
 

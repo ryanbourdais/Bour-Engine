@@ -14,7 +14,7 @@ struct Material {
   
 uniform Material material;
 
-#define MAX_POINT_LIGHTS 4
+#define MAX_SHADER_POINT_LIGHTS 4
 struct PointLight {
     vec3 position;
   
@@ -27,7 +27,7 @@ struct PointLight {
     float quadratic;
 };
 
-uniform PointLight pointLights[MAX_POINT_LIGHTS];
+uniform PointLight pointLights[MAX_SHADER_POINT_LIGHTS];
 uniform int pointLightCount;
 // uniform vec3 objectColor;
 uniform vec3 viewPos;
@@ -43,7 +43,7 @@ struct DirectionalLight {
 
 uniform DirectionalLight directionalLight;
 
-#define MAX_SPOT_LIGHTS 4
+#define MAX_SHADER_SPOT_LIGHTS 4
 struct SpotLight {
     vec3 position;
     vec3 direction;
@@ -60,7 +60,7 @@ struct SpotLight {
     float outerCutoff;
 };
 
-uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
+uniform SpotLight spotLights[MAX_SHADER_SPOT_LIGHTS];
 uniform int spotLightCount;
 
 vec3 calculateDirectionalLight(

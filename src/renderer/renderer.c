@@ -26,8 +26,8 @@ struct RendererState {
     
     
     DirectionalLightUniforms directional_light_uniforms;
-    PointLightUniforms point_light_uniforms[MAX_POINT_LIGHTS];
-    SpotLightUniforms spot_light_uniforms[MAX_SPOT_LIGHTS];
+    PointLightUniforms point_light_uniforms[MAX_SHADER_POINT_LIGHTS];
+    SpotLightUniforms spot_light_uniforms[MAX_SHADER_SPOT_LIGHTS];
 
     GLuint shader_program;
     GLuint lamp_shader_program;
@@ -137,7 +137,7 @@ LightColor sunlight = {
     .specular = {{0.5f, 0.5f, 0.5f}}
 };
 
-LightColor point_light_colors[MAX_POINT_LIGHTS] = {
+LightColor point_light_colors[MAX_SHADER_POINT_LIGHTS] = {
     {
         .ambient  = {{0.02f, 0.002f, 0.002f}},
         .diffuse  = {{1.0f,  0.1f,   0.1f}},
@@ -167,7 +167,7 @@ vec3s point_light_positions[] = {
     {{ 0.0f,  0.0f,  -3.0f}}
 };
 
-LightColor spot_light_colors[MAX_SPOT_LIGHTS] = {
+LightColor spot_light_colors[MAX_SHADER_SPOT_LIGHTS] = {
     {
         // Hot magenta/pink
         .ambient  = {{0.0f, 0.0f, 0.0f}},
@@ -474,7 +474,7 @@ static int renderer_init(struct RendererState *renderer)
 
     point_light_collection_init(&renderer->point_lights);
 
-    for(size_t i = 0; i < MAX_POINT_LIGHTS; i++)
+    for(size_t i = 0; i < MAX_SHADER_POINT_LIGHTS; i++)
     {
         PointLight light = {0};
 
@@ -487,7 +487,7 @@ static int renderer_init(struct RendererState *renderer)
 
     renderer->point_light_count_location = glGetUniformLocation(renderer->shader_program, "pointLightCount");
 
-    for(size_t i = 0; i < MAX_POINT_LIGHTS; i++)
+    for(size_t i = 0; i < MAX_SHADER_POINT_LIGHTS; i++)
     {
         PointLightUniforms *uniforms = &renderer->point_light_uniforms[i];
 
@@ -529,7 +529,7 @@ static int renderer_init(struct RendererState *renderer)
     renderer->spot_light_count_location =
     glGetUniformLocation(renderer->shader_program, "spotLightCount");
 
-    for (size_t i = 0; i < MAX_SPOT_LIGHTS; i++)
+    for (size_t i = 0; i < MAX_SHADER_SPOT_LIGHTS; i++)
     {
         SpotLightUniforms *uniforms = &renderer->spot_light_uniforms[i];
 

@@ -44,7 +44,7 @@ void point_light_collection_init(PointLightCollection *lights)
 
 bool point_light_collection_add(PointLightCollection *lights, PointLight light)
 {
-    if(lights->count >= MAX_POINT_LIGHTS)
+    if(lights->count >= MAX_SHADER_POINT_LIGHTS)
     {
         return false;
     }
@@ -76,7 +76,7 @@ void spot_light_collection_init(SpotLightCollection *lights)
 
 bool spot_light_collection_add(SpotLightCollection *lights, SpotLight light)
 {
-    if(lights->count >= MAX_SPOT_LIGHTS)
+    if(lights->count >= MAX_SHADER_SPOT_LIGHTS)
     {
         return false;
     }
