@@ -68,3 +68,21 @@ void spot_light_init(SpotLight *light, vec3s position, vec3s direction, LightCol
     light->inner_cutoff_degrees = inner_cutoff_degrees;
     light->outer_cutoff_degrees = outer_cutoff_degrees;
 }
+
+void spot_light_collection_init(SpotLightCollection *lights)
+{
+    lights->count = 0;
+}
+
+bool spot_light_collection_add(SpotLightCollection *lights, SpotLight light)
+{
+    if(lights->count >= MAX_SPOT_LIGHTS)
+    {
+        return false;
+    }
+
+    lights->items[lights->count] = light;
+    lights->count++;
+
+    return true;
+}

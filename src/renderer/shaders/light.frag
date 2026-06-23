@@ -43,6 +43,7 @@ struct DirectionalLight {
 
 uniform DirectionalLight directionalLight;
 
+#define MAX_SPOT_LIGHTS 4
 struct SpotLight {
     vec3 position;
     vec3 direction;
@@ -59,7 +60,8 @@ struct SpotLight {
     float outerCutoff;
 };
 
-uniform SpotLight spotLight;
+uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
+uniform int spotLightCount;
 
 vec3 calculateDirectionalLight(
     DirectionalLight light,
@@ -189,12 +191,15 @@ void main()
         );
     }
 
-    result += calculateSpotLight(
-        spotLight,
-        normal,
-        FragPos,
-        viewDirection
-    );
+    for (int i = 0; i < spotLightCount; i++)
+    {
+        result += calculateSpotLight(
+            spotLights[i],
+            normal,
+            FragPos,
+            viewDirection
+        );
+    }
     
     FragColor = vec4(result, 1.0);
 }
