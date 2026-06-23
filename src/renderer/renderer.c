@@ -304,11 +304,11 @@ static int renderer_init(struct RendererState *renderer)
         renderobject_array_append(&renderer->render_objects, new_render_object);
     }
 
-    RenderObject lamp_visual = {0};
-    create_mesh_from_vertices(&lamp_visual.mesh, cube, cube_vertex_count, cube_indices, cube_index_count);
-    lamp_visual.position = (vec3s){0.0f, 0.0f, 1.5f};
-    lamp_visual.scale = (vec3s){{0.2f, 0.2f, 0.2f}};
-    vec3s lamp_color = (vec3s){1.0f, 1.0f, 1.0f};
+    // RenderObject lamp_visual = {0};
+    // create_mesh_from_vertices(&lamp_visual.mesh, cube, cube_vertex_count, cube_indices, cube_index_count);
+    // lamp_visual.position = (vec3s){0.0f, 0.0f, 1.5f};
+    // lamp_visual.scale = (vec3s){{0.2f, 0.2f, 0.2f}};
+    // vec3s lamp_color = (vec3s){1.0f, 1.0f, 1.0f};
 
     if (load_shaders(&vs, &fs, "src/renderer/shaders/light.vert" ,"src/renderer/shaders/light.frag") != 0) {
         return 1;
@@ -327,28 +327,18 @@ static int renderer_init(struct RendererState *renderer)
         return 1;
     }
 
-    renderer->lamp_model_location =
-        glGetUniformLocation(renderer->lamp_shader_program, "model");
-    renderer->lamp_view_location =
-        glGetUniformLocation(renderer->lamp_shader_program, "view");
-    renderer->lamp_projection_location =
-        glGetUniformLocation(renderer->lamp_shader_program, "projection");
-    renderer->lamp_light_color_location =
-        glGetUniformLocation(renderer->lamp_shader_program, "lightColor");
+    // renderer->lamp_model_location =
+    //     glGetUniformLocation(renderer->lamp_shader_program, "model");
+    // renderer->lamp_view_location =
+    //     glGetUniformLocation(renderer->lamp_shader_program, "view");
+    // renderer->lamp_projection_location =
+    //     glGetUniformLocation(renderer->lamp_shader_program, "projection");
+    // renderer->lamp_light_color_location =
+    //     glGetUniformLocation(renderer->lamp_shader_program, "lightColor");
 
-    directional_light_init(&renderer->directional_light, (vec3s){{-0.2f, -1.0f, -0.3f}},sunlight);
+    directional_light_init(&renderer->directional_light, (vec3s){{-0.2f, -1.0f, -0.3f}}, sunlight);
 
-    renderer->directional_light_uniforms.direction =
-        glGetUniformLocation(renderer->shader_program, "directionalLight.direction");
-    
-    renderer->directional_light_uniforms.ambient =
-        glGetUniformLocation(renderer->shader_program, "directionalLight.ambient");
-
-    renderer->directional_light_uniforms.diffuse =
-        glGetUniformLocation(renderer->shader_program, "directionalLight.diffuse");
-
-    renderer->directional_light_uniforms.specular =
-        glGetUniformLocation(renderer->shader_program, "directionalLight.specular");
+    directional_light_uniforms_init(renderer->directional_light_uniforms, renderer->shader_program);
 
     point_light_collection_init(&renderer->point_lights);
 
@@ -367,30 +357,7 @@ static int renderer_init(struct RendererState *renderer)
 
     for(size_t i = 0; i < MAX_SHADER_POINT_LIGHTS; i++)
     {
-        PointLightUniforms *uniforms = &renderer->point_light_uniforms[i];
-
-        char name[64];
-
-        snprintf(name, sizeof(name), "pointLights[%zu].position", i);
-        uniforms->position = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "pointLights[%zu].ambient", i);
-        uniforms->ambient = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "pointLights[%zu].diffuse", i);
-        uniforms->diffuse = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "pointLights[%zu].specular", i);
-        uniforms->specular = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "pointLights[%zu].constant", i);
-        uniforms->constant = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "pointLights[%zu].linear", i);
-        uniforms->linear = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "pointLights[%zu].quadratic", i);
-        uniforms->quadratic = glGetUniformLocation(renderer->shader_program, name);
+        point_light_uniforms_init(&renderer->point_light_uniforms[i],renderer->shader_program, i);
     }
 
     spot_light_collection_init(&renderer->spot_lights);
@@ -409,39 +376,7 @@ static int renderer_init(struct RendererState *renderer)
 
     for (size_t i = 0; i < MAX_SHADER_SPOT_LIGHTS; i++)
     {
-        SpotLightUniforms *uniforms = &renderer->spot_light_uniforms[i];
-
-        char name[64];
-
-        snprintf(name, sizeof(name), "spotLights[%zu].position", i);
-        uniforms->position = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "spotLights[%zu].direction", i);
-        uniforms->direction = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "spotLights[%zu].ambient", i);
-        uniforms->ambient = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "spotLights[%zu].diffuse", i);
-        uniforms->diffuse = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "spotLights[%zu].specular", i);
-        uniforms->specular = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "spotLights[%zu].constant", i);
-        uniforms->constant = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "spotLights[%zu].linear", i);
-        uniforms->linear = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "spotLights[%zu].quadratic", i);
-        uniforms->quadratic = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "spotLights[%zu].innerCutoff", i);
-        uniforms->inner_cutoff = glGetUniformLocation(renderer->shader_program, name);
-
-        snprintf(name, sizeof(name), "spotLights[%zu].outerCutoff", i);
-        uniforms->outer_cutoff = glGetUniformLocation(renderer->shader_program, name);
+        spot_light_uniforms_init(&renderer->spot_light_uniforms[i], renderer->shader_program, i);
     }
     
     camera_init(&renderer->camera);
