@@ -1,6 +1,8 @@
-#include "lightObject.h"
 
-void draw_directional_light(DirectionalLight *light, DirectionalLightUniforms *uniform)
+#include "lightObject.h"
+#include <math.h>
+
+void upload_directional_light(DirectionalLight *light, DirectionalLightUniforms *uniform)
 {
     glUniform3fv(
         uniform->direction,
@@ -20,13 +22,23 @@ void draw_directional_light(DirectionalLight *light, DirectionalLightUniforms *u
         1,
         light->color.specular.raw);
 }
+
 void directional_light_init(DirectionalLight *light, vec3s direction, LightColor color)
 {
     light->direction = direction;
     light->color = color;
 }
 
-void draw_point_light(PointLight *light, PointLightUniforms *uniforms)
+void upload_point_light_collection(PointLightCollection *point_lights, PointLightUniforms *uniforms, GLint point_light_location)
+{
+    glUniform1i(point_light_location, (GLint)point_lights->count);
+    for (size_t i = 0; i < point_lights->count; i++)
+    {
+        upload_point_light(&point_lights->items[i], &uniforms[i]);
+    }
+}
+
+void upload_point_light(PointLight *light, PointLightUniforms *uniforms)
 {
     glUniform3fv(
         uniforms->position,
@@ -89,7 +101,16 @@ bool point_light_collection_add(PointLightCollection *lights, PointLight light)
     return true;
 }
 
-void draw_spot_light(SpotLight *spot, SpotLightUniforms *uniform)
+void upload_spot_light_collection(SpotLightCollection *spot_lights, SpotLightUniforms *uniforms, GLint spot_light_count_location)
+{
+    glUniform1i(spot_light_count_location, (GLint)spot_lights->count);
+    for (size_t i = 0; i < spot_lights->count; i++)
+    {
+        upload_spot_light(&spot_lights->items[i], &uniforms[i]);
+    }
+}
+
+void upload_spot_light(SpotLight *spot, SpotLightUniforms *uniform)
 {
     glUniform3fv(uniform->position, 1, spot->position.raw);
     glUniform3fv(uniform->direction, 1, spot->direction.raw);
