@@ -29,12 +29,14 @@ void upload_camera(GLint view_location, GLint view_pos_location, Camera *camera)
         view_location,
         1,
         GL_FALSE,
-        (float *)&camera->view.raw);
+        (float *)camera->view.raw
+    );
 
     glUniform3fv(
         view_pos_location,
         1,
-        &camera->cameraPos.raw);
+        camera->cameraPos.raw
+    );
 }
 
 void update_camera_settings(Camera *camera, mat4 projection, GLint projection_location, float speed, float sensitivity, float fov)
