@@ -28,62 +28,20 @@ struct RendererState {
     SpotLightUniforms spot_light_uniforms[MAX_SHADER_SPOT_LIGHTS];
 
     GLuint shader_program;
-    GLuint lamp_shader_program;
     GLint point_light_count_location;
     GLint spot_light_count_location;
     GLint model_location;
     GLint projection_location;
     GLint view_location;
-    GLint light_pos_location;
-    GLint light_color_location;
-    GLint object_color_location;
     GLint view_pos_location;
-    GLint lamp_model_location;
-    GLint lamp_view_location;
-    GLint lamp_projection_location;
-    GLint lamp_light_color_location;
-    GLint material_ambient_location;
+    // Move these to a uniforms collection like lights
     GLint material_diffuse_location;
     GLint material_specular_location;
     GLint material_shininess_location;
-    GLint light_ambient_location;
-    GLint light_diffuse_location;
-    GLint light_specular_location;
 };
 
 struct RendererState renderer = {0};
 
-// TODO: Move to RenderObject objects in a separate file.
-Vertex square[] = {
-    {
-        .position = { 0.5f,  0.5f, 0.0f },
-        .color    = { 1.0f,  0.0f, 0.0f },
-        .uv       = { 1.0f,  1.0f}
-    },
-    {
-        .position = { 0.5f, -0.5f, 0.0f },
-        .color    = { 0.0f,  1.0f, 0.0f },
-        .uv       = { 1.0f,  0.0f}
-    },
-    {
-        .position = {-0.5f, -0.5f, 0.0f },
-        .color    = { 0.0f,  0.0f, 1.0f },
-        .uv       = { 0.0f,  0.0f}
-    },
-        {
-        .position = {-0.5f, 0.5f, 0.0f },
-        .color    = { 0.0f,  0.0f, 0.0f },
-        .uv       = { 0.0f,  1.0f}
-    }
-};
-
-unsigned int indices[] = {  // note that we start from 0!
-    0, 1, 3,   // first triangle
-    1, 2, 3    // second triangle
-};
-
-size_t vertex_count = sizeof(square) / sizeof(square[0]);
-GLsizei index_count = sizeof(indices) / sizeof(indices[0]);
 
 Vertex cube[] = {
     { .position = { -0.5f, -0.5f,  0.5f }, .color = { 1.0f, 0.0f, 0.0f }, .uv = { 0.0f, 0.0f }, .normal = {  0.0f,  0.0f,  1.0f } },
@@ -261,9 +219,10 @@ static void run_render_loop(GLFWwindow* window, bool fps_enabled, struct Rendere
 
         upload_spot_light_collection(&renderer_state->spot_lights, &renderer_state->spot_light_uniforms, renderer_state->spot_light_count_location);
 
+        vec3s rotation_axis = {1.0f, 0.3f, 0.5f};
+
         for(int i = 0; i < renderer_state->render_objects.count; i++)
         {
-            vec3s rotation_axis = {1.0f, 0.3f, 0.5f};
             identity_model(&renderer_state->render_objects.items[i]);
             translate_model_matrix(&renderer_state->render_objects.items[i], renderer_state->render_objects.items[i].position);
             rotate_model(&renderer_state->render_objects.items[i], glm_rad(20.0f * (i + 1) * current_time), rotation_axis);
@@ -304,12 +263,6 @@ static int renderer_init(struct RendererState *renderer)
         renderobject_array_append(&renderer->render_objects, new_render_object);
     }
 
-    // RenderObject lamp_visual = {0};
-    // create_mesh_from_vertices(&lamp_visual.mesh, cube, cube_vertex_count, cube_indices, cube_index_count);
-    // lamp_visual.position = (vec3s){0.0f, 0.0f, 1.5f};
-    // lamp_visual.scale = (vec3s){{0.2f, 0.2f, 0.2f}};
-    // vec3s lamp_color = (vec3s){1.0f, 1.0f, 1.0f};
-
     if (load_shaders(&vs, &fs, "src/renderer/shaders/light.vert" ,"src/renderer/shaders/light.frag") != 0) {
         return 1;
     }
@@ -318,27 +271,9 @@ static int renderer_init(struct RendererState *renderer)
         return 1;
     }
 
-    if (load_shaders(&vs, &fs, "src/renderer/shaders/lit.vert", "src/renderer/shaders/lit.frag") != 0)
-    {
-        return 1;
-    }
-    if (create_shader_program(&vs, &fs, &renderer->lamp_shader_program) != 0)
-    {
-        return 1;
-    }
-
-    // renderer->lamp_model_location =
-    //     glGetUniformLocation(renderer->lamp_shader_program, "model");
-    // renderer->lamp_view_location =
-    //     glGetUniformLocation(renderer->lamp_shader_program, "view");
-    // renderer->lamp_projection_location =
-    //     glGetUniformLocation(renderer->lamp_shader_program, "projection");
-    // renderer->lamp_light_color_location =
-    //     glGetUniformLocation(renderer->lamp_shader_program, "lightColor");
-
     directional_light_init(&renderer->directional_light, (vec3s){{-0.2f, -1.0f, -0.3f}}, sunlight);
 
-    directional_light_uniforms_init(renderer->directional_light_uniforms, renderer->shader_program);
+    directional_light_uniforms_init(&renderer->directional_light_uniforms, renderer->shader_program);
 
     point_light_collection_init(&renderer->point_lights);
 
@@ -350,8 +285,6 @@ static int renderer_init(struct RendererState *renderer)
 
         point_light_collection_add(&renderer->point_lights, light);
     }
-
-    // PointLightUniforms *point_uniforms = &renderer->point_light_uniforms;
 
     renderer->point_light_count_location = glGetUniformLocation(renderer->shader_program, "pointLightCount");
 
@@ -380,7 +313,6 @@ static int renderer_init(struct RendererState *renderer)
     }
     
     camera_init(&renderer->camera);
-    mat4s view_location = renderer->camera.view;
 
     renderer->projection_location = glGetUniformLocation(renderer->shader_program, "projection");
     glm_perspective(glm_rad(renderer->camera.cameraFOV), 800.0f/600.0f, 0.1f, 100.0f, renderer->projection);
@@ -395,8 +327,6 @@ static int renderer_init(struct RendererState *renderer)
 
     glEnable(GL_DEPTH_TEST);  
     renderer->model_location = glGetUniformLocation(renderer->shader_program, "model");
-    glUniform1i(glGetUniformLocation(renderer->shader_program, "texture1"), 0);
-    glUniform1i(glGetUniformLocation(renderer->shader_program, "texture2"), 1);
     if(renderer->model_location < 0)
     {
         fprintf(stderr, "Failed to get uniform location");

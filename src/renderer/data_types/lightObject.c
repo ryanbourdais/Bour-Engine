@@ -30,18 +30,18 @@ void directional_light_init(DirectionalLight *light, vec3s direction, LightColor
     light->color = color;
 }
 
-void directional_light_uniforms_init(DirectionalLightUniforms uniforms, GLuint shader_program)
+void directional_light_uniforms_init(DirectionalLightUniforms *uniforms, GLuint shader_program)
 {
-    uniforms.direction =
+    uniforms->direction =
         glGetUniformLocation(shader_program, "directionalLight.direction");
     
-    uniforms.ambient =
+    uniforms->ambient =
         glGetUniformLocation(shader_program, "directionalLight.ambient");
 
-    uniforms.diffuse =
+    uniforms->diffuse =
         glGetUniformLocation(shader_program, "directionalLight.diffuse");
 
-    uniforms.specular =
+    uniforms->specular =
         glGetUniformLocation(shader_program, "directionalLight.specular");
 }
 
@@ -104,7 +104,7 @@ void point_light_collection_init(PointLightCollection *lights)
     lights->count = 0;
 }
 
-void point_light_uniforms_init(PointLightUniforms *uniforms, GLuint shader_program, int index)
+void point_light_uniforms_init(PointLightUniforms *uniforms, GLuint shader_program, size_t index)
 {
         char name[64];
 
@@ -192,7 +192,7 @@ void spot_light_collection_init(SpotLightCollection *lights)
     lights->count = 0;
 }
 
-void spot_light_uniforms_init(SpotLightUniforms *uniforms, GLuint shader_program, int index)
+void spot_light_uniforms_init(SpotLightUniforms *uniforms, GLuint shader_program, size_t index)
 {
         char name[64];
 
