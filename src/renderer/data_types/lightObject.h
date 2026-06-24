@@ -99,13 +99,14 @@ typedef struct SpotLightCollection
 
 void upload_directional_light(DirectionalLight *light, DirectionalLightUniforms *uniform);
 void directional_light_init(DirectionalLight *light, vec3s direction, LightColor color);
-void directional_light_uniforms_init(DirectionalLightUniforms uniforms, GLuint shader_program);
+void directional_light_uniforms_init(DirectionalLightUniforms *uniforms, GLuint shader_program);
 void upload_point_light_collection(PointLightCollection *point_lights, PointLightUniforms *uniforms, GLint point_light_location);
 void upload_point_light(PointLight *light, PointLightUniforms *uniforms);
 void point_light_init(PointLight *light, vec3s position, LightColor color, float constant, float linear, float quadratic);
+void point_light_uniforms_init(PointLightUniforms *uniforms, GLuint shader_program, size_t index);
 void point_light_set_visual(PointLight* light, RenderObject visual);
 void point_light_collection_init(PointLightCollection *lights);
-void spot_light_uniforms_init(SpotLightUniforms *uniforms, GLuint shader_program, int index);
+void spot_light_uniforms_init(SpotLightUniforms *uniforms, GLuint shader_program, size_t index);
 bool point_light_collection_add(PointLightCollection *lights, PointLight light);
 void upload_spot_light_collection(SpotLightCollection *spot_lights, SpotLightUniforms *uniforms, GLint spot_light_count_location);
 void upload_spot_light(SpotLight *spot, SpotLightUniforms *uniform);
