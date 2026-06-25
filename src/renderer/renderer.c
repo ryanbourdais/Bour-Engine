@@ -26,8 +26,8 @@ struct RendererState
     SpotLightCollection spot_lights;
 
     DirectionalLightUniforms directional_light_uniforms;
-    PointLightUniforms point_light_uniforms[MAX_POINT_LIGHTS];
-    SpotLightUniforms spot_light_uniforms[MAX_SPOT_LIGHTS];
+    PointLightUniforms point_light_uniforms[MAX_SHADER_POINT_LIGHTS];
+    SpotLightUniforms spot_light_uniforms[MAX_SHADER_SPOT_LIGHTS];
     MaterialUniforms material_uniforms;
 
     GLuint shader_program;
@@ -88,7 +88,7 @@ LightColor sunlight = {
     .diffuse = {{0.4f, 0.4f, 0.4f}},
     .specular = {{0.5f, 0.5f, 0.5f}}};
 
-LightColor point_light_colors[MAX_POINT_LIGHTS] = {
+LightColor point_light_colors[MAX_SHADER_POINT_LIGHTS] = {
     {.ambient = {{0.02f, 0.002f, 0.002f}},
      .diffuse = {{1.0f, 0.1f, 0.1f}},
      .specular = {{1.0f, 0.3f, 0.3f}}},
@@ -108,7 +108,7 @@ vec3s point_light_positions[] = {
     {{-4.0f, 2.0f, -12.0f}},
     {{0.0f, 0.0f, -3.0f}}};
 
-LightColor spot_light_colors[MAX_SPOT_LIGHTS] = {
+LightColor spot_light_colors[MAX_SHADER_SPOT_LIGHTS] = {
     {// Hot magenta/pink
      .ambient = {{0.0f, 0.0f, 0.0f}},
      .diffuse = {{4.0f, 0.0f, 2.5f}},
@@ -278,7 +278,7 @@ static void init_lighting(struct RendererState *renderer)
 
     renderer->point_light_count_location = glGetUniformLocation(renderer->shader_program, "pointLightCount");
 
-    for (size_t i = 0; i < MAX_POINT_LIGHTS; i++)
+    for (size_t i = 0; i < MAX_SHADER_POINT_LIGHTS; i++)
     {
         point_light_uniforms_init(&renderer->point_light_uniforms[i], renderer->shader_program, i);
     }
