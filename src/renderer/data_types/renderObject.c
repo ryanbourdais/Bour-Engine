@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 void draw_render_object(struct RenderObject *render_object, GLint model_location)
 {
     glActiveTexture(GL_TEXTURE0);
@@ -10,8 +9,8 @@ void draw_render_object(struct RenderObject *render_object, GLint model_location
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, render_object->mesh.texture2);
     glBindVertexArray(render_object->mesh.vao);
-    glUniformMatrix4fv(model_location, 1,GL_FALSE, (float *)render_object->model);
-    glDrawElements(GL_TRIANGLES, render_object->mesh.index_count, GL_UNSIGNED_INT, 0);    
+    glUniformMatrix4fv(model_location, 1, GL_FALSE, (float *)render_object->model);
+    glDrawElements(GL_TRIANGLES, render_object->mesh.index_count, GL_UNSIGNED_INT, 0);
 }
 
 void identity_model(struct RenderObject *render_object)
@@ -36,8 +35,9 @@ void scale_model(struct RenderObject *render_object, vec3s scale_vector)
 
 void renderobject_array_initialize(struct RenderObjectArray *arr)
 {
-  arr->items = malloc(4 * sizeof(RenderObject)); // Initial capacity of 4
-    if(arr->items == NULL) {
+    arr->items = malloc(4 * sizeof(RenderObject)); // Initial capacity of 4
+    if (arr->items == NULL)
+    {
         fprintf(stderr, "Memory allocation failed\n");
         exit(1);
     }
@@ -46,24 +46,28 @@ void renderobject_array_initialize(struct RenderObjectArray *arr)
 }
 void renderobject_array_append(struct RenderObjectArray *arr, RenderObject value)
 {
-    if(arr->count == arr->capacity) {
-            arr->capacity *= 2;
-            arr->items = realloc(arr->items, arr->capacity * sizeof(RenderObject));
-            if(arr->items == NULL) {
-                fprintf(stderr, "Memory allocation failed\n");
-                exit(1);
-            }
+    if (arr->count == arr->capacity)
+    {
+        arr->capacity *= 2;
+        arr->items = realloc(arr->items, arr->capacity * sizeof(RenderObject));
+        if (arr->items == NULL)
+        {
+            fprintf(stderr, "Memory allocation failed\n");
+            exit(1);
         }
-        if(arr->capacity == 0) {
-            arr->capacity = 4; // Initial capacity
-            arr->items = malloc(arr->capacity * sizeof(RenderObject));
-            if(arr->items == NULL) {
-                fprintf(stderr, "Memory allocation failed\n");
-                exit(1);
-            }
+    }
+    if (arr->capacity == 0)
+    {
+        arr->capacity = 4; // Initial capacity
+        arr->items = malloc(arr->capacity * sizeof(RenderObject));
+        if (arr->items == NULL)
+        {
+            fprintf(stderr, "Memory allocation failed\n");
+            exit(1);
         }
-        arr->items[arr->count] = value;
-        arr->count++;
+    }
+    arr->items[arr->count] = value;
+    arr->count++;
 }
 void free_renderobject_array(struct RenderObjectArray *arr)
 {

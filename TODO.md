@@ -1,3 +1,2 @@
-1. Material Uniforms
-2. Constants for Active light maxes
-3. Cleanup renderer_init
+1. Implement Assimp
+2. Abstract renderer as is to pave way for other subsystems
