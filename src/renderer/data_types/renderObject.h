@@ -1,6 +1,7 @@
 #pragma once
 #include <cglm/struct.h>
 #include <glad/glad.h>
+#include <stddef.h>
 #include "mesh.h"
 
 typedef struct RenderObject {

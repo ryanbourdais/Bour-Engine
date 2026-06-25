@@ -34,7 +34,7 @@ void directional_light_uniforms_init(DirectionalLightUniforms *uniforms, GLuint 
 {
     uniforms->direction =
         glGetUniformLocation(shader_program, "directionalLight.direction");
-    
+
     uniforms->ambient =
         glGetUniformLocation(shader_program, "directionalLight.ambient");
 
@@ -106,28 +106,28 @@ void point_light_collection_init(PointLightCollection *lights)
 
 void point_light_uniforms_init(PointLightUniforms *uniforms, GLuint shader_program, size_t index)
 {
-        char name[64];
+    char name[64];
 
-        snprintf(name, sizeof(name), "pointLights[%zu].position", index);
-        uniforms->position = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "pointLights[%zu].position", index);
+    uniforms->position = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "pointLights[%zu].ambient", index);
-        uniforms->ambient = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "pointLights[%zu].ambient", index);
+    uniforms->ambient = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "pointLights[%zu].diffuse", index);
-        uniforms->diffuse = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "pointLights[%zu].diffuse", index);
+    uniforms->diffuse = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "pointLights[%zu].specular", index);
-        uniforms->specular = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "pointLights[%zu].specular", index);
+    uniforms->specular = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "pointLights[%zu].constant", index);
-        uniforms->constant = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "pointLights[%zu].constant", index);
+    uniforms->constant = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "pointLights[%zu].linear", index);
-        uniforms->linear = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "pointLights[%zu].linear", index);
+    uniforms->linear = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "pointLights[%zu].quadratic", index);
-        uniforms->quadratic = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "pointLights[%zu].quadratic", index);
+    uniforms->quadratic = glGetUniformLocation(shader_program, name);
 }
 bool point_light_collection_add(PointLightCollection *lights, PointLight light)
 {
@@ -194,37 +194,37 @@ void spot_light_collection_init(SpotLightCollection *lights)
 
 void spot_light_uniforms_init(SpotLightUniforms *uniforms, GLuint shader_program, size_t index)
 {
-        char name[64];
+    char name[64];
 
-        snprintf(name, sizeof(name), "spotLights[%zu].position", index);
-        uniforms->position = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "spotLights[%zu].position", index);
+    uniforms->position = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "spotLights[%zu].direction", index);
-        uniforms->direction = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "spotLights[%zu].direction", index);
+    uniforms->direction = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "spotLights[%zu].ambient", index);
-        uniforms->ambient = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "spotLights[%zu].ambient", index);
+    uniforms->ambient = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "spotLights[%zu].diffuse", index);
-        uniforms->diffuse = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "spotLights[%zu].diffuse", index);
+    uniforms->diffuse = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "spotLights[%zu].specular", index);
-        uniforms->specular = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "spotLights[%zu].specular", index);
+    uniforms->specular = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "spotLights[%zu].constant", index);
-        uniforms->constant = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "spotLights[%zu].constant", index);
+    uniforms->constant = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "spotLights[%zu].linear", index);
-        uniforms->linear = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "spotLights[%zu].linear", index);
+    uniforms->linear = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "spotLights[%zu].quadratic", index);
-        uniforms->quadratic = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "spotLights[%zu].quadratic", index);
+    uniforms->quadratic = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "spotLights[%zu].innerCutoff", index);
-        uniforms->inner_cutoff = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "spotLights[%zu].innerCutoff", index);
+    uniforms->inner_cutoff = glGetUniformLocation(shader_program, name);
 
-        snprintf(name, sizeof(name), "spotLights[%zu].outerCutoff", index);
-        uniforms->outer_cutoff = glGetUniformLocation(shader_program, name);
+    snprintf(name, sizeof(name), "spotLights[%zu].outerCutoff", index);
+    uniforms->outer_cutoff = glGetUniformLocation(shader_program, name);
 }
 
 bool spot_light_collection_add(SpotLightCollection *lights, SpotLight light)
