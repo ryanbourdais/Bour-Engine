@@ -131,7 +131,7 @@ void point_light_uniforms_init(PointLightUniforms *uniforms, GLuint shader_progr
 }
 bool point_light_collection_add(PointLightCollection *lights, PointLight light)
 {
-    if (lights->count >= MAX_POINT_LIGHTS)
+    if (lights->count >= MAX_SHADER_POINT_LIGHTS)
     {
         return false;
     }
@@ -229,7 +229,7 @@ void spot_light_uniforms_init(SpotLightUniforms *uniforms, GLuint shader_program
 
 bool spot_light_collection_add(SpotLightCollection *lights, SpotLight light)
 {
-    if (lights->count >= MAX_SPOT_LIGHTS)
+    if (lights->count >= MAX_SHADER_SPOT_LIGHTS)
     {
         return false;
     }
