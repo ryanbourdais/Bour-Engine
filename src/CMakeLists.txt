@@ -24,7 +24,9 @@ add_executable(bour_engine
     renderer/data_types/texture.c
     renderer/data_types/renderObject.c
     renderer/data_types/lightObject.c
+    renderer/data_types/material.c
     renderer/camera.c
+
 )
 
 add_subdirectory(external/cglm EXCLUDE_FROM_ALL)
