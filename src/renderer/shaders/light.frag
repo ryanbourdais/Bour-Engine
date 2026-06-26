@@ -1,5 +1,12 @@
 #version 410 core
 
+#define MAX_SHADER_POINT_LIGHTS 4
+#define MAX_SHADER_SPOT_LIGHTS 4
+
+const int ALPHA_MODE_OPAQUE = 0;
+const int ALPHA_MODE_MASK = 1;
+const int ALPHA_MODE_BLEND = 2;
+
 out vec4 FragColor;
 
 in vec3 FragPos;
@@ -10,11 +17,14 @@ struct Material {
     sampler2D diffuse;
     sampler2D specular;
     float shininess;
+    vec4 diffuseColor;
+    int alphaMode;
+    float alphaCutoff;
 }; 
   
 uniform Material material;
 
-#define MAX_SHADER_POINT_LIGHTS 4
+
 struct PointLight {
     vec3 position;
   
@@ -29,7 +39,6 @@ struct PointLight {
 
 uniform PointLight pointLights[MAX_SHADER_POINT_LIGHTS];
 uniform int pointLightCount;
-// uniform vec3 objectColor;
 uniform vec3 viewPos;
 
 
@@ -43,7 +52,6 @@ struct DirectionalLight {
 
 uniform DirectionalLight directionalLight;
 
-#define MAX_SHADER_SPOT_LIGHTS 4
 struct SpotLight {
     vec3 position;
     vec3 direction;
@@ -76,11 +84,10 @@ vec3 calculateDirectionalLight(
 
     float specularStrength = pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
 
-    // vec3 diffuseTexture = vec3(texture(material.diffuse, TexCoords));
+    vec4 diffuseSample = texture(material.diffuse, TexCoords) * material.diffuseColor;
+    vec3 diffuseTexture = diffuseSample.rgb;
 
     // vec3 specularTexture = vec3(texture(material.specular, TexCoords));
-
-    vec3 diffuseTexture = vec3(1.0);
 
     vec3 specularTexture = vec3(0.3);
 
@@ -116,10 +123,11 @@ vec3 calculatePointLight(
         light.quadratic * distance * distance
     );
 
-    // vec3 diffuseTexture = vec3(texture(material.diffuse, TexCoords));
+    vec4 diffuseSample = texture(material.diffuse, TexCoords) * material.diffuseColor;
+    vec3 diffuseTexture = diffuseSample.rgb;
 
     // vec3 specularTexture = vec3(texture(material.specular, TexCoords));
-    vec3 diffuseTexture = vec3(1.0);
+    // vec3 diffuseTexture = vec3(1.0);
 
     vec3 specularTexture = vec3(0.3);
 
@@ -160,11 +168,12 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 fragmentPosition, vec
 
     float coneIntensity = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
 
-    // vec3 diffuseTexture = vec3(texture(material.diffuse, TexCoords));
+    vec4 diffuseSample = texture(material.diffuse, TexCoords) * material.diffuseColor;
+    vec3 diffuseTexture = diffuseSample.rgb;
 
     // vec3 specularTexture = vec3(texture(material.specular, TexCoords));
 
-    vec3 diffuseTexture = vec3(1.0);
+    // vec3 diffuseTexture = vec3(1.0);
 
     vec3 specularTexture = vec3(0.3);
 
@@ -185,6 +194,13 @@ void main()
 {
     vec3 normal = normalize(Normal);
     vec3 viewDirection = normalize(viewPos - FragPos);
+
+    vec4 diffuseSample = texture(material.diffuse, TexCoords) * material.diffuseColor;
+
+    if ((material.alphaMode == ALPHA_MODE_MASK || material.alphaMode == ALPHA_MODE_BLEND) && diffuseSample.a < material.alphaCutoff)
+    {
+        discard;
+    }
 
     vec3 result = calculateDirectionalLight(
         directionalLight,
@@ -213,4 +229,5 @@ void main()
     }
     
     FragColor = vec4(result, 1.0);
+    // FragColor = texture(material.diffuse, TexCoords);
 }
