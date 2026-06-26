@@ -32,3 +32,5 @@ install_manifest.txt
 # OS metadata
 .DS_Store
 Thumbs.db
+
+assets/models/*.zip
