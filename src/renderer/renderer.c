@@ -189,8 +189,6 @@ static void run_render_loop(GLFWwindow *window, bool fps_enabled, struct Rendere
         // Put the shader program and VAO in focus in OpenGL's state machine
         glUseProgram(renderer_state->shader_program);
 
-        upload_material_shininess(&renderer_state->material_uniforms, 32.0f);
-
         upload_camera(renderer_state->view_location, renderer_state->view_pos_location, &renderer_state->camera);
 
         upload_directional_light(&renderer_state->directional_light, &renderer_state->directional_light_uniforms);
@@ -202,9 +200,9 @@ static void run_render_loop(GLFWwindow *window, bool fps_enabled, struct Rendere
         mat4 model_matrix;
         glm_mat4_identity(model_matrix);
         glm_translate(model_matrix, (vec3){0.0f, 0.0f, 0.0f});
-        glm_scale(model_matrix, (vec3){1.0f, 1.0f, 1.0f});
+        glm_scale(model_matrix, (vec3){0.1f, 0.1f, 0.1f});
 
-        draw_model(&renderer_state->test_model, renderer_state->model_location, model_matrix);
+        draw_model(&renderer_state->test_model, renderer_state->model_location, &renderer_state->material_uniforms, model_matrix);
 
         vec3s rotation_axis = {1.0f, 0.3f, 0.5f};
 
