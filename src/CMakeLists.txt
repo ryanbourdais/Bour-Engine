@@ -13,6 +13,7 @@ add_executable(bour_engine
     renderer/rendering_engine.c
     external/glad/src/glad.c
     external/stb/stb_image.c
+    external/cgltf/cgltf.c
     utils/helpers/file_reader.c
     renderer/window.c
     renderer/shaders.c
@@ -25,8 +26,8 @@ add_executable(bour_engine
     renderer/data_types/renderObject.c
     renderer/data_types/lightObject.c
     renderer/data_types/material.c
+    renderer/data_types/model.c
     renderer/camera.c
-
 )
 
 add_subdirectory(external/cglm EXCLUDE_FROM_ALL)
@@ -34,6 +35,7 @@ add_subdirectory(external/cglm EXCLUDE_FROM_ALL)
 
 target_include_directories(bour_engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/cgltf
 )
 
 target_link_libraries(bour_engine PRIVATE

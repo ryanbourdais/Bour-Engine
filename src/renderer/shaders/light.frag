@@ -76,9 +76,13 @@ vec3 calculateDirectionalLight(
 
     float specularStrength = pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
 
-    vec3 diffuseTexture = vec3(texture(material.diffuse, TexCoords));
+    // vec3 diffuseTexture = vec3(texture(material.diffuse, TexCoords));
 
-    vec3 specularTexture = vec3(texture(material.specular, TexCoords));
+    // vec3 specularTexture = vec3(texture(material.specular, TexCoords));
+
+    vec3 diffuseTexture = vec3(1.0);
+
+    vec3 specularTexture = vec3(0.3);
 
     vec3 ambient = light.ambient * diffuseTexture;
 
@@ -112,9 +116,12 @@ vec3 calculatePointLight(
         light.quadratic * distance * distance
     );
 
-    vec3 diffuseTexture = vec3(texture(material.diffuse, TexCoords));
+    // vec3 diffuseTexture = vec3(texture(material.diffuse, TexCoords));
 
-    vec3 specularTexture = vec3(texture(material.specular, TexCoords));
+    // vec3 specularTexture = vec3(texture(material.specular, TexCoords));
+    vec3 diffuseTexture = vec3(1.0);
+
+    vec3 specularTexture = vec3(0.3);
 
     vec3 ambient = light.ambient * diffuseTexture;
 
@@ -153,9 +160,13 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 fragmentPosition, vec
 
     float coneIntensity = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
 
-    vec3 diffuseTexture = vec3(texture(material.diffuse, TexCoords));
+    // vec3 diffuseTexture = vec3(texture(material.diffuse, TexCoords));
 
-    vec3 specularTexture = vec3(texture(material.specular, TexCoords));
+    // vec3 specularTexture = vec3(texture(material.specular, TexCoords));
+
+    vec3 diffuseTexture = vec3(1.0);
+
+    vec3 specularTexture = vec3(0.3);
 
     vec3 ambient = light.ambient * diffuseTexture;
 
