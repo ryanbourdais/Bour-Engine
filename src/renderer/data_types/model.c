@@ -7,7 +7,63 @@
 
 #include "texture.h"
 
+typedef struct ModelImportDiagnostics
+{
+    size_t nodes_seen;
+    size_t mesh_nodes_seen;
 
+    size_t primitives_seen;
+    size_t primitives_imported;
+    size_t primitives_skipped_non_triangles;
+
+    size_t missing_positions;
+    size_t missing_normals;
+    size_t missing_texcoords;
+    size_t missing_indices;
+
+    size_t materials_seen;
+    size_t materials_missing;
+
+    size_t diffuse_textures_found;
+    size_t diffuse_textures_missing;
+
+    size_t alpha_opaque;
+    size_t alpha_mask;
+    size_t alpha_blend;
+
+    size_t fallback_diffuse_used;
+
+} ModelImportDiagnostics;
+
+static void print_import_diagnostics(const Model *model, const ModelImportDiagnostics *diagnostics)
+{
+    printf("\nModel import summary\n");
+    printf("  Nodes seen: %zu\n", diagnostics->nodes_seen);
+    printf("  Mesh nodes seen: %zu\n", diagnostics->mesh_nodes_seen);
+
+    printf("  Primitives seen: %zu\n", diagnostics->primitives_seen);
+    printf("  Primitives imported: %zu\n", diagnostics->primitives_imported);
+    printf("  Primitives skipped non-triangles: %zu\n", diagnostics->primitives_skipped_non_triangles);
+
+    printf("  Missing POSITION: %zu\n", diagnostics->missing_positions);
+    printf("  Missing NORMAL: %zu\n", diagnostics->missing_normals);
+    printf("  Missing TEXCOORD_0: %zu\n", diagnostics->missing_texcoords);
+    printf("  Missing indices: %zu\n", diagnostics->missing_indices);
+
+    printf("  Materials seen: %zu\n", diagnostics->materials_seen);
+    printf("  Materials missing: %zu\n", diagnostics->materials_missing);
+
+    printf("  Diffuse textures found: %zu\n", diagnostics->diffuse_textures_found);
+    printf("  Diffuse textures missing: %zu\n", diagnostics->diffuse_textures_missing);
+    printf("  Fallback diffuse used: %zu\n", diagnostics->fallback_diffuse_used);
+
+    printf("  Alpha opaque: %zu\n", diagnostics->alpha_opaque);
+    printf("  Alpha mask: %zu\n", diagnostics->alpha_mask);
+    printf("  Alpha blend: %zu\n", diagnostics->alpha_blend);
+
+    printf("  Engine meshes created: %zu\n", model->count);
+    printf("  Unique textures loaded: %zu\n", model->texture_cache_count);
+}
 
 static bool model_add_mesh(Model *model, Mesh mesh, Material material, mat4 transform)
 {
@@ -96,10 +152,14 @@ static void inspect_primitive(cgltf_primitive *primitive)
     }
 }
 
-static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, mat4 transform, const char *model_directory)
+static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, mat4 transform, const char *model_directory, ModelImportDiagnostics *diagnostics)
 {
+
+    diagnostics->primitives_seen++;
+
     if (primitive->type != cgltf_primitive_type_triangles)
     {
+        diagnostics->primitives_skipped_non_triangles++;
         return 0;
     }
 
@@ -128,8 +188,23 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
         }
     }
 
+    
+    if (normal_accessor == NULL)
+    {
+        diagnostics->missing_normals++;
+    }
+    if (texcoord_accessor == NULL)
+    {
+        diagnostics->missing_texcoords++;
+    }
+    if (primitive->indices == NULL)
+    {
+        diagnostics->missing_indices++;
+    }
+
     if(position_accessor == NULL)
     {
+        diagnostics->missing_positions++;
         fprintf(stderr, "glTF primitive missing POSITION attribute\n");
         return 1;
     }
@@ -239,18 +314,21 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
 
     if (gltf_material)
     {
-
+        diagnostics->materials_seen++;
         if (gltf_material->alpha_mode == cgltf_alpha_mode_mask)
         {
+            diagnostics->alpha_mask++;
             engine_material.alpha_mode = ALPHA_MODE_MASK;
             engine_material.alpha_cutoff = gltf_material->alpha_cutoff;
         }
         else if (gltf_material->alpha_mode == cgltf_alpha_mode_blend)
         {
+            diagnostics->alpha_blend++;
             engine_material.alpha_mode = ALPHA_MODE_BLEND;
             engine_material.alpha_cutoff = 0.4f;
         }
         else {
+            diagnostics->alpha_opaque++;
             engine_material.alpha_mode = ALPHA_MODE_OPAQUE;
             engine_material.alpha_cutoff = 0.5f;
         }
@@ -265,6 +343,7 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
             }};
         }
         else {
+            diagnostics->materials_missing++;
             engine_material.diffuse_color = (vec4s){{
                 gltf_material->pbr_metallic_roughness.base_color_factor[0],
                 gltf_material->pbr_metallic_roughness.base_color_factor[1],
@@ -288,6 +367,8 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
 
         if (diffuse_texture && diffuse_texture->image && diffuse_texture->image->uri)
         {
+            diagnostics->diffuse_textures_found++;
+
             char texture_path[512] = {0};
 
             snprintf(
@@ -298,17 +379,18 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
                 diffuse_texture->image->uri
             );
 
-            printf("Loading base color texture: %s\n", texture_path);
-
             if (model_load_cached_texture(model, texture_path, &engine_material.diffuse_texture) != 0)
             {
                 fprintf(stderr, "Failed to load base color texture %s\n", texture_path);
             }
+        } else {
+            diagnostics->diffuse_textures_missing++;
         }
     }
 
     if (engine_material.diffuse_texture == 0)
     {
+        diagnostics->fallback_diffuse_used++;
         if (model_get_fallback_white_texture(model, &engine_material.diffuse_texture) != 0)
         {
             fprintf(stderr, "Failed to get fallback diffuse texture\n");
@@ -327,13 +409,23 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
     {
         return 1;
     }
+
+    diagnostics->primitives_imported++;
+
     return 0;
 }
 
-static int process_node(Model *model, cgltf_node *node, const char *model_directory)
+static int process_node(Model *model, cgltf_node *node, const char *model_directory, ModelImportDiagnostics *diagnostics)
 {
     mat4 transform;
     cgltf_node_transform_world(node, (float *)transform);
+
+    diagnostics->nodes_seen++;
+
+    if (node->mesh)
+    {
+        diagnostics->mesh_nodes_seen++;
+    }
 
     if(node->mesh)
     {
@@ -343,13 +435,13 @@ static int process_node(Model *model, cgltf_node *node, const char *model_direct
         {
             cgltf_primitive *primitive = &gltf_mesh->primitives[primitive_index];
 
-            if(create_mesh_from_primitive(model, primitive, transform, model_directory) != 0) { return 1;}
+            if(create_mesh_from_primitive(model, primitive, transform, model_directory, diagnostics) != 0) { return 1;}
         }
     }
 
     for (cgltf_size child_index = 0; child_index < node->children_count; child_index++)
     {
-            if (process_node(model, node->children[child_index], model_directory) != 0) { return 1;}
+            if (process_node(model, node->children[child_index], model_directory, diagnostics) != 0) { return 1;}
     }
     return 0;
 }
@@ -529,6 +621,7 @@ int model_load_gltf(Model *model, const char *path)
 {
     cgltf_options options = {0};
     cgltf_data *data = NULL;
+    ModelImportDiagnostics diagnostics = {0};
 
     char model_directory[512] = {0};
 
@@ -583,7 +676,7 @@ int model_load_gltf(Model *model, const char *path)
 
     for (cgltf_size node_index = 0; node_index < scene->nodes_count; node_index++)
     {
-        if (process_node(model, scene->nodes[node_index], model_directory) != 0)
+        if (process_node(model, scene->nodes[node_index], model_directory, &diagnostics) != 0)
         {
             cgltf_free(data);
             model_free(model);
@@ -591,8 +684,7 @@ int model_load_gltf(Model *model, const char *path)
         }
     }
 
-    printf("Engine meshes created: %zu\n", model->count);
-    printf("Unique textures loaded: %zu\n", model->texture_cache_count);
+    print_import_diagnostics(model, &diagnostics);
     cgltf_free(data);
 
     return 0;
