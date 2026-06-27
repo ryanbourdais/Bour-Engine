@@ -84,8 +84,6 @@ int load_texture(GLuint *out_texture, const char *file_location)
 
     *out_texture = texture;
 
-    printf("Created texture %u from %s\n", texture, file_location);
-
     return 0;
 }
 
