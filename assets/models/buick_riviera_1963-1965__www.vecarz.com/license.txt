@@ -1,0 +1,11 @@
+Model Information:
+* title:	Buick Riviera 1963-1965 | www.vecarz.com
+* source:	https://sketchfab.com/3d-models/buick-riviera-1963-1965-wwwvecarzcom-cff9c088a0f746bb8cc8e96d405f2d5a
+* author:	vecarz (https://sketchfab.com/heynic)
+
+Model License:
+* license type:	CC-BY-NC-SA-4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)
+* requirements:	Author must be credited. No commercial use. Modified versions must have the same license.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Buick Riviera 1963-1965 | www.vecarz.com" (https://sketchfab.com/3d-models/buick-riviera-1963-1965-wwwvecarzcom-cff9c088a0f746bb8cc8e96d405f2d5a) by vecarz (https://sketchfab.com/heynic) licensed under CC-BY-NC-SA-4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)
