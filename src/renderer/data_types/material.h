@@ -1,6 +1,7 @@
 #pragma once
 #include <cglm/struct.h>
 #include <glad/glad.h>
+#include <stdbool.h>
 
 typedef enum AlphaMode
 {
@@ -19,6 +20,8 @@ typedef struct Material {
 
     AlphaMode alpha_mode;
     float alpha_cutoff;
+
+    bool double_sided;
 } Material;
 
 typedef struct MaterialUniforms

@@ -85,12 +85,18 @@ unsigned int cube_indices[] = {
 size_t cube_vertex_count = sizeof(cube) / sizeof(cube[0]);
 GLsizei cube_index_count = sizeof(cube_indices) / sizeof(cube_indices[0]);
 
-LightColor sunlight = {
+LightColor debug_sunlight = {
     .ambient = {{0.05f, 0.05f, 0.05f}},
     .diffuse = {{0.4f, 0.4f, 0.4f}},
     .specular = {{0.5f, 0.5f, 0.5f}}};
+    
+LightColor sunlight = {
+    .ambient = {{0.18f, 0.18f, 0.18f}},
+    .diffuse = {{0.65f, 0.62f, 0.56f}},
+    .specular = {{0.25f, 0.25f, 0.25f}}
+};
 
-LightColor point_light_colors[MAX_SHADER_POINT_LIGHTS] = {
+LightColor debug_point_light_colors[MAX_SHADER_POINT_LIGHTS] = {
     {.ambient = {{0.02f, 0.002f, 0.002f}},
      .diffuse = {{1.0f, 0.1f, 0.1f}},
      .specular = {{1.0f, 0.3f, 0.3f}}},
@@ -104,13 +110,36 @@ LightColor point_light_colors[MAX_SHADER_POINT_LIGHTS] = {
      .diffuse = {{1.0f, 0.77f, 0.56f}},
      .specular = {{1.0f, 0.77f, 0.56f}}}};
 
+LightColor point_light_colors[MAX_SHADER_POINT_LIGHTS] = {
+    {
+        .ambient = {{0.01f, 0.01f, 0.01f}},
+        .diffuse = {{0.75f, 0.70f, 0.62f}},
+        .specular = {{0.25f, 0.24f, 0.22f}}
+    },
+    {
+        .ambient = {{0.005f, 0.005f, 0.006f}},
+        .diffuse = {{0.35f, 0.38f, 0.45f}},
+        .specular = {{0.12f, 0.13f, 0.16f}}
+    },
+    {
+        .ambient = {{0.005f, 0.005f, 0.005f}},
+        .diffuse = {{0.28f, 0.30f, 0.32f}},
+        .specular = {{0.08f, 0.08f, 0.08f}}
+    },
+    {
+        .ambient = {{0.005f, 0.004f, 0.003f}},
+        .diffuse = {{0.45f, 0.36f, 0.28f}},
+        .specular = {{0.12f, 0.10f, 0.08f}}
+    }
+};
+
 vec3s point_light_positions[] = {
     {{0.7f, 0.2f, 2.0f}},
     {{2.3f, -3.3f, -4.0f}},
     {{-4.0f, 2.0f, -12.0f}},
     {{0.0f, 0.0f, -3.0f}}};
 
-LightColor spot_light_colors[MAX_SHADER_SPOT_LIGHTS] = {
+LightColor debug_spot_light_colors[MAX_SHADER_SPOT_LIGHTS] = {
     {// Hot magenta/pink
      .ambient = {{0.0f, 0.0f, 0.0f}},
      .diffuse = {{4.0f, 0.0f, 2.5f}},
@@ -120,6 +149,18 @@ LightColor spot_light_colors[MAX_SHADER_SPOT_LIGHTS] = {
      .diffuse = {{0.0f, 3.0f, 4.0f}},
      .specular = {{0.0f, 3.0f, 4.0f}}}};
 
+LightColor spot_light_colors[MAX_SHADER_SPOT_LIGHTS] = {
+    {
+        .ambient = {{0.0f, 0.0f, 0.0f}},
+        .diffuse = {{0.65f, 0.60f, 0.52f}},
+        .specular = {{0.22f, 0.20f, 0.18f}}
+    },
+    {
+        .ambient = {{0.0f, 0.0f, 0.0f}},
+        .diffuse = {{0.25f, 0.28f, 0.34f}},
+        .specular = {{0.08f, 0.09f, 0.11f}}
+    }
+};
 vec3s spot_light_positions[] = {
     {{0.0f, 15.0f, -7.5f}},
     {{4.0f, 12.0f, -3.0f}}};
@@ -202,18 +243,9 @@ static void run_render_loop(GLFWwindow *window, bool fps_enabled, struct Rendere
         glm_translate(model_matrix, (vec3){0.0f, 0.0f, 0.0f});
         glm_scale(model_matrix, (vec3){0.1f, 0.1f, 0.1f});
 
-        draw_model(&renderer_state->test_model, renderer_state->model_location, &renderer_state->material_uniforms, model_matrix);
+        draw_model(&renderer_state->test_model, renderer_state->model_location, &renderer_state->material_uniforms, model_matrix ,renderer_state->camera.cameraPos.raw);
 
         vec3s rotation_axis = {1.0f, 0.3f, 0.5f};
-
-        // for (int i = 0; i < renderer_state->render_objects.count; i++)
-        // {
-        //     identity_model(&renderer_state->render_objects.items[i]);
-        //     translate_model_matrix(&renderer_state->render_objects.items[i], renderer_state->render_objects.items[i].position);
-        //     rotate_model(&renderer_state->render_objects.items[i], glm_rad(20.0f * (i + 1) * current_time), rotation_axis);
-
-        //     draw_render_object(&renderer_state->render_objects.items[i], renderer_state->model_location);
-        // }
 
         // Put the drawing into the visible area
         glfwSwapBuffers(window);
@@ -361,7 +393,8 @@ static int renderer_init(struct RendererState *renderer)
         return 1;
     }
 
-    if(model_load_gltf(&renderer->test_model, "assets/models/postwar_city_-_exterior_scene/scene.gltf") != 0)
+    if(model_load_gltf(&renderer->test_model, "assets/models/buick_riviera_1963-1965__www.vecarz.com/scene.gltf") != 0)
+    // if (model_load_gltf(&renderer->test_model, "assets/models/postwar_city_-_exterior_scene/scene.gltf") != 0);
     {
         fprintf(stderr, "Failed to load test model\n");
     }
@@ -371,6 +404,15 @@ static int renderer_init(struct RendererState *renderer)
     init_camera_projection(renderer);
 
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+    
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
     renderer->model_location = glGetUniformLocation(renderer->shader_program, "model");
 

@@ -35,6 +35,11 @@ typedef struct ModelImportDiagnostics
 
 } ModelImportDiagnostics;
 
+typedef struct TransparentModelMesh {
+    ModelMesh *model_mesh;
+    float distance;
+} TransparentModelMesh;
+
 static void print_import_diagnostics(const Model *model, const ModelImportDiagnostics *diagnostics)
 {
     printf("\nModel import summary\n");
@@ -89,6 +94,44 @@ static bool model_add_mesh(Model *model, Mesh mesh, Material material, mat4 tran
 
     return true;
 }
+
+static float model_mesh_distance_to_camera(ModelMesh *model_mesh, mat4 model_matrix, vec3 camera_position)
+{
+    mat4 final_model;
+    glm_mat4_mul(model_matrix, model_mesh->transform, final_model);
+
+    vec3 mesh_position = {
+        final_model[3][0],
+        final_model[3][1],
+        final_model[3][2]
+    };
+
+    vec3 difference;
+    glm_vec3_sub(camera_position, mesh_position, difference);
+
+    return glm_vec3_dot(difference, difference);
+}
+
+static int compare_transparent_model_meshes(const void *a, const void *b)
+{
+    const TransparentModelMesh *mesh_a = a;
+    const TransparentModelMesh *mesh_b = b;
+
+    if (mesh_a->distance < mesh_b->distance)
+    {
+        return 1;
+    }
+
+    if (mesh_a->distance > mesh_b->distance)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+
+
 
 static void inspect_primitive(cgltf_primitive *primitive)
 {
@@ -300,6 +343,7 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
     engine_material.shininess = 32.0f;
     engine_material.alpha_mode = ALPHA_MODE_OPAQUE;
     engine_material.alpha_cutoff = 0.5f;
+    engine_material.double_sided = false;
 
     int status = create_mesh_from_vertices(
         &mesh,
@@ -315,6 +359,9 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
     if (gltf_material)
     {
         diagnostics->materials_seen++;
+
+        engine_material.double_sided = gltf_material->double_sided;
+
         if (gltf_material->alpha_mode == cgltf_alpha_mode_mask)
         {
             diagnostics->alpha_mask++;
@@ -325,7 +372,7 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
         {
             diagnostics->alpha_blend++;
             engine_material.alpha_mode = ALPHA_MODE_BLEND;
-            engine_material.alpha_cutoff = 0.4f;
+            engine_material.alpha_cutoff = 0.0f;
         }
         else {
             diagnostics->alpha_opaque++;
@@ -545,6 +592,39 @@ static int model_get_fallback_white_texture(Model *model, GLuint *out_texture)
     return 0;
 }
 
+static void draw_model_mesh(ModelMesh *model_mesh, GLint model_location, MaterialUniforms *material_uniforms, mat4 model_matrix)
+{
+    mat4 final_model;
+    glm_mat4_mul(model_matrix, model_mesh->transform, final_model);
+
+    glUniformMatrix4fv(model_location, 1, GL_FALSE, (float *)final_model);
+
+    Mesh *mesh = &model_mesh->mesh;
+    Material *material = &model_mesh->material;
+
+    if (material->double_sided)
+    {
+        glDisable(GL_CULL_FACE);
+    }
+    else{
+        glEnable(GL_CULL_FACE);
+    }
+
+    upload_material_diffuse_color(material_uniforms, material->diffuse_color);
+    upload_material_shininess(material_uniforms, material->shininess);
+    upload_material_alpha(material_uniforms, material->alpha_mode, material->alpha_cutoff);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, material->diffuse_texture);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, material->specular_texture);
+
+    glBindVertexArray(mesh->vao);
+
+    glDrawElements(GL_TRIANGLES, mesh->index_count, GL_UNSIGNED_INT, 0);
+}
+
 void model_init(Model *model)
 {
     model->meshes = malloc(4 * sizeof(ModelMesh));
@@ -690,41 +770,46 @@ int model_load_gltf(Model *model, const char *path)
     return 0;
 }
 
-void draw_model(Model *model, GLint model_location, MaterialUniforms *material_uniforms, mat4 model_matrix)
+void draw_model(Model *model, GLint model_location, MaterialUniforms *material_uniforms, mat4 model_matrix, vec3 camera_position)
 {
+
+    TransparentModelMesh *transparent_meshes = malloc(model->count * sizeof(TransparentModelMesh));
+
+    if (transparent_meshes == NULL)
+    {
+        fprintf(stderr, "Failed to allocate transparent mesh sort list\n");
+        return;
+    }
+
+    size_t transparent_count = 0;
+
+    glDepthMask(GL_TRUE);
+
     for (size_t i = 0; i < model->count; i++)
     {
-        mat4 final_model;
-        glm_mat4_mul(model_matrix, model->meshes[i].transform, final_model);
+        ModelMesh *model_mesh = &model->meshes[i];
 
-        glUniformMatrix4fv(
-            model_location,
-            1,
-            GL_FALSE,
-            (float *)final_model
-        );
+        if (model_mesh->material.alpha_mode == ALPHA_MODE_BLEND)
+        {
+            transparent_meshes[transparent_count].model_mesh = model_mesh;
+            transparent_meshes[transparent_count].distance = model_mesh_distance_to_camera(model_mesh, model_matrix, camera_position);
+            transparent_count++;
+            continue;
+        }
 
-        Mesh *mesh = &model->meshes[i].mesh;
-        Material *material = &model->meshes[i].material;
-
-        upload_material_diffuse_color(material_uniforms, material->diffuse_color);
-        upload_material_shininess(material_uniforms, material->shininess);
-
-        upload_material_alpha(material_uniforms, material->alpha_mode, material->alpha_cutoff);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, material->diffuse_texture);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, material->specular_texture);
-
-        glBindVertexArray(mesh->vao);
-
-        glDrawElements(
-            GL_TRIANGLES,
-            mesh->index_count,
-            GL_UNSIGNED_INT,
-            0
-        );
+        draw_model_mesh(model_mesh, model_location, material_uniforms, model_matrix);
     }
+
+    qsort(transparent_meshes, transparent_count, sizeof(TransparentModelMesh), compare_transparent_model_meshes);
+
+    glDepthMask(GL_FALSE);
+
+    for (size_t i = 0; i < transparent_count; i++)
+    {
+        draw_model_mesh(transparent_meshes[i].model_mesh, model_location, material_uniforms, model_matrix);
+    }
+
+    glDepthMask(GL_TRUE);
+
+    free(transparent_meshes);
 }

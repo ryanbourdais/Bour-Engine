@@ -197,7 +197,7 @@ void main()
 
     vec4 diffuseSample = texture(material.diffuse, TexCoords) * material.diffuseColor;
 
-    if ((material.alphaMode == ALPHA_MODE_MASK || material.alphaMode == ALPHA_MODE_BLEND) && diffuseSample.a < material.alphaCutoff)
+    if (material.alphaMode == ALPHA_MODE_MASK  && diffuseSample.a < material.alphaCutoff)
     {
         discard;
     }
@@ -228,6 +228,6 @@ void main()
         );
     }
     
-    FragColor = vec4(result, 1.0);
+    FragColor = vec4(result, diffuseSample.a);
     // FragColor = texture(material.diffuse, TexCoords);
 }
