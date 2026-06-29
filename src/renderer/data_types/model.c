@@ -670,10 +670,7 @@ void model_free(Model *model)
     {
         Mesh *mesh = &model->meshes[i].mesh;
 
-        glDeleteBuffers(1, &mesh->position_vbo);
-        glDeleteBuffers(1, &mesh->color_vbo);
-        glDeleteBuffers(1, &mesh->uv_vbo);
-        glDeleteBuffers(1, &mesh->normal_vbo);
+        glDeleteBuffers(1, &mesh->vertex_vbo);
         glDeleteBuffers(1, &mesh->ebo);
         glDeleteVertexArrays(1, &mesh->vao);
     }

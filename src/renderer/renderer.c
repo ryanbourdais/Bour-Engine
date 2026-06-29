@@ -11,6 +11,7 @@
 #include "data_types/lightObject.h"
 #include "data_types/material.h"
 #include "data_types/model.h"
+#include "data_types/skybox.h"
 
 #include "shaders.h"
 #include "camera.h"
@@ -23,6 +24,7 @@ struct RendererState
     mat4 projection;
     Camera camera;
     Model test_model;
+    Skybox skybox;
     DirectionalLight directional_light;
     PointLightCollection point_lights;
     SpotLightCollection spot_lights;
@@ -169,6 +171,16 @@ vec3s spot_light_directions[] = {
     {{0.0f, -1.0f, 0.0f}},
     {{-0.3f, -1.0f, -0.2f}}};
 
+
+const char *skybox_faces[6] = {
+    "assets/cubemaps/skybox/right.jpg",
+    "assets/cubemaps/skybox/left.jpg",
+    "assets/cubemaps/skybox/top.jpg",
+    "assets/cubemaps/skybox/bottom.jpg",
+    "assets/cubemaps/skybox/front.jpg",
+    "assets/cubemaps/skybox/back.jpg"
+};
+
 static void fps_counter(double *delta_time, double *title_countdown_time, GLFWwindow *window)
 {
     *title_countdown_time -= *delta_time;
@@ -244,6 +256,8 @@ static void run_render_loop(GLFWwindow *window, bool fps_enabled, struct Rendere
         glm_scale(model_matrix, (vec3){0.1f, 0.1f, 0.1f});
 
         draw_model(&renderer_state->test_model, renderer_state->model_location, &renderer_state->material_uniforms, model_matrix ,renderer_state->camera.cameraPos.raw);
+
+        skybox_draw(&renderer_state->skybox, renderer_state->projection, renderer_state->camera.view.raw);
 
         vec3s rotation_axis = {1.0f, 0.3f, 0.5f};
 
@@ -424,6 +438,11 @@ static int renderer_init(struct RendererState *renderer)
 
     init_material(renderer);
 
+    if (skybox_init(&renderer->skybox, skybox_faces) != 0)
+    {
+        fprintf(stderr, "Failed to initialize skybox\n");
+        return 1;
+    }
     init_scene_positions(renderer);
 
     return 0;
@@ -432,11 +451,10 @@ static int renderer_init(struct RendererState *renderer)
 static void renderer_shutdown(struct RendererState *renderer)
 {
     model_free(&renderer->test_model);
+    skybox_free(&renderer->skybox);
     for (int i = 0; i < renderer->render_objects.count; i++)
     {
-        glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.position_vbo);
-        glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.color_vbo);
-        glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.uv_vbo);
+        glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.vertex_vbo);
         glDeleteTextures(1, &renderer->render_objects.items[i].mesh.texture);
         glDeleteTextures(1, &renderer->render_objects.items[i].mesh.texture2);
         glDeleteVertexArrays(1, &renderer->render_objects.items[i].mesh.vao);
