@@ -1,0 +1,11 @@
+Model Information:
+* title:	White Monster 3D Scan
+* source:	https://sketchfab.com/3d-models/white-monster-3d-scan-62f9706628244398804e23adeb2bc982
+* author:	Laser Design (https://sketchfab.com/Laserdesign)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "White Monster 3D Scan" (https://sketchfab.com/3d-models/white-monster-3d-scan-62f9706628244398804e23adeb2bc982) by Laser Design (https://sketchfab.com/Laserdesign) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -1,0 +1,11 @@
+Model Information:
+* title:	Leopard 2A4 OTCO
+* source:	https://sketchfab.com/3d-models/leopard-2a4-otco-d914bf65a41044db9b24350d0d777d26
+* author:	Jeyhun1985 (https://sketchfab.com/Jeyhun1985)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Leopard 2A4 OTCO" (https://sketchfab.com/3d-models/leopard-2a4-otco-d914bf65a41044db9b24350d0d777d26) by Jeyhun1985 (https://sketchfab.com/Jeyhun1985) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

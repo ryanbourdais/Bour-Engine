@@ -12,6 +12,7 @@
 #include "data_types/material.h"
 #include "data_types/model.h"
 #include "data_types/skybox.h"
+#include "data_types/instancedModel.h"
 
 #include "shaders.h"
 #include "camera.h"
@@ -28,6 +29,8 @@ struct RendererState
     DirectionalLight directional_light;
     PointLightCollection point_lights;
     SpotLightCollection spot_lights;
+    Model instance_model;
+    InstancedModel instance_instances;
 
     DirectionalLightUniforms directional_light_uniforms;
     PointLightUniforms point_light_uniforms[MAX_SHADER_POINT_LIGHTS];
@@ -41,6 +44,8 @@ struct RendererState
     GLint projection_location;
     GLint view_location;
     GLint view_pos_location;
+
+    GLint use_instancing_location;
 };
 
 struct RendererState renderer = {0};
@@ -255,7 +260,17 @@ static void run_render_loop(GLFWwindow *window, bool fps_enabled, struct Rendere
         glm_translate(model_matrix, (vec3){0.0f, 0.0f, 0.0f});
         glm_scale(model_matrix, (vec3){0.1f, 0.1f, 0.1f});
 
+        glUniform1i(renderer_state->use_instancing_location, 0);
         draw_model(&renderer_state->test_model, renderer_state->model_location, &renderer_state->material_uniforms, model_matrix ,renderer_state->camera.cameraPos.raw);
+
+        glUniform1i(renderer_state->use_instancing_location, 1);
+
+        mat4 instance_model_matrix;
+        glm_mat4_identity(instance_model_matrix);
+
+        draw_model_instanced(&renderer_state->instance_model, renderer_state->model_location, &renderer_state->material_uniforms, instance_model_matrix, renderer_state->instance_instances.instance_vbo, (GLsizei)renderer_state->instance_instances.count);
+
+        glUniform1i(renderer_state->use_instancing_location, 0);
 
         skybox_draw(&renderer_state->skybox, renderer_state->projection, renderer_state->camera.view.raw);
 
@@ -413,6 +428,13 @@ static int renderer_init(struct RendererState *renderer)
         fprintf(stderr, "Failed to load test model\n");
     }
 
+    if(model_load_gltf(&renderer->instance_model, "assets/models/white_monster_3d_scan/scene.gltf") != 0)
+    // if (model_load_gltf(&renderer->test_model, "assets/models/postwar_city_-_exterior_scene/scene.gltf") != 0);
+    {
+        fprintf(stderr, "Failed to load test model\n");
+    }
+
+
     init_lighting(renderer);
 
     init_camera_projection(renderer);
@@ -429,6 +451,29 @@ static int renderer_init(struct RendererState *renderer)
 
 
     renderer->model_location = glGetUniformLocation(renderer->shader_program, "model");
+
+    renderer->use_instancing_location = glGetUniformLocation(renderer->shader_program, "useInstancing");
+
+    if (instanced_model_init(&renderer->instance_instances) != 0)
+    {
+        fprintf(stderr, "Failed to initialize instanced model transforms\n");
+        return 1;
+    }
+
+    for (size_t i = 0; i < 100; i++)
+    {
+        mat4 transform;
+        glm_mat4_identity(transform);
+        float x = (float)(i % 10) * 2.0f;
+        float z = (float)(i / 10) * 2.0f;
+
+        glm_translate(transform, (vec3){x, 0.0f, z});
+        glm_scale(transform, (vec3){0.01f, 0.01f, 0.01f});
+
+        instanced_model_add_transform(&renderer->instance_instances, transform);
+    }
+
+    instanced_model_upload_transforms(&renderer->instance_instances);
 
     if (renderer->model_location < 0)
     {
@@ -451,6 +496,7 @@ static int renderer_init(struct RendererState *renderer)
 static void renderer_shutdown(struct RendererState *renderer)
 {
     model_free(&renderer->test_model);
+    instanced_model_free(&renderer->instance_instances);
     skybox_free(&renderer->skybox);
     for (int i = 0; i < renderer->render_objects.count; i++)
     {

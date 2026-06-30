@@ -28,6 +28,7 @@ add_executable(bour_engine
     renderer/data_types/material.c
     renderer/data_types/model.c
     renderer/data_types/skybox.c
+    renderer/data_types/instancedModel.c
     renderer/camera.c
 )
 
