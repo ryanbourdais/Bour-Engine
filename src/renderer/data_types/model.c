@@ -625,6 +625,72 @@ static void draw_model_mesh(ModelMesh *model_mesh, GLint model_location, Materia
     glDrawElements(GL_TRIANGLES, mesh->index_count, GL_UNSIGNED_INT, 0);
 }
 
+static void draw_model_mesh_instanced(ModelMesh *model_mesh, GLint model_location, MaterialUniforms *material_uniforms, mat4 model_matrix, GLuint instance_vbo, GLsizei instance_count)
+{
+    Mesh *mesh = &model_mesh->mesh;
+    Material *material = &model_mesh->material;
+
+    if (material->alpha_mode == ALPHA_MODE_BLEND)
+    {
+        return;
+    }
+
+    if (material->double_sided)
+    {
+        glDisable(GL_CULL_FACE);
+    }
+    else {
+        glEnable(GL_CULL_FACE);
+    }
+
+    upload_material_diffuse_color(material_uniforms, material->diffuse_color);
+    upload_material_shininess(material_uniforms, material->shininess);
+    upload_material_alpha(material_uniforms, material->alpha_mode, material->alpha_cutoff);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, material->diffuse_texture);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, material->specular_texture);
+
+    glBindVertexArray(mesh->vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, instance_vbo);
+
+    size_t vec4_size = sizeof(float) * 4;
+
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void *)(0 * vec4_size));
+    glVertexAttribDivisor(4, 1);
+
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void *)(1 * vec4_size));
+    glVertexAttribDivisor(5, 1);
+
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void *)(2 * vec4_size));
+    glVertexAttribDivisor(6, 1);
+
+    glEnableVertexAttribArray(7);
+    glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void *)(3 * vec4_size));
+    glVertexAttribDivisor(7, 1);
+
+    mat4 mesh_model;
+    glm_mat4_mul(model_matrix, model_mesh->transform, mesh_model);
+
+    glUniformMatrix4fv(model_location, 1, GL_FALSE, (float *)mesh_model);
+
+    glDrawElementsInstanced(GL_TRIANGLES, mesh->index_count, GL_UNSIGNED_INT, 0, instance_count);
+}
+
+void draw_model_instanced(Model *model, GLint model_location, MaterialUniforms *material_uniforms, mat4 model_matrix, GLuint instance_vbo, GLsizei instance_count)
+{
+    for(size_t i = 0; i < model->count; i++)
+    {
+        draw_model_mesh_instanced(&model->meshes[i], model_location, material_uniforms, model_matrix, instance_vbo, instance_count);
+    }
+}
+
 void model_init(Model *model)
 {
     model->meshes = malloc(4 * sizeof(ModelMesh));
