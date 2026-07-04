@@ -13,6 +13,7 @@
 #include "data_types/model.h"
 #include "data_types/skybox.h"
 #include "data_types/instancedModel.h"
+#include "data_types/renderTarget.h"
 
 #include "shaders.h"
 #include "camera.h"
@@ -31,19 +32,27 @@ struct RendererState
     SpotLightCollection spot_lights;
     Model instance_model;
     InstancedModel instance_instances;
+    RenderTarget scene_target;
+    MsaaRenderTarget scene_msaa_target;
 
     DirectionalLightUniforms directional_light_uniforms;
     PointLightUniforms point_light_uniforms[MAX_SHADER_POINT_LIGHTS];
     SpotLightUniforms spot_light_uniforms[MAX_SHADER_SPOT_LIGHTS];
     MaterialUniforms material_uniforms;
 
+    GLuint camera_ubo;
+    GLuint screen_shader_program;
+    GLuint screen_quad_vao;
+    GLuint screen_quad_vbo;
+    GLint screen_texture_location;
+
     GLuint shader_program;
     GLint point_light_count_location;
     GLint spot_light_count_location;
     GLint model_location;
-    GLint projection_location;
-    GLint view_location;
-    GLint view_pos_location;
+    // GLint projection_location;
+    // GLint view_location;
+    // GLint view_pos_location;
 
     GLint use_instancing_location;
 };
@@ -216,6 +225,24 @@ void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
     handle_mouse(&renderer.camera, offsets, true);
 }
 
+static void draw_screen_quad(struct RendererState *renderer)
+{
+    glUseProgram(renderer->screen_shader_program);
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, renderer->scene_target.color_texture);
+
+    glBindVertexArray(renderer->screen_quad_vao);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+}
+
 static void run_render_loop(GLFWwindow *window, bool fps_enabled, struct RendererState *renderer_state)
 {
     double previous_time = glfwGetTime();
@@ -237,6 +264,10 @@ static void run_render_loop(GLFWwindow *window, bool fps_enabled, struct Rendere
         glfwPollEvents();
 
         // Wipe drawing surface clear
+        msaa_render_target_bind(&renderer_state->scene_msaa_target);
+
+        glEnable(GL_DEPTH_TEST);
+
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -247,7 +278,7 @@ static void run_render_loop(GLFWwindow *window, bool fps_enabled, struct Rendere
         // Put the shader program and VAO in focus in OpenGL's state machine
         glUseProgram(renderer_state->shader_program);
 
-        upload_camera(renderer_state->view_location, renderer_state->view_pos_location, &renderer_state->camera);
+        upload_camera_ubo(renderer_state->camera_ubo, &renderer_state->camera, renderer_state->projection);
 
         upload_directional_light(&renderer_state->directional_light, &renderer_state->directional_light_uniforms);
 
@@ -274,7 +305,21 @@ static void run_render_loop(GLFWwindow *window, bool fps_enabled, struct Rendere
 
         skybox_draw(&renderer_state->skybox, renderer_state->projection, renderer_state->camera.view.raw);
 
-        vec3s rotation_axis = {1.0f, 0.3f, 0.5f};
+        msaa_render_target_resolve_to(&renderer_state->scene_msaa_target, &renderer_state->scene_target);
+
+        render_target_unbind();
+
+        int framebuffer_width = 0;
+        int framebuffer_height = 0;
+
+        glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
+
+        glViewport(0, 0, framebuffer_width, framebuffer_height);
+
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        draw_screen_quad(renderer_state);
 
         // Put the drawing into the visible area
         glfwSwapBuffers(window);
@@ -317,6 +362,11 @@ static int init_shader_program(struct RendererState *renderer)
     }
 
     if (create_shader_program(&vs, &fs, &renderer->shader_program) != 0)
+    {
+        return 1;
+    }
+
+    if (bind_camera_uniform_block(renderer->shader_program) != 0)
     {
         return 1;
     }
@@ -370,16 +420,41 @@ static void init_lighting(struct RendererState *renderer)
     }
 }
 
-static void init_camera_projection(struct RendererState *renderer)
+static void init_camera_projection(struct RendererState *renderer, GLFWwindow *window)
 {
     camera_init(&renderer->camera);
 
-    renderer->projection_location = glGetUniformLocation(renderer->shader_program, "projection");
-    glm_perspective(glm_rad(renderer->camera.cameraFOV), 800.0f / 600.0f, 0.1f, 100.0f, renderer->projection);
-    glUniformMatrix4fv(renderer->projection_location, 1, GL_FALSE, (float *)renderer->projection);
-    renderer->view_location = glGetUniformLocation(renderer->shader_program, "view");
+    int framebuffer_width = 0;
+    int framebuffer_height = 0;
 
-    renderer->view_pos_location = glGetUniformLocation(renderer->shader_program, "viewPos");
+    glfwGetFramebufferSize(
+        window,
+        &framebuffer_width,
+        &framebuffer_height
+    );
+
+    glm_perspective(glm_rad(renderer->camera.cameraFOV), (float)framebuffer_width / (float)framebuffer_height, 0.1f, 100.0f, renderer->projection);
+    
+    camera_update(&renderer->camera);
+
+    camera_ubo_init(&renderer->camera_ubo);
+
+    upload_camera_ubo(renderer->camera_ubo, &renderer->camera, renderer->projection);
+}
+
+static int bind_camera_uniform_block(GLuint shader_program)
+{
+    GLuint camera_block_index = glGetUniformBlockIndex(shader_program, "CameraBlock");
+
+    if(camera_block_index == GL_INVALID_INDEX)
+    {
+        fprintf(stderr, "Failed to find CameraBlock uniform block\n");
+        return 1;
+    }
+
+    glUniformBlockBinding(shader_program, camera_block_index, CAMERA_UBO_BINDING);
+
+    return 0;
 }
 
 static void init_material(struct RendererState *renderer)
@@ -410,7 +485,57 @@ static void init_scene_positions(struct RendererState *renderer)
     }
 }
 
-static int renderer_init(struct RendererState *renderer)
+static int init_screen_quad(struct RendererState *renderer)
+{
+    float quad_vertices[] = {
+        // positions | texcoords
+        -1.0f, 1.0f, 0.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f, 0.0f,
+        1.0f, -1.0f, 1.0f, 0.0f,
+
+        -1.0f, 1.0f, 0.0f, 1.0f,
+        1.0f, -1.0f, 1.0f, 0.0f,
+        1.0f, 1.0f, 1.0f, 1.0f
+    };
+
+    GLuint vs, fs;
+
+    if (load_shaders(&vs, &fs, "src/renderer/shaders/screen.vert", "src/renderer/shaders/screen.frag") != 0)
+    {
+        return 1;
+    }
+
+    if (create_shader_program(&vs, &fs, &renderer->screen_shader_program) != 0)
+    {
+        return 1;
+    }
+
+    glGenVertexArrays(1, &renderer->screen_quad_vao);
+    glGenBuffers(1, &renderer->screen_quad_vbo);
+
+    glBindVertexArray(renderer->screen_quad_vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, renderer->screen_quad_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+
+    glBindVertexArray(0);
+
+    glUseProgram(renderer->screen_shader_program);
+
+    renderer->screen_texture_location = glGetUniformLocation(renderer->screen_shader_program, "screenTexture");
+
+    glUniform1i(renderer->screen_texture_location, 0);
+
+    return 0;
+}
+
+static int renderer_init(struct RendererState *renderer, GLFWwindow *window)
 {
     if (init_render_objects(renderer) != 0)
     {
@@ -418,6 +543,31 @@ static int renderer_init(struct RendererState *renderer)
     }
 
     if (init_shader_program(renderer) != 0)
+    {
+        return 1;
+    }
+
+    int framebuffer_width = 0;
+    int framebuffer_height = 0;
+
+    glfwGetFramebufferSize(
+        window,
+        &framebuffer_width,
+        &framebuffer_height
+    );
+
+
+    if (render_target_init(&renderer->scene_target, framebuffer_width, framebuffer_height) != 0)
+    {
+        return 1;
+    }
+
+    if (msaa_render_target_init(&renderer->scene_msaa_target, framebuffer_width, framebuffer_height, 4) != 0)
+    {
+        return 1;
+    }
+
+    if (init_screen_quad(renderer) != 0)
     {
         return 1;
     }
@@ -437,7 +587,7 @@ static int renderer_init(struct RendererState *renderer)
 
     init_lighting(renderer);
 
-    init_camera_projection(renderer);
+    init_camera_projection(renderer, window);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -449,6 +599,7 @@ static int renderer_init(struct RendererState *renderer)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    glEnable(GL_MULTISAMPLE);
 
     renderer->model_location = glGetUniformLocation(renderer->shader_program, "model");
 
@@ -498,6 +649,25 @@ static void renderer_shutdown(struct RendererState *renderer)
     model_free(&renderer->test_model);
     instanced_model_free(&renderer->instance_instances);
     skybox_free(&renderer->skybox);
+
+    msaa_render_target_free(&renderer->scene_msaa_target);
+    render_target_free(&renderer->scene_target);
+
+    if (renderer->screen_quad_vbo)
+    {
+        glDeleteBuffers(1, &renderer->screen_quad_vbo);
+    }
+
+    if (renderer->screen_quad_vao)
+    {
+        glDeleteVertexArrays(1, &renderer->screen_quad_vao);
+    }
+
+    if (renderer->screen_shader_program)
+    {
+        glDeleteProgram(renderer->screen_shader_program);
+    }
+
     for (int i = 0; i < renderer->render_objects.count; i++)
     {
         glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.vertex_vbo);
@@ -506,6 +676,12 @@ static void renderer_shutdown(struct RendererState *renderer)
         glDeleteVertexArrays(1, &renderer->render_objects.items[i].mesh.vao);
         glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.ebo);
     }
+
+    if (renderer->camera_ubo)
+    {
+        glDeleteBuffers(1, &renderer->camera_ubo);
+    }
+
     free_renderobject_array(&renderer->render_objects);
     glDeleteProgram(renderer->shader_program);
 }
@@ -513,7 +689,7 @@ static void renderer_shutdown(struct RendererState *renderer)
 int renderer_run(GLFWwindow *window, bool fps_enabled)
 {
 
-    if (renderer_init(&renderer) != 0)
+    if (renderer_init(&renderer, window) != 0)
     {
         renderer_shutdown(&renderer);
         fprintf(stderr, "Failed to initialize renderer\n");
