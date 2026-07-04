@@ -6,9 +6,15 @@ layout(location = 2) in vec2 aTexCoords;
 
 layout(location = 4) in mat4 instanceModel;
 
+layout(std140) uniform CameraBlock
+{
+    mat4 view;
+    mat4 projection;
+    vec4 viewPos;
+};
+
 uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+
 uniform int useInstancing;
 
 out vec3 FragPos;

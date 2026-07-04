@@ -123,3 +123,35 @@ const float radius = 10.0f;
     camera->view = glms_lookat((vec3s){camX, 0.0, camZ},
                               (vec3s){0.0f, 0.0f, 0.0f},
                               (vec3s){0.0f, 1.0f, 0.0f});*/
+
+void camera_ubo_init(GLuint *camera_ubo)
+{
+    glGenBuffers(1, camera_ubo);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, *camera_ubo);
+
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraUniformData), NULL, GL_DYNAMIC_DRAW);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, CAMERA_UBO_BINDING, *camera_ubo);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void upload_camera_ubo(GLuint camera_ubo, Camera *camera, mat4 projection)
+{
+    CameraUniformData data = {0};
+
+    glm_mat4_copy(camera->view.raw, data.view);
+    glm_mat4_copy(projection, data.projection);
+
+    data.view_pos[0] = camera->cameraPos.x;
+    data.view_pos[1] = camera->cameraPos.y;
+    data.view_pos[2] = camera->cameraPos.z;
+    data.view_pos[3] = 1.0f;
+
+    glBindBuffer(GL_UNIFORM_BUFFER, camera_ubo);
+
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUniformData), &data);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}

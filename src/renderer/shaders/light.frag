@@ -39,7 +39,13 @@ struct PointLight {
 
 uniform PointLight pointLights[MAX_SHADER_POINT_LIGHTS];
 uniform int pointLightCount;
-uniform vec3 viewPos;
+
+layout(std140) uniform CameraBlock
+{
+    mat4 view;
+    mat4 projection;
+    vec4 viewPos;
+};
 
 
 struct DirectionalLight {
@@ -193,7 +199,7 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 fragmentPosition, vec
 void main()
 {
     vec3 normal = normalize(Normal);
-    vec3 viewDirection = normalize(viewPos - FragPos);
+    vec3 viewDirection = normalize(viewPos.xyz - FragPos);
 
     vec4 diffuseSample = texture(material.diffuse, TexCoords) * material.diffuseColor;
 
