@@ -102,9 +102,10 @@ size_t cube_vertex_count = sizeof(cube) / sizeof(cube[0]);
 GLsizei cube_index_count = sizeof(cube_indices) / sizeof(cube_indices[0]);
 
 LightColor debug_sunlight = {
-    .ambient = {{0.05f, 0.05f, 0.05f}},
-    .diffuse = {{0.4f, 0.4f, 0.4f}},
-    .specular = {{0.5f, 0.5f, 0.5f}}};
+    .ambient  = {{0.02f, 0.02f, 0.02f}},
+    .diffuse  = {{0.05f, 0.05f, 0.05f}},
+    .specular = {{0.02f, 0.02f, 0.02f}}
+};
     
 LightColor sunlight = {
     .ambient = {{0.18f, 0.18f, 0.18f}},
@@ -113,18 +114,27 @@ LightColor sunlight = {
 };
 
 LightColor debug_point_light_colors[MAX_SHADER_POINT_LIGHTS] = {
-    {.ambient = {{0.02f, 0.002f, 0.002f}},
-     .diffuse = {{1.0f, 0.1f, 0.1f}},
-     .specular = {{1.0f, 0.3f, 0.3f}}},
-    {.ambient = {{0.002f, 0.02f, 0.002f}},
-     .diffuse = {{0.1f, 1.0f, 0.1f}},
-     .specular = {{0.3f, 1.0f, 0.3f}}},
-    {.ambient = {{0.002f, 0.002f, 0.02f}},
-     .diffuse = {{0.1f, 0.1f, 1.0f}},
-     .specular = {{0.3f, 0.3f, 1.0f}}},
-    {.ambient = {{0.02f, 0.0154f, 0.0112f}},
-     .diffuse = {{1.0f, 0.77f, 0.56f}},
-     .specular = {{1.0f, 0.77f, 0.56f}}}};
+    {
+        .ambient  = {{0.00f, 0.00f, 0.00f}},
+        .diffuse  = {{3.00f, 0.20f, 0.20f}},
+        .specular = {{3.00f, 0.20f, 0.20f}}
+    },
+    {
+        .ambient  = {{0.00f, 0.00f, 0.00f}},
+        .diffuse  = {{0.20f, 3.00f, 0.20f}},
+        .specular = {{0.20f, 3.00f, 0.20f}}
+    },
+    {
+        .ambient  = {{0.00f, 0.00f, 0.00f}},
+        .diffuse  = {{0.20f, 0.20f, 3.00f}},
+        .specular = {{0.20f, 0.20f, 3.00f}}
+    },
+    {
+        .ambient  = {{0.00f, 0.00f, 0.00f}},
+        .diffuse  = {{3.00f, 1.80f, 0.40f}},
+        .specular = {{3.00f, 1.80f, 0.40f}}
+    }
+};
 
 LightColor point_light_colors[MAX_SHADER_POINT_LIGHTS] = {
     {
@@ -149,11 +159,13 @@ LightColor point_light_colors[MAX_SHADER_POINT_LIGHTS] = {
     }
 };
 
+
 vec3s point_light_positions[] = {
-    {{0.7f, 0.2f, 2.0f}},
-    {{2.3f, -3.3f, -4.0f}},
-    {{-4.0f, 2.0f, -12.0f}},
-    {{0.0f, 0.0f, -3.0f}}};
+    {{ 0.0f,  2.5f,  0.0f}},
+    {{ 3.0f,  2.0f,  0.0f}},
+    {{-3.0f,  2.0f,  0.0f}},
+    {{ 0.0f,  2.0f, -3.0f}}
+};
 
 LightColor debug_spot_light_colors[MAX_SHADER_SPOT_LIGHTS] = {
     {// Hot magenta/pink
@@ -177,13 +189,16 @@ LightColor spot_light_colors[MAX_SHADER_SPOT_LIGHTS] = {
         .specular = {{0.08f, 0.09f, 0.11f}}
     }
 };
+
 vec3s spot_light_positions[] = {
-    {{0.0f, 15.0f, -7.5f}},
-    {{4.0f, 12.0f, -3.0f}}};
+    {{ 0.0f, 3.0f,  2.0f}},
+    {{ 0.0f, 3.0f, -2.0f}}
+};
 
 vec3s spot_light_directions[] = {
-    {{0.0f, -1.0f, 0.0f}},
-    {{-0.3f, -1.0f, -0.2f}}};
+    {{ 0.0f, -1.0f, -0.3f}},
+    {{ 0.0f, -1.0f,  0.3f}}
+};
 
 
 const char *skybox_faces[6] = {
@@ -288,22 +303,22 @@ static void run_render_loop(GLFWwindow *window, bool fps_enabled, struct Rendere
 
         mat4 model_matrix;
         glm_mat4_identity(model_matrix);
-        glm_translate(model_matrix, (vec3){0.0f, 0.0f, 0.0f});
-        glm_scale(model_matrix, (vec3){0.1f, 0.1f, 0.1f});
+        // glm_translate(model_matrix, (vec3){0.0f, 0.0f, 0.0f});
+        // glm_scale(model_matrix, (vec3){0.1f, 0.1f, 0.1f});
 
         glUniform1i(renderer_state->use_instancing_location, 0);
         draw_model(&renderer_state->test_model, renderer_state->model_location, &renderer_state->material_uniforms, model_matrix ,renderer_state->camera.cameraPos.raw);
 
-        glUniform1i(renderer_state->use_instancing_location, 1);
+        // glUniform1i(renderer_state->use_instancing_location, 1);
 
-        mat4 instance_model_matrix;
-        glm_mat4_identity(instance_model_matrix);
+        // mat4 instance_model_matrix;
+        // glm_mat4_identity(instance_model_matrix);
 
-        draw_model_instanced(&renderer_state->instance_model, renderer_state->model_location, &renderer_state->material_uniforms, instance_model_matrix, renderer_state->instance_instances.instance_vbo, (GLsizei)renderer_state->instance_instances.count);
+        // draw_model_instanced(&renderer_state->instance_model, renderer_state->model_location, &renderer_state->material_uniforms, instance_model_matrix, renderer_state->instance_instances.instance_vbo, (GLsizei)renderer_state->instance_instances.count);
 
-        glUniform1i(renderer_state->use_instancing_location, 0);
+        // glUniform1i(renderer_state->use_instancing_location, 0);
 
-        skybox_draw(&renderer_state->skybox, renderer_state->projection, renderer_state->camera.view.raw);
+        // skybox_draw(&renderer_state->skybox, renderer_state->projection, renderer_state->camera.view.raw);
 
         msaa_render_target_resolve_to(&renderer_state->scene_msaa_target, &renderer_state->scene_target);
 
@@ -378,7 +393,7 @@ static int init_shader_program(struct RendererState *renderer)
 
 static void init_lighting(struct RendererState *renderer)
 {
-    directional_light_init(&renderer->directional_light, (vec3s){{-0.2f, -1.0f, -0.3f}}, sunlight);
+    directional_light_init(&renderer->directional_light, (vec3s){{-0.2f, -1.0f, -0.3f}}, debug_sunlight);
 
     directional_light_uniforms_init(&renderer->directional_light_uniforms, renderer->shader_program);
 
@@ -388,7 +403,7 @@ static void init_lighting(struct RendererState *renderer)
     {
         PointLight light = {0};
 
-        point_light_init(&light, point_light_positions[i], point_light_colors[i], 1.0f, 0.09f, 0.032f);
+        point_light_init(&light, point_light_positions[i], debug_point_light_colors[i], 1.0f, 0.09f, 0.032f);
 
         point_light_collection_add(&renderer->point_lights, light);
     }
@@ -406,7 +421,7 @@ static void init_lighting(struct RendererState *renderer)
     {
         SpotLight light = {0};
 
-        spot_light_init(&light, spot_light_positions[i], spot_light_directions[i], spot_light_colors[i], 1.0f, 0.045f, 0.0075f, 30.0f, 40.0f);
+        spot_light_init(&light, spot_light_positions[i], spot_light_directions[i], debug_spot_light_colors[i], 1.0f, 0.09f, 0.032f, 25.0f, 45.0f);
 
         spot_light_collection_add(&renderer->spot_lights, light);
     }
@@ -537,11 +552,6 @@ static int init_screen_quad(struct RendererState *renderer)
 
 static int renderer_init(struct RendererState *renderer, GLFWwindow *window)
 {
-    if (init_render_objects(renderer) != 0)
-    {
-        return 1;
-    }
-
     if (init_shader_program(renderer) != 0)
     {
         return 1;
@@ -572,16 +582,22 @@ static int renderer_init(struct RendererState *renderer, GLFWwindow *window)
         return 1;
     }
 
-    if(model_load_gltf(&renderer->test_model, "assets/models/buick_riviera_1963-1965__www.vecarz.com/scene.gltf") != 0)
-    // if (model_load_gltf(&renderer->test_model, "assets/models/postwar_city_-_exterior_scene/scene.gltf") != 0);
-    {
-        fprintf(stderr, "Failed to load test model\n");
-    }
+    // if(model_load_gltf(&renderer->test_model, "assets/models/buick_riviera_1963-1965__www.vecarz.com/scene.gltf") != 0)
+    // // if (model_load_gltf(&renderer->test_model, "assets/models/postwar_city_-_exterior_scene/scene.gltf") != 0);
+    // {
+    //     fprintf(stderr, "Failed to load test model\n");
+    // }
 
-    if(model_load_gltf(&renderer->instance_model, "assets/models/white_monster_3d_scan/scene.gltf") != 0)
-    // if (model_load_gltf(&renderer->test_model, "assets/models/postwar_city_-_exterior_scene/scene.gltf") != 0);
+    // if(model_load_gltf(&renderer->instance_model, "assets/models/white_monster_3d_scan/scene.gltf") != 0)
+    // // if (model_load_gltf(&renderer->test_model, "assets/models/postwar_city_-_exterior_scene/scene.gltf") != 0);
+    // {
+    //     fprintf(stderr, "Failed to load test model\n");
+    // }
+
+    if (model_load_gltf(&renderer->test_model, "assets/models/loft_japanese_11_free_interior/scene.gltf") != 0)
     {
-        fprintf(stderr, "Failed to load test model\n");
+        fprintf(stderr, "Failed to load loft interior model\n");
+        return 1;
     }
 
 
@@ -605,26 +621,26 @@ static int renderer_init(struct RendererState *renderer, GLFWwindow *window)
 
     renderer->use_instancing_location = glGetUniformLocation(renderer->shader_program, "useInstancing");
 
-    if (instanced_model_init(&renderer->instance_instances) != 0)
-    {
-        fprintf(stderr, "Failed to initialize instanced model transforms\n");
-        return 1;
-    }
+    // if (instanced_model_init(&renderer->instance_instances) != 0)
+    // {
+    //     fprintf(stderr, "Failed to initialize instanced model transforms\n");
+    //     return 1;
+    // }
 
-    for (size_t i = 0; i < 100; i++)
-    {
-        mat4 transform;
-        glm_mat4_identity(transform);
-        float x = (float)(i % 10) * 2.0f;
-        float z = (float)(i / 10) * 2.0f;
+    // for (size_t i = 0; i < 100; i++)
+    // {
+    //     mat4 transform;
+    //     glm_mat4_identity(transform);
+    //     float x = (float)(i % 10) * 2.0f;
+    //     float z = (float)(i / 10) * 2.0f;
 
-        glm_translate(transform, (vec3){x, 0.0f, z});
-        glm_scale(transform, (vec3){0.01f, 0.01f, 0.01f});
+    //     glm_translate(transform, (vec3){x, 0.0f, z});
+    //     glm_scale(transform, (vec3){0.01f, 0.01f, 0.01f});
 
-        instanced_model_add_transform(&renderer->instance_instances, transform);
-    }
+    //     instanced_model_add_transform(&renderer->instance_instances, transform);
+    // }
 
-    instanced_model_upload_transforms(&renderer->instance_instances);
+    // instanced_model_upload_transforms(&renderer->instance_instances);
 
     if (renderer->model_location < 0)
     {
@@ -647,7 +663,7 @@ static int renderer_init(struct RendererState *renderer, GLFWwindow *window)
 static void renderer_shutdown(struct RendererState *renderer)
 {
     model_free(&renderer->test_model);
-    instanced_model_free(&renderer->instance_instances);
+    // instanced_model_free(&renderer->instance_instances);
     skybox_free(&renderer->skybox);
 
     msaa_render_target_free(&renderer->scene_msaa_target);
@@ -668,21 +684,10 @@ static void renderer_shutdown(struct RendererState *renderer)
         glDeleteProgram(renderer->screen_shader_program);
     }
 
-    for (int i = 0; i < renderer->render_objects.count; i++)
-    {
-        glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.vertex_vbo);
-        glDeleteTextures(1, &renderer->render_objects.items[i].mesh.texture);
-        glDeleteTextures(1, &renderer->render_objects.items[i].mesh.texture2);
-        glDeleteVertexArrays(1, &renderer->render_objects.items[i].mesh.vao);
-        glDeleteBuffers(1, &renderer->render_objects.items[i].mesh.ebo);
-    }
-
     if (renderer->camera_ubo)
     {
         glDeleteBuffers(1, &renderer->camera_ubo);
     }
-
-    free_renderobject_array(&renderer->render_objects);
     glDeleteProgram(renderer->shader_program);
 }
 

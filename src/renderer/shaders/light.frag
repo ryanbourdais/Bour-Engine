@@ -86,9 +86,9 @@ vec3 calculateDirectionalLight(
 
     float diffuseStrength = max(dot(normal, lightDirection), 0.0);
 
-    vec3 reflectionDirection = reflect(-lightDirection, normal);
+    vec3 halfwayDirection = normalize(lightDirection + viewDirection);
 
-    float specularStrength = pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
+    float specularStrength = pow(max(dot(normal, halfwayDirection), 0.0), material.shininess);
 
     vec4 diffuseSample = texture(material.diffuse, TexCoords) * material.diffuseColor;
     vec3 diffuseTexture = diffuseSample.rgb;
@@ -117,9 +117,9 @@ vec3 calculatePointLight(
 
     float diffuseStrength = max(dot(normal, lightDirection), 0.0);
 
-    vec3 reflectionDirection = reflect(-lightDirection, normal);
+    vec3 halfwayDirection = normalize(lightDirection + viewDirection);
 
-    float specularStrength = pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
+    float specularStrength = pow(max(dot(normal, halfwayDirection), 0.0), material.shininess);
 
     float distance = length(light.position - fragmentPosition);
 
@@ -156,9 +156,9 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 fragmentPosition, vec
 
     float diffuseStrength = max(dot(normal, lightDirection), 0.0);
 
-    vec3 reflectionDirection = reflect(-lightDirection, normal);
+    vec3 halfwayDirection = normalize(lightDirection + viewDirection);
     
-    float specularStrength = pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
+    float specularStrength = pow(max(dot(normal, halfwayDirection), 0.0), material.shininess);
 
     float distance = length(light.position - fragmentPosition);
 

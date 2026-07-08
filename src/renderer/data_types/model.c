@@ -340,7 +340,7 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
     engine_material.diffuse_texture = 0;
     engine_material.specular_texture = 0;
     engine_material.diffuse_color = (vec4s){{1.0f, 1.0f, 1.0f, 1.0f}};
-    engine_material.shininess = 32.0f;
+    engine_material.shininess = 96.0f;
     engine_material.alpha_mode = ALPHA_MODE_OPAQUE;
     engine_material.alpha_cutoff = 0.5f;
     engine_material.double_sided = false;
