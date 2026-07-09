@@ -354,11 +354,11 @@ static int init_render_objects(struct RendererState *renderer)
             fprintf(stderr, "Mesh failed to be created, exiting!");
             return 1;
         }
-        if (create_texture(&new_render_object.mesh, "assets/diffuse maps/container2.png") != 0)
+        if (create_texture_ex(&new_render_object.mesh, "assets/diffuse maps/container2.png", true) != 0)
         {
             return 1;
         }
-        if (create_texture(&new_render_object.mesh, "assets/specular maps/container2_specular.png") != 0)
+        if (create_texture_ex(&new_render_object.mesh, "assets/specular maps/container2_specular.png", false) != 0)
         {
             return 1;
         }
@@ -616,6 +616,7 @@ static int renderer_init(struct RendererState *renderer, GLFWwindow *window)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glEnable(GL_MULTISAMPLE);
+    glEnable(GL_FRAMEBUFFER_SRGB);
 
     renderer->model_location = glGetUniformLocation(renderer->shader_program, "model");
 

@@ -60,6 +60,8 @@ int window_run( bool fullscreen, bool fps_enabled)
         win_h = mode->height; // to get a 'full screen borderless' window.
     }
 
+    glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
+
     GLFWwindow* window = glfwCreateWindow(
         win_w,
         win_h,
