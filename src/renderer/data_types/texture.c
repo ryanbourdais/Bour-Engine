@@ -5,8 +5,6 @@ static int init_textures()
 {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     return 0;
@@ -33,7 +31,33 @@ int create_texture(Mesh *mesh, char* file_location)
     return 0;
 }
 
+int create_texture_ex(Mesh *mesh, char *file_location, bool srgb)
+{
+    GLuint texture = 0;
+
+    if (load_texture_ex(&texture, file_location, srgb) != 0)
+    {
+        return 1;
+    }
+
+    if (!mesh->texture)
+    {
+        mesh->texture = texture;
+    }
+    else {
+        mesh->texture2 = texture;
+    }
+
+    return 0;
+}
+
+// Default loader is for color/albedo textures
 int load_texture(GLuint *out_texture, const char *file_location)
+{
+    return load_texture_ex(out_texture, file_location, true); 
+}
+
+int load_texture_ex(GLuint *out_texture, const char *file_location, bool srgb)
 {
     int width, height, nrChannels;
 
@@ -43,12 +67,7 @@ int load_texture(GLuint *out_texture, const char *file_location)
 
     if (data == NULL)
     {
-        fprintf(
-            stderr,
-            "Texture faield to load: %s reason: %s\n",
-            file_location,
-            stbi_failure_reason()
-        );
+        fprintf(stderr, "Texture failed to load: %s reason: %s\n", file_location, stbi_failure_reason());
         return 1;
     }
 
@@ -62,21 +81,27 @@ int load_texture(GLuint *out_texture, const char *file_location)
         return 1;
     }
 
+    GLenum source_format = GL_RGB;
+    GLenum internal_format = GL_RGB;
+
     if (nrChannels == 3)
     {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        source_format = GL_RGB;
+        internal_format = srgb ? GL_SRGB : GL_RGB;
     }
     else if (nrChannels == 4)
     {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        source_format = GL_RGBA;
+        internal_format = srgb ? GL_SRGB_ALPHA : GL_RGBA;
     }
-    else
-    {
+    else {
         fprintf(stderr, "Unsupported texture channel count %d for %s\n", nrChannels, file_location);
         stbi_image_free(data);
         glDeleteTextures(1, &texture);
         return 1;
     }
+
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, source_format, GL_UNSIGNED_BYTE, data);
 
     glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -103,8 +128,8 @@ int create_solid_color_texture(GLuint *out_texture, unsigned char r, unsigned ch
     glTexImage2D(
         GL_TEXTURE_2D,
         0,
-        GL_RGBA,
-        1,
+        GL_SRGB_ALPHA,
+    1,
         1,
         0,
         GL_RGBA,

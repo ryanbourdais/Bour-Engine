@@ -73,15 +73,18 @@ static int load_cubemap(GLuint *out_texture, const char *faces[6])
             return 1;
         }
 
-        GLenum format = GL_RGB;
+        GLenum source_format = GL_RGB;
+        GLenum internal_format = GL_SRGB;
 
         if (channels == 4)
         {
-            format = GL_RGBA;
+            source_format = GL_RGBA;
+            internal_format = GL_SRGB_ALPHA;
         }
         else if (channels == 3)
         {
-            format = GL_RGB;
+            source_format = GL_RGB;
+            internal_format = GL_SRGB;
         }
         else {
             fprintf(stderr, "Unsupported cubemap channel count %d for %s\n", channels, faces[i]);
@@ -90,7 +93,7 @@ static int load_cubemap(GLuint *out_texture, const char *faces[6])
             return 1;
         }
 
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internal_format, width, height, 0, source_format, GL_UNSIGNED_BYTE, data);
 
         stbi_image_free(data);
     }
