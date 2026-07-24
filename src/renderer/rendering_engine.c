@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "window.h"
-
+#include "renderer.h"
 
 static void safe_exit() {
     glfwTerminate();
@@ -41,12 +41,23 @@ int rendering_engine_entry(bool fullscreen, bool fps_enabled) {
         return 1;
     }
     set_hints();
-    int window_result = window_run(fullscreen, fps_enabled);
-    if(window_result != 0) {
-        fprintf(stderr, "Failed to run window\n");
+    
+    GLFWwindow *window = window_create(fullscreen);
+    if(window == NULL) {
         safe_exit();
         return 1;
     }
+
+    int renderer_result = renderer_run(window, fps_enabled);
+
+    window_destroy(window);
+
+    if( renderer_result != 0) {
+        fprintf(stderr, "Failed to run renderer\n");
+        safe_exit();
+        return 1;
+    }
+
     safe_exit();
     return 0;
 }

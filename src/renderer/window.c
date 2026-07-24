@@ -1,18 +1,11 @@
-#include "window.h"
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "window.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "renderer.h"
 
 static void create_window_context(GLFWwindow* window)
 {
     glfwMakeContextCurrent(window);
-}
-
-static void close_window(GLFWwindow* window)
-{
-    glfwDestroyWindow(window);
 }
 
 static int start_glad()
@@ -40,7 +33,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-int window_run( bool fullscreen, bool fps_enabled)
+GLFWwindow *window_create(bool fullscreen)
 {
     GLFWmonitor *mon = NULL;
     int win_w = 1024, win_h = 768; // Our window dimensions, in pixels.
@@ -62,35 +55,52 @@ int window_run( bool fullscreen, bool fps_enabled)
 
     glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 
-    GLFWwindow* window = glfwCreateWindow(
+    GLFWwindow *window = glfwCreateWindow(        
         win_w,
         win_h,
         "Extended OpenGL Init",
         mon,
         NULL
     );
-    if(!window)
+
+    if (window == NULL)
     {
-        fprintf(stderr, "Window failed to be created");
-        return 1;
+        fprintf(stderr, "Window failed to be created\n");
+        return NULL;
     }
+
     create_window_context(window);
+
     glfwSetKeyCallback(window, key_callback);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    int glad_result = start_glad();
-    if(glad_result != 0) {
-        fprintf(stderr, "Failed to start GLAD");
-        close_window(window);
-        return 1;
+
+    if (start_glad() != 0)
+    {
+        fprintf(stderr, "Failed to start GLAD\n");
+        glfwDestroyWindow(window);
+        return NULL;
     }
-    int renderer_result = renderer_run(window, fps_enabled);
-    if(renderer_result != 0) {
-        fprintf(stderr, "Failed to run renderer\n");
-        close_window(window);
-        return 1;
-    }
-    close_window(window);
-    return 0;
+
+    return window;
+}
+
+void window_destroy(GLFWwindow *window)
+{
+    glfwDestroyWindow(window);
+}
+
+bool window_should_close(GLFWwindow *window)
+{
+    return glfwWindowShouldClose(window);
+}
+
+void window_poll_events(void)
+{
+    glfwPollEvents();
+}
+
+void window_present(GLFWwindow *window)
+{
+    glfwSwapBuffers(window);
 }

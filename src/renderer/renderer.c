@@ -701,6 +701,7 @@ int renderer_run(GLFWwindow *window, bool fps_enabled)
         fprintf(stderr, "Failed to initialize renderer\n");
         return 1;
     }
+    glfwSetCursorPosCallback(window, mouse_callback);
     run_render_loop(window, fps_enabled, &renderer);
     renderer_shutdown(&renderer);
     return 0;
