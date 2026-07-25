@@ -40,6 +40,7 @@ int rendering_engine_entry(bool fullscreen, bool fps_enabled) {
         safe_exit();
         return 1;
     }
+    
     set_hints();
     
     GLFWwindow *window = window_create(fullscreen);

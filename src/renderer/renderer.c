@@ -231,7 +231,7 @@ static void update_frame_time(double current_time, double *previous_time, double
     *previous_time = current_time;
 }
 
-void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
+static void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
 {
     float xpos = (float)xposIn;
     float ypos = (float)yposIn;
@@ -258,7 +258,56 @@ static void draw_screen_quad(struct RendererState *renderer)
     glEnable(GL_CULL_FACE);
 }
 
-static void run_render_loop(GLFWwindow *window, bool fps_enabled, struct RendererState *renderer_state)
+void renderer_render_frame(GLFWwindow *window, double delta_time)
+{
+    struct RendererState *renderer_state = &renderer;
+    
+    // Wipe drawing surface clear
+    msaa_render_target_bind(&renderer_state->scene_msaa_target);
+    glEnable(GL_DEPTH_TEST);
+
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    vec2s movement_axis = input_get_movement_axis();
+    camera_movement(&renderer_state->camera, movement_axis, delta_time);
+    camera_update(&renderer_state->camera);
+
+    // Put the shader program and VAO in focus in OpenGL's state machine
+    glUseProgram(renderer_state->shader_program);
+
+    upload_camera_ubo(renderer_state->camera_ubo, &renderer_state->camera, renderer_state->projection);
+
+    upload_directional_light(&renderer_state->directional_light, &renderer_state->directional_light_uniforms);
+
+    upload_point_light_collection(&renderer_state->point_lights, renderer_state->point_light_uniforms, renderer_state->point_light_count_location);
+
+    upload_spot_light_collection(&renderer_state->spot_lights, renderer_state->spot_light_uniforms, renderer_state->spot_light_count_location);
+
+    mat4 model_matrix;
+    glm_mat4_identity(model_matrix);
+
+    glUniform1i(renderer_state->use_instancing_location, 0);
+    draw_model(&renderer_state->test_model, renderer_state->model_location, &renderer_state->material_uniforms, model_matrix ,renderer_state->camera.cameraPos.raw);
+
+    msaa_render_target_resolve_to(&renderer_state->scene_msaa_target, &renderer_state->scene_target);
+
+    render_target_unbind();
+
+    int framebuffer_width = 0;
+    int framebuffer_height = 0;
+
+    glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
+
+    glViewport(0, 0, framebuffer_width, framebuffer_height);
+
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    draw_screen_quad(renderer_state);
+}
+
+static void run_render_loop(GLFWwindow *window, bool fps_enabled)
 {
     double previous_time = glfwGetTime();
     double title_countdown_time = 0.1;
@@ -278,63 +327,7 @@ static void run_render_loop(GLFWwindow *window, bool fps_enabled, struct Rendere
         // Update window events
         glfwPollEvents();
 
-        // Wipe drawing surface clear
-        msaa_render_target_bind(&renderer_state->scene_msaa_target);
-
-        glEnable(GL_DEPTH_TEST);
-
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        vec2s movement_axis = input_get_movement_axis();
-        camera_movement(&renderer_state->camera, movement_axis, delta_time);
-        camera_update(&renderer_state->camera);
-
-        // Put the shader program and VAO in focus in OpenGL's state machine
-        glUseProgram(renderer_state->shader_program);
-
-        upload_camera_ubo(renderer_state->camera_ubo, &renderer_state->camera, renderer_state->projection);
-
-        upload_directional_light(&renderer_state->directional_light, &renderer_state->directional_light_uniforms);
-
-        upload_point_light_collection(&renderer_state->point_lights, renderer_state->point_light_uniforms, renderer_state->point_light_count_location);
-
-        upload_spot_light_collection(&renderer_state->spot_lights, renderer_state->spot_light_uniforms, renderer_state->spot_light_count_location);
-
-        mat4 model_matrix;
-        glm_mat4_identity(model_matrix);
-        // glm_translate(model_matrix, (vec3){0.0f, 0.0f, 0.0f});
-        // glm_scale(model_matrix, (vec3){0.1f, 0.1f, 0.1f});
-
-        glUniform1i(renderer_state->use_instancing_location, 0);
-        draw_model(&renderer_state->test_model, renderer_state->model_location, &renderer_state->material_uniforms, model_matrix ,renderer_state->camera.cameraPos.raw);
-
-        // glUniform1i(renderer_state->use_instancing_location, 1);
-
-        // mat4 instance_model_matrix;
-        // glm_mat4_identity(instance_model_matrix);
-
-        // draw_model_instanced(&renderer_state->instance_model, renderer_state->model_location, &renderer_state->material_uniforms, instance_model_matrix, renderer_state->instance_instances.instance_vbo, (GLsizei)renderer_state->instance_instances.count);
-
-        // glUniform1i(renderer_state->use_instancing_location, 0);
-
-        // skybox_draw(&renderer_state->skybox, renderer_state->projection, renderer_state->camera.view.raw);
-
-        msaa_render_target_resolve_to(&renderer_state->scene_msaa_target, &renderer_state->scene_target);
-
-        render_target_unbind();
-
-        int framebuffer_width = 0;
-        int framebuffer_height = 0;
-
-        glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
-
-        glViewport(0, 0, framebuffer_width, framebuffer_height);
-
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        draw_screen_quad(renderer_state);
+        renderer_render_frame(window, delta_time);
 
         // Put the drawing into the visible area
         glfwSwapBuffers(window);
@@ -550,7 +543,7 @@ static int init_screen_quad(struct RendererState *renderer)
     return 0;
 }
 
-static int renderer_init(struct RendererState *renderer, GLFWwindow *window)
+static int renderer_state_init(struct RendererState *renderer, GLFWwindow *window)
 {
     if (init_shader_program(renderer) != 0)
     {
@@ -582,18 +575,6 @@ static int renderer_init(struct RendererState *renderer, GLFWwindow *window)
         return 1;
     }
 
-    // if(model_load_gltf(&renderer->test_model, "assets/models/buick_riviera_1963-1965__www.vecarz.com/scene.gltf") != 0)
-    // // if (model_load_gltf(&renderer->test_model, "assets/models/postwar_city_-_exterior_scene/scene.gltf") != 0);
-    // {
-    //     fprintf(stderr, "Failed to load test model\n");
-    // }
-
-    // if(model_load_gltf(&renderer->instance_model, "assets/models/white_monster_3d_scan/scene.gltf") != 0)
-    // // if (model_load_gltf(&renderer->test_model, "assets/models/postwar_city_-_exterior_scene/scene.gltf") != 0);
-    // {
-    //     fprintf(stderr, "Failed to load test model\n");
-    // }
-
     if (model_load_gltf(&renderer->test_model, "assets/models/loft_japanese_11_free_interior/scene.gltf") != 0)
     {
         fprintf(stderr, "Failed to load loft interior model\n");
@@ -622,27 +603,6 @@ static int renderer_init(struct RendererState *renderer, GLFWwindow *window)
 
     renderer->use_instancing_location = glGetUniformLocation(renderer->shader_program, "useInstancing");
 
-    // if (instanced_model_init(&renderer->instance_instances) != 0)
-    // {
-    //     fprintf(stderr, "Failed to initialize instanced model transforms\n");
-    //     return 1;
-    // }
-
-    // for (size_t i = 0; i < 100; i++)
-    // {
-    //     mat4 transform;
-    //     glm_mat4_identity(transform);
-    //     float x = (float)(i % 10) * 2.0f;
-    //     float z = (float)(i / 10) * 2.0f;
-
-    //     glm_translate(transform, (vec3){x, 0.0f, z});
-    //     glm_scale(transform, (vec3){0.01f, 0.01f, 0.01f});
-
-    //     instanced_model_add_transform(&renderer->instance_instances, transform);
-    // }
-
-    // instanced_model_upload_transforms(&renderer->instance_instances);
-
     if (renderer->model_location < 0)
     {
         fprintf(stderr, "Failed to get uniform location");
@@ -661,7 +621,7 @@ static int renderer_init(struct RendererState *renderer, GLFWwindow *window)
     return 0;
 }
 
-static void renderer_shutdown(struct RendererState *renderer)
+static void renderer_state_shutdown(struct RendererState *renderer)
 {
     model_free(&renderer->test_model);
     // instanced_model_free(&renderer->instance_instances);
@@ -692,17 +652,33 @@ static void renderer_shutdown(struct RendererState *renderer)
     glDeleteProgram(renderer->shader_program);
 }
 
-int renderer_run(GLFWwindow *window, bool fps_enabled)
+int renderer_init(GLFWwindow *window)
 {
-
-    if (renderer_init(&renderer, window) != 0)
+    if (renderer_state_init(&renderer, window) != 0)
     {
-        renderer_shutdown(&renderer);
-        fprintf(stderr, "Failed to initialize renderer\n");
+        renderer_state_shutdown(&renderer);
+        fprintf(stderr, "Failed to initialize renderer state\n");
         return 1;
     }
+
     glfwSetCursorPosCallback(window, mouse_callback);
-    run_render_loop(window, fps_enabled, &renderer);
-    renderer_shutdown(&renderer);
     return 0;
+}
+
+int renderer_run(GLFWwindow *window, bool fps_enabled)
+{
+    if (renderer_init(window) != 0)
+    {
+        return 1;
+    }
+
+    run_render_loop(window, fps_enabled);
+
+    renderer_shutdown();
+    return 0;
+}
+
+void renderer_shutdown(void)
+{
+    renderer_state_shutdown(&renderer);
 }

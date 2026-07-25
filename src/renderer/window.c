@@ -55,7 +55,7 @@ GLFWwindow *window_create(bool fullscreen)
 
     glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 
-    GLFWwindow *window = glfwCreateWindow(        
+    GLFWwindow *window = glfwCreateWindow(
         win_w,
         win_h,
         "Extended OpenGL Init",
