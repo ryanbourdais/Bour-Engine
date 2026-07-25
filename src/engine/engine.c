@@ -1,12 +1,12 @@
-#include "rendering_engine.h"
+#include "engine.h"
 //openGL 4.1 Core
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "window.h"
-#include "renderer.h"
+#include "../renderer/window.h"
+#include "../renderer/renderer.h"
 
 static void safe_exit() {
     glfwTerminate();
@@ -78,7 +78,7 @@ static void run_engine_loop(GLFWwindow *window, bool fps_enabled)
     }
 }
 
-int rendering_engine_entry(bool fullscreen, bool fps_enabled) {
+int engine_run(bool fullscreen, bool fps_enabled) {
     initialize_glfw();
     if(!glfwInit())
     {

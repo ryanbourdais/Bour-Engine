@@ -10,7 +10,7 @@ find_package(glfw3 CONFIG REQUIRED)
 
 add_executable(bour_engine
     main.c
-    renderer/rendering_engine.c
+    engine/engine.c
     external/glad/src/glad.c
     external/stb/stb_image.c
     external/cgltf/cgltf.c
