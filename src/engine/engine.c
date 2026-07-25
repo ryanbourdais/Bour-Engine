@@ -8,6 +8,15 @@
 #include "../renderer/window.h"
 #include "../renderer/renderer.h"
 
+struct EngineState {
+    GLFWwindow *window;
+
+    bool fps_enabled;
+    double previous_time;
+    double delta_time;
+    double title_countdown_time;
+};
+
 static void safe_exit() {
     glfwTerminate();
 }
@@ -53,28 +62,28 @@ static void update_frame_time(double current_time, double *previous_time, double
     *previous_time = current_time;
 }
 
-static void run_engine_loop(GLFWwindow *window, bool fps_enabled)
+static void run_engine_loop(struct EngineState *engine)
 {
     double previous_time = glfwGetTime();
     double title_countdown_time = 0.1;
     double delta_time = 0.0;
 
-    while (!window_should_close(window))
+    while (!window_should_close(engine->window))
     {
         double current_time = glfwGetTime();
 
         update_frame_time(current_time, &previous_time, &delta_time);
 
-        if (fps_enabled)
+        if (engine->fps_enabled)
         {
-            fps_counter(&delta_time, &title_countdown_time, window);
+            fps_counter(&delta_time, &title_countdown_time, engine->window);
         }
 
         window_poll_events();
 
-        renderer_render_frame(window, delta_time);
+        renderer_render_frame(engine->window, delta_time);
 
-        window_present(window);
+        window_present(engine->window);
     }
 }
 
@@ -95,6 +104,14 @@ int engine_run(bool fullscreen, bool fps_enabled) {
         return 1;
     }
 
+    struct EngineState engine = {
+        .window = window,
+        .fps_enabled = fps_enabled,
+        .previous_time = glfwGetTime(),
+        .delta_time = 0.0,
+        .title_countdown_time = 0.1
+    };
+
     if (renderer_init(window) != 0)
     {
         fprintf(stderr, "Failed to initialize renderer\n");
@@ -103,7 +120,7 @@ int engine_run(bool fullscreen, bool fps_enabled) {
         return 1;
     }
 
-    run_engine_loop(window, fps_enabled);
+    run_engine_loop(&engine);
 
     renderer_shutdown();
     window_destroy(window);
