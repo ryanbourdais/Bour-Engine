@@ -210,27 +210,6 @@ const char *skybox_faces[6] = {
     "assets/cubemaps/skybox/back.jpg"
 };
 
-static void fps_counter(double *delta_time, double *title_countdown_time, GLFWwindow *window)
-{
-    *title_countdown_time -= *delta_time;
-    if (*title_countdown_time <= 0.0 && *delta_time > 0.0)
-    {
-        double fps = 1.0 / *delta_time;
-
-        // Create a string and put the FPS as the window title.
-        char title[256];
-        sprintf(title, "FPS = %.2lf", fps);
-        glfwSetWindowTitle(window, title);
-        *title_countdown_time = 0.1;
-    }
-}
-
-static void update_frame_time(double current_time, double *previous_time, double *delta_time)
-{
-    *delta_time = current_time - *previous_time;
-    *previous_time = current_time;
-}
-
 static void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
 {
     float xpos = (float)xposIn;
@@ -305,33 +284,6 @@ void renderer_render_frame(GLFWwindow *window, double delta_time)
     glClear(GL_COLOR_BUFFER_BIT);
 
     draw_screen_quad(renderer_state);
-}
-
-static void run_render_loop(GLFWwindow *window, bool fps_enabled)
-{
-    double previous_time = glfwGetTime();
-    double title_countdown_time = 0.1;
-    double delta_time = 0.0;
-
-    while (!glfwWindowShouldClose(window))
-    {
-        double current_time = glfwGetTime();
-        // Update delta time and previous time for next frame
-        update_frame_time(current_time, &previous_time, &delta_time);
-
-        if (fps_enabled)
-        {
-            fps_counter(&delta_time, &title_countdown_time, window);
-        }
-
-        // Update window events
-        glfwPollEvents();
-
-        renderer_render_frame(window, delta_time);
-
-        // Put the drawing into the visible area
-        glfwSwapBuffers(window);
-    }
 }
 
 static int init_render_objects(struct RendererState *renderer)
@@ -662,19 +614,6 @@ int renderer_init(GLFWwindow *window)
     }
 
     glfwSetCursorPosCallback(window, mouse_callback);
-    return 0;
-}
-
-int renderer_run(GLFWwindow *window, bool fps_enabled)
-{
-    if (renderer_init(window) != 0)
-    {
-        return 1;
-    }
-
-    run_render_loop(window, fps_enabled);
-
-    renderer_shutdown();
     return 0;
 }
 

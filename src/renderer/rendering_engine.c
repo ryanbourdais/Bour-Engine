@@ -32,6 +32,52 @@ static void set_hints()
     glfwWindowHint( GLFW_SAMPLES, 8 );
 }
 
+static void fps_counter(double *delta_time, double *title_countdown_time, GLFWwindow *window)
+{
+    *title_countdown_time -= *delta_time;
+    if (*title_countdown_time <= 0.0 && *delta_time > 0.0)
+    {
+        double fps = 1.0 / *delta_time;
+
+        // Create a string and put the FPS as the window title.
+        char title[256];
+        sprintf(title, "FPS = %.2lf", fps);
+        glfwSetWindowTitle(window, title);
+        *title_countdown_time = 0.1;
+    }
+}
+
+static void update_frame_time(double current_time, double *previous_time, double *delta_time)
+{
+    *delta_time = current_time - *previous_time;
+    *previous_time = current_time;
+}
+
+static void run_engine_loop(GLFWwindow *window, bool fps_enabled)
+{
+    double previous_time = glfwGetTime();
+    double title_countdown_time = 0.1;
+    double delta_time = 0.0;
+
+    while (!window_should_close(window))
+    {
+        double current_time = glfwGetTime();
+
+        update_frame_time(current_time, &previous_time, &delta_time);
+
+        if (fps_enabled)
+        {
+            fps_counter(&delta_time, &title_countdown_time, window);
+        }
+
+        window_poll_events();
+
+        renderer_render_frame(window, delta_time);
+
+        window_present(window);
+    }
+}
+
 int rendering_engine_entry(bool fullscreen, bool fps_enabled) {
     initialize_glfw();
     if(!glfwInit())
@@ -40,7 +86,7 @@ int rendering_engine_entry(bool fullscreen, bool fps_enabled) {
         safe_exit();
         return 1;
     }
-    
+
     set_hints();
     
     GLFWwindow *window = window_create(fullscreen);
@@ -49,16 +95,19 @@ int rendering_engine_entry(bool fullscreen, bool fps_enabled) {
         return 1;
     }
 
-    int renderer_result = renderer_run(window, fps_enabled);
-
-    window_destroy(window);
-
-    if( renderer_result != 0) {
-        fprintf(stderr, "Failed to run renderer\n");
+    if (renderer_init(window) != 0)
+    {
+        fprintf(stderr, "Failed to initialize renderer\n");
+        window_destroy(window);
         safe_exit();
         return 1;
     }
 
+    run_engine_loop(window, fps_enabled);
+
+    renderer_shutdown();
+    window_destroy(window);
     safe_exit();
+
     return 0;
 }
