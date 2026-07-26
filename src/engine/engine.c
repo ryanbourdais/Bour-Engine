@@ -7,9 +7,12 @@
 #include <stdbool.h>
 #include "../renderer/window.h"
 #include "../renderer/renderer.h"
+#include "../renderer/camera.h"
+#include "../controller/input.h"
 
 struct EngineState {
     GLFWwindow *window;
+    Camera camera;
 
     bool fps_enabled;
     double previous_time;
@@ -56,32 +59,53 @@ static void fps_counter(double *delta_time, double *title_countdown_time, GLFWwi
     }
 }
 
+static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
+{
+    struct EngineState *engine = glfwGetWindowUserPointer(window);
+
+    vec2s offsets = input_get_mouse_offsets(xpos, ypos);
+
+    handle_mouse(&engine->camera, offsets, true);
+}
+
+
 static void update_frame_time(double current_time, double *previous_time, double *delta_time)
 {
     *delta_time = current_time - *previous_time;
     *previous_time = current_time;
 }
 
+static void engine_update(struct EngineState *engine)
+{
+    vec2s movement_axis = input_get_movement_axis();
+
+    camera_movement(
+        &engine->camera,
+        movement_axis,
+        engine->delta_time
+    );
+
+    camera_update(&engine->camera);
+}
+
 static void run_engine_loop(struct EngineState *engine)
 {
-    double previous_time = glfwGetTime();
-    double title_countdown_time = 0.1;
-    double delta_time = 0.0;
-
     while (!window_should_close(engine->window))
     {
         double current_time = glfwGetTime();
 
-        update_frame_time(current_time, &previous_time, &delta_time);
+        update_frame_time(current_time, &engine->previous_time, &engine->delta_time);
 
         if (engine->fps_enabled)
         {
-            fps_counter(&delta_time, &title_countdown_time, engine->window);
+            fps_counter(&engine->delta_time, &engine->title_countdown_time, engine->window);
         }
 
         window_poll_events();
 
-        renderer_render_frame(engine->window, delta_time);
+        engine_update(engine);
+
+        renderer_render_frame(engine->window, &engine->camera);
 
         window_present(engine->window);
     }
@@ -112,7 +136,13 @@ int engine_run(bool fullscreen, bool fps_enabled) {
         .title_countdown_time = 0.1
     };
 
-    if (renderer_init(window) != 0)
+    glfwSetWindowUserPointer(window, &engine);
+    glfwSetCursorPosCallback(window, mouse_callback);
+
+    camera_init(&engine.camera);
+    camera_update(&engine.camera);
+
+    if (renderer_init(window, &engine.camera) != 0)
     {
         fprintf(stderr, "Failed to initialize renderer\n");
         window_destroy(window);

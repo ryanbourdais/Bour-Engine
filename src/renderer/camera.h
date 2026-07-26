@@ -33,4 +33,4 @@ void camera_movement(Camera* camera, vec2s movement_axis, float delta_time);
 void handle_mouse(Camera* camera, vec2s offsets, bool constrainPitch);
 void update_camera_settings(Camera* camera, mat4 projection, GLint projection_location, float speed, float sensitivity, float fov);
 void camera_ubo_init(GLuint *camera_ubo);
-void upload_camera_ubo(GLuint camera_ubo, Camera *camera, mat4 projection);
+void upload_camera_ubo(GLuint camera_ubo, const Camera *camera, mat4 projection);
