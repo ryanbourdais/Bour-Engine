@@ -3,9 +3,7 @@
 #include <stdlib.h>
 #include <cglm/struct.h>
 
-#include "../controller/input.h"
 #include "data_types/mesh.h"
-
 #include "data_types/texture.h"
 #include "data_types/renderObject.h"
 #include "data_types/lightObject.h"
@@ -16,7 +14,6 @@
 #include "data_types/renderTarget.h"
 
 #include "shaders.h"
-#include "camera.h"
 
 #define ACTIVE_SPOT_LIGHTS 2
 #define ACTIVE_POINT_LIGHTS 4
@@ -24,7 +21,6 @@ struct RendererState
 {
     RenderObjectArray render_objects;
     mat4 projection;
-    Camera camera;
     Model test_model;
     Skybox skybox;
     DirectionalLight directional_light;
@@ -210,15 +206,6 @@ const char *skybox_faces[6] = {
     "assets/cubemaps/skybox/back.jpg"
 };
 
-static void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
-{
-    float xpos = (float)xposIn;
-    float ypos = (float)yposIn;
-
-    vec2s offsets = input_get_mouse_offsets(xpos, ypos);
-    handle_mouse(&renderer.camera, offsets, true);
-}
-
 static void draw_screen_quad(struct RendererState *renderer)
 {
     glUseProgram(renderer->screen_shader_program);
@@ -237,7 +224,7 @@ static void draw_screen_quad(struct RendererState *renderer)
     glEnable(GL_CULL_FACE);
 }
 
-void renderer_render_frame(GLFWwindow *window, double delta_time)
+void renderer_render_frame(GLFWwindow *window, const Camera *camera)
 {
     struct RendererState *renderer_state = &renderer;
     
@@ -248,14 +235,10 @@ void renderer_render_frame(GLFWwindow *window, double delta_time)
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    vec2s movement_axis = input_get_movement_axis();
-    camera_movement(&renderer_state->camera, movement_axis, delta_time);
-    camera_update(&renderer_state->camera);
-
     // Put the shader program and VAO in focus in OpenGL's state machine
     glUseProgram(renderer_state->shader_program);
 
-    upload_camera_ubo(renderer_state->camera_ubo, &renderer_state->camera, renderer_state->projection);
+    upload_camera_ubo(renderer_state->camera_ubo, camera, renderer_state->projection);
 
     upload_directional_light(&renderer_state->directional_light, &renderer_state->directional_light_uniforms);
 
@@ -267,7 +250,7 @@ void renderer_render_frame(GLFWwindow *window, double delta_time)
     glm_mat4_identity(model_matrix);
 
     glUniform1i(renderer_state->use_instancing_location, 0);
-    draw_model(&renderer_state->test_model, renderer_state->model_location, &renderer_state->material_uniforms, model_matrix ,renderer_state->camera.cameraPos.raw);
+    draw_model(&renderer_state->test_model, renderer_state->model_location, &renderer_state->material_uniforms, model_matrix , camera->cameraPos.raw);
 
     msaa_render_target_resolve_to(&renderer_state->scene_msaa_target, &renderer_state->scene_target);
 
@@ -380,9 +363,8 @@ static void init_lighting(struct RendererState *renderer)
     }
 }
 
-static void init_camera_projection(struct RendererState *renderer, GLFWwindow *window)
+static void init_camera_projection(struct RendererState *renderer, GLFWwindow *window, const Camera *camera)
 {
-    camera_init(&renderer->camera);
 
     int framebuffer_width = 0;
     int framebuffer_height = 0;
@@ -393,13 +375,11 @@ static void init_camera_projection(struct RendererState *renderer, GLFWwindow *w
         &framebuffer_height
     );
 
-    glm_perspective(glm_rad(renderer->camera.cameraFOV), (float)framebuffer_width / (float)framebuffer_height, 0.1f, 100.0f, renderer->projection);
-    
-    camera_update(&renderer->camera);
+    glm_perspective(glm_rad(camera->cameraFOV), (float)framebuffer_width / (float)framebuffer_height, 0.1f, 100.0f, renderer->projection);
 
     camera_ubo_init(&renderer->camera_ubo);
 
-    upload_camera_ubo(renderer->camera_ubo, &renderer->camera, renderer->projection);
+    upload_camera_ubo(renderer->camera_ubo, camera, renderer->projection);
 }
 
 static int bind_camera_uniform_block(GLuint shader_program)
@@ -495,7 +475,7 @@ static int init_screen_quad(struct RendererState *renderer)
     return 0;
 }
 
-static int renderer_state_init(struct RendererState *renderer, GLFWwindow *window)
+static int renderer_state_init(struct RendererState *renderer, GLFWwindow *window, const Camera *camera)
 {
     if (init_shader_program(renderer) != 0)
     {
@@ -536,7 +516,7 @@ static int renderer_state_init(struct RendererState *renderer, GLFWwindow *windo
 
     init_lighting(renderer);
 
-    init_camera_projection(renderer, window);
+    init_camera_projection(renderer, window, camera);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -604,16 +584,15 @@ static void renderer_state_shutdown(struct RendererState *renderer)
     glDeleteProgram(renderer->shader_program);
 }
 
-int renderer_init(GLFWwindow *window)
+int renderer_init(GLFWwindow *window, const Camera *camera)
 {
-    if (renderer_state_init(&renderer, window) != 0)
+    if (renderer_state_init(&renderer, window, camera) != 0)
     {
         renderer_state_shutdown(&renderer);
         fprintf(stderr, "Failed to initialize renderer state\n");
         return 1;
     }
 
-    glfwSetCursorPosCallback(window, mouse_callback);
     return 0;
 }
 
