@@ -3,6 +3,10 @@
 #include "GLFW/glfw3.h"
 #include "camera.h"
 
-int renderer_init(GLFWwindow *window, const Camera *camera);
-void renderer_render_frame(GLFWwindow *window, const Camera *camera);
-void renderer_shutdown(void);
+typedef struct RendererState Renderer;
+
+Renderer *renderer_create(void);
+int renderer_init(Renderer *renderer, GLFWwindow *window, const Camera *camera);
+void renderer_render_frame(Renderer *renderer, GLFWwindow *window, const Camera *camera);
+void renderer_shutdown(Renderer *renderer);
+void renderer_destroy(Renderer *renderer);

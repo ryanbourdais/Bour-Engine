@@ -95,7 +95,7 @@ static bool model_add_mesh(Model *model, Mesh mesh, Material material, mat4 tran
     return true;
 }
 
-static float model_mesh_distance_to_camera(ModelMesh *model_mesh, mat4 model_matrix, vec3 camera_position)
+static float model_mesh_distance_to_camera(ModelMesh *model_mesh, mat4 model_matrix, const vec3 camera_position)
 {
     mat4 final_model;
     glm_mat4_mul(model_matrix, model_mesh->transform, final_model);
@@ -106,8 +106,10 @@ static float model_mesh_distance_to_camera(ModelMesh *model_mesh, mat4 model_mat
         final_model[3][2]
     };
 
+    vec3 camera_position_copy = {camera_position[0], camera_position[1], camera_position[2]};
+
     vec3 difference;
-    glm_vec3_sub(camera_position, mesh_position, difference);
+    glm_vec3_sub(camera_position_copy, mesh_position, difference);
 
     return glm_vec3_dot(difference, difference);
 }
@@ -193,6 +195,104 @@ static void inspect_primitive(cgltf_primitive *primitive)
     else {
         printf("    Indices: missing\n");
     }
+}
+static bool model_add_cached_texture(Model *model, const char *path, GLuint texture)
+{
+    if (model->texture_cache_count == model->texture_cache_capacity)
+    {
+        size_t  new_capacity = model->texture_cache_capacity * 2;
+
+        TextureCacheEntry *new_items = realloc(
+            model->texture_cache,
+            new_capacity * sizeof(TextureCacheEntry)
+        );
+
+        if (new_items == NULL)
+        {
+            fprintf(stderr, "Failed to grow model texture cache\n");
+            return false;
+        }
+
+        model->texture_cache = new_items;
+        model->texture_cache_capacity = new_capacity;
+    }
+
+    TextureCacheEntry *entry = &model->texture_cache[model->texture_cache_count];
+
+    snprintf(entry->path, sizeof(entry->path), "%s", path);
+    entry->texture = texture;
+
+    model->texture_cache_count++;
+
+    return true;
+}
+
+static bool model_get_cached_texture(Model *model, const char *path, GLuint *out_texture)
+{
+    for (size_t i = 0; i < model->texture_cache_count; i++)
+    {
+        TextureCacheEntry *entry = &model->texture_cache[i];
+
+        if (strcmp(entry->path, path) == 0)
+        {
+            *out_texture = entry->texture;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static int model_load_cached_texture(Model *model, const char *path, GLuint *out_texture)
+{
+    if (model_get_cached_texture(model, path, out_texture))
+    {
+        return 0;
+    }
+
+    GLuint texture = 0;
+
+    if (load_texture(&texture, path) != 0)
+    {
+        return 1;
+    }
+
+    if (!model_add_cached_texture(model, path, texture))
+    {
+        glDeleteTextures(1, &texture);
+        return 1;
+    }
+
+    *out_texture = texture;
+    
+    return 0;
+}
+
+static int model_get_fallback_white_texture(Model *model, GLuint *out_texture)
+{
+    const char *fallback_key = "__fallback_white__";
+
+    if (model_get_cached_texture(model, fallback_key, out_texture))
+    {
+        return 0;
+    }
+
+    GLuint texture = 0;
+
+    if (create_solid_color_texture(&texture, 255, 255, 255, 255) != 0)
+    {
+        return 1;
+    }
+
+    if (!model_add_cached_texture(model, fallback_key, texture))
+    {
+        glDeleteTextures(1, &texture);
+        return 1;
+    }
+
+    *out_texture = texture;
+
+    return 0;
 }
 
 static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, mat4 transform, const char *model_directory, ModelImportDiagnostics *diagnostics)
@@ -493,105 +593,6 @@ static int process_node(Model *model, cgltf_node *node, const char *model_direct
     return 0;
 }
 
-static bool model_add_cached_texture(Model *model, const char *path, GLuint texture)
-{
-    if (model->texture_cache_count == model->texture_cache_capacity)
-    {
-        size_t  new_capacity = model->texture_cache_capacity * 2;
-
-        TextureCacheEntry *new_items = realloc(
-            model->texture_cache,
-            new_capacity * sizeof(TextureCacheEntry)
-        );
-
-        if (new_items == NULL)
-        {
-            fprintf(stderr, "Failed to grow model texture cache\n");
-            return false;
-        }
-
-        model->texture_cache = new_items;
-        model->texture_cache_capacity = new_capacity;
-    }
-
-    TextureCacheEntry *entry = &model->texture_cache[model->texture_cache_count];
-
-    snprintf(entry->path, sizeof(entry->path), "%s", path);
-    entry->texture = texture;
-
-    model->texture_cache_count++;
-
-    return true;
-}
-
-static bool model_get_cached_texture(Model *model, const char *path, GLuint *out_texture)
-{
-    for (size_t i = 0; i < model->texture_cache_count; i++)
-    {
-        TextureCacheEntry *entry = &model->texture_cache[i];
-
-        if (strcmp(entry->path, path) == 0)
-        {
-            *out_texture = entry->texture;
-            return true;
-        }
-    }
-
-    return false;
-}
-
-static int model_load_cached_texture(Model *model, const char *path, GLuint *out_texture)
-{
-    if (model_get_cached_texture(model, path, out_texture))
-    {
-        return 0;
-    }
-
-    GLuint texture = 0;
-
-    if (load_texture(&texture, path) != 0)
-    {
-        return 1;
-    }
-
-    if (!model_add_cached_texture(model, path, texture))
-    {
-        glDeleteTextures(1, &texture);
-        return 1;
-    }
-
-    *out_texture = texture;
-    
-    return 0;
-}
-
-static int model_get_fallback_white_texture(Model *model, GLuint *out_texture)
-{
-    const char *fallback_key = "__fallback_white__";
-
-    if (model_get_cached_texture(model, fallback_key, out_texture))
-    {
-        return 0;
-    }
-
-    GLuint texture = 0;
-
-    if (create_solid_color_texture(&texture, 255, 255, 255, 255) != 0)
-    {
-        return 1;
-    }
-
-    if (!model_add_cached_texture(model, fallback_key, texture))
-    {
-        glDeleteTextures(1, &texture);
-        return 1;
-    }
-
-    *out_texture = texture;
-
-    return 0;
-}
-
 static void draw_model_mesh(ModelMesh *model_mesh, GLint model_location, MaterialUniforms *material_uniforms, mat4 model_matrix)
 {
     mat4 final_model;
@@ -833,7 +834,7 @@ int model_load_gltf(Model *model, const char *path)
     return 0;
 }
 
-void draw_model(Model *model, GLint model_location, MaterialUniforms *material_uniforms, mat4 model_matrix, vec3 camera_position)
+void draw_model(Model *model, GLint model_location, MaterialUniforms *material_uniforms, mat4 model_matrix, const vec3 camera_position)
 {
 
     TransparentModelMesh *transparent_meshes = malloc(model->count * sizeof(TransparentModelMesh));

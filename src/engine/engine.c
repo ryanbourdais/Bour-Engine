@@ -13,6 +13,7 @@
 struct EngineState {
     GLFWwindow *window;
     Camera camera;
+    Renderer *renderer;
 
     bool fps_enabled;
     double previous_time;
@@ -105,7 +106,7 @@ static void run_engine_loop(struct EngineState *engine)
 
         engine_update(engine);
 
-        renderer_render_frame(engine->window, &engine->camera);
+        renderer_render_frame(engine->renderer, engine->window, &engine->camera);
 
         window_present(engine->window);
     }
@@ -139,12 +140,22 @@ int engine_run(bool fullscreen, bool fps_enabled) {
     glfwSetWindowUserPointer(window, &engine);
     glfwSetCursorPosCallback(window, mouse_callback);
 
+    engine.renderer = renderer_create();
+
+    if (engine.renderer == NULL)
+    {
+        window_destroy(window);
+        safe_exit();
+        return 1;
+    }
+
     camera_init(&engine.camera);
     camera_update(&engine.camera);
 
-    if (renderer_init(window, &engine.camera) != 0)
+    if (renderer_init(engine.renderer, window, &engine.camera) != 0)
     {
         fprintf(stderr, "Failed to initialize renderer\n");
+        renderer_destroy(engine.renderer);
         window_destroy(window);
         safe_exit();
         return 1;
@@ -152,7 +163,8 @@ int engine_run(bool fullscreen, bool fps_enabled) {
 
     run_engine_loop(&engine);
 
-    renderer_shutdown();
+    renderer_shutdown(engine.renderer);
+    renderer_destroy(engine.renderer);
     window_destroy(window);
     safe_exit();
 
