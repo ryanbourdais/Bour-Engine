@@ -53,8 +53,6 @@ struct RendererState
     GLint use_instancing_location;
 };
 
-struct RendererState renderer = {0};
-
 Vertex cube[] = {
     {.position = {-0.5f, -0.5f, 0.5f}, .color = {1.0f, 0.0f, 0.0f}, .uv = {0.0f, 0.0f}, .normal = {0.0f, 0.0f, 1.0f}},
     {.position = {0.5f, -0.5f, 0.5f}, .color = {0.0f, 1.0f, 0.0f}, .uv = {1.0f, 0.0f}, .normal = {0.0f, 0.0f, 1.0f}},
@@ -224,35 +222,33 @@ static void draw_screen_quad(struct RendererState *renderer)
     glEnable(GL_CULL_FACE);
 }
 
-void renderer_render_frame(GLFWwindow *window, const Camera *camera)
-{
-    struct RendererState *renderer_state = &renderer;
-    
+void renderer_render_frame(Renderer *renderer, GLFWwindow *window, const Camera *camera)
+{   
     // Wipe drawing surface clear
-    msaa_render_target_bind(&renderer_state->scene_msaa_target);
+    msaa_render_target_bind(&renderer->scene_msaa_target);
     glEnable(GL_DEPTH_TEST);
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Put the shader program and VAO in focus in OpenGL's state machine
-    glUseProgram(renderer_state->shader_program);
+    glUseProgram(renderer->shader_program);
 
-    upload_camera_ubo(renderer_state->camera_ubo, camera, renderer_state->projection);
+    upload_camera_ubo(renderer->camera_ubo, camera, renderer->projection);
 
-    upload_directional_light(&renderer_state->directional_light, &renderer_state->directional_light_uniforms);
+    upload_directional_light(&renderer->directional_light, &renderer->directional_light_uniforms);
 
-    upload_point_light_collection(&renderer_state->point_lights, renderer_state->point_light_uniforms, renderer_state->point_light_count_location);
+    upload_point_light_collection(&renderer->point_lights, renderer->point_light_uniforms, renderer->point_light_count_location);
 
-    upload_spot_light_collection(&renderer_state->spot_lights, renderer_state->spot_light_uniforms, renderer_state->spot_light_count_location);
+    upload_spot_light_collection(&renderer->spot_lights, renderer->spot_light_uniforms, renderer->spot_light_count_location);
 
     mat4 model_matrix;
     glm_mat4_identity(model_matrix);
 
-    glUniform1i(renderer_state->use_instancing_location, 0);
-    draw_model(&renderer_state->test_model, renderer_state->model_location, &renderer_state->material_uniforms, model_matrix , camera->cameraPos.raw);
+    glUniform1i(renderer->use_instancing_location, 0);
+    draw_model(&renderer->test_model, renderer->model_location, &renderer->material_uniforms, model_matrix , camera->cameraPos.raw);
 
-    msaa_render_target_resolve_to(&renderer_state->scene_msaa_target, &renderer_state->scene_target);
+    msaa_render_target_resolve_to(&renderer->scene_msaa_target, &renderer->scene_target);
 
     render_target_unbind();
 
@@ -266,7 +262,7 @@ void renderer_render_frame(GLFWwindow *window, const Camera *camera)
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    draw_screen_quad(renderer_state);
+    draw_screen_quad(renderer);
 }
 
 static int init_render_objects(struct RendererState *renderer)
@@ -292,6 +288,21 @@ static int init_render_objects(struct RendererState *renderer)
         }
         renderobject_array_append(&renderer->render_objects, new_render_object);
     }
+    return 0;
+}
+
+static int bind_camera_uniform_block(GLuint shader_program)
+{
+    GLuint camera_block_index = glGetUniformBlockIndex(shader_program, "CameraBlock");
+
+    if(camera_block_index == GL_INVALID_INDEX)
+    {
+        fprintf(stderr, "Failed to find CameraBlock uniform block\n");
+        return 1;
+    }
+
+    glUniformBlockBinding(shader_program, camera_block_index, CAMERA_UBO_BINDING);
+
     return 0;
 }
 
@@ -380,21 +391,6 @@ static void init_camera_projection(struct RendererState *renderer, GLFWwindow *w
     camera_ubo_init(&renderer->camera_ubo);
 
     upload_camera_ubo(renderer->camera_ubo, camera, renderer->projection);
-}
-
-static int bind_camera_uniform_block(GLuint shader_program)
-{
-    GLuint camera_block_index = glGetUniformBlockIndex(shader_program, "CameraBlock");
-
-    if(camera_block_index == GL_INVALID_INDEX)
-    {
-        fprintf(stderr, "Failed to find CameraBlock uniform block\n");
-        return 1;
-    }
-
-    glUniformBlockBinding(shader_program, camera_block_index, CAMERA_UBO_BINDING);
-
-    return 0;
 }
 
 static void init_material(struct RendererState *renderer)
@@ -584,11 +580,11 @@ static void renderer_state_shutdown(struct RendererState *renderer)
     glDeleteProgram(renderer->shader_program);
 }
 
-int renderer_init(GLFWwindow *window, const Camera *camera)
+int renderer_init(Renderer *renderer, GLFWwindow *window, const Camera *camera)
 {
-    if (renderer_state_init(&renderer, window, camera) != 0)
+    if (renderer_state_init(renderer, window, camera) != 0)
     {
-        renderer_state_shutdown(&renderer);
+        renderer_state_shutdown(renderer);
         fprintf(stderr, "Failed to initialize renderer state\n");
         return 1;
     }
@@ -596,7 +592,17 @@ int renderer_init(GLFWwindow *window, const Camera *camera)
     return 0;
 }
 
-void renderer_shutdown(void)
+void renderer_shutdown(Renderer *renderer)
 {
-    renderer_state_shutdown(&renderer);
+    renderer_state_shutdown(renderer);
+}
+
+Renderer *renderer_create(void)
+{
+    return calloc(1, sizeof(Renderer));
+}
+
+void renderer_destroy(Renderer *renderer)
+{
+    free(renderer);
 }

@@ -12,6 +12,7 @@ This project is focused on learning low-level graphics programming, engine archi
 
 ## Build Philosophy
 - **No AI-written code** — everything is written and understood manually
+- **AI-assisted documentation and planning** — AI may help organize notes, backlog, and project management
 - **Learn by building** — not by stitching together libraries
 - **Keep it simple first** — complexity comes later
 - **Working > Perfect** — every milestone must run
