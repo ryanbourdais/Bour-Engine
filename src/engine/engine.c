@@ -9,6 +9,7 @@
 #include "../renderer/renderer.h"
 #include "../renderer/camera.h"
 #include "../controller/input.h"
+#include "timing.h"
 
 struct EngineState
 {
@@ -17,9 +18,8 @@ struct EngineState
     Renderer *renderer;
 
     bool fps_enabled;
-    double previous_time;
-    double delta_time;
-    double title_countdown_time;
+    FrameClock clock;
+    double fps_title_countdown_time;
 };
 
 static void safe_exit()
@@ -71,12 +71,6 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     handle_mouse(&engine->camera, offsets, true);
 }
 
-static void update_frame_time(double current_time, double *previous_time, double *delta_time)
-{
-    *delta_time = current_time - *previous_time;
-    *previous_time = current_time;
-}
-
 static void engine_update(struct EngineState *engine)
 {
     vec2s movement_axis = input_get_movement_axis();
@@ -84,7 +78,7 @@ static void engine_update(struct EngineState *engine)
     camera_movement(
         &engine->camera,
         movement_axis,
-        engine->delta_time);
+        engine->clock.delta_time);
 
     camera_update(&engine->camera);
 }
@@ -95,11 +89,11 @@ static void run_engine_loop(struct EngineState *engine)
     {
         double current_time = glfwGetTime();
 
-        update_frame_time(current_time, &engine->previous_time, &engine->delta_time);
+        frame_clock_update(&engine->clock, current_time);
 
         if (engine->fps_enabled)
         {
-            fps_counter(&engine->delta_time, &engine->title_countdown_time, engine->window);
+            fps_counter(&engine->clock.delta_time, &engine->fps_title_countdown_time, engine->window);
         }
 
         window_poll_events();
@@ -138,9 +132,9 @@ int engine_run(bool fullscreen, bool fps_enabled)
     struct EngineState engine = {
         .window = window,
         .fps_enabled = fps_enabled,
-        .previous_time = glfwGetTime(),
-        .delta_time = 0.0,
-        .title_countdown_time = 0.1};
+        .fps_title_countdown_time = 0.1};
+
+    frame_clock_init(&engine.clock, glfwGetTime());
 
     glfwSetWindowUserPointer(window, &engine);
     glfwSetCursorPosCallback(window, mouse_callback);

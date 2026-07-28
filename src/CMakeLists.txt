@@ -31,6 +31,7 @@ add_executable(bour_engine
     renderer/data_types/instancedModel.c
     renderer/data_types/renderTarget.c
     renderer/camera.c
+    engine/timing.c
 )
 
 add_subdirectory(external/cglm EXCLUDE_FROM_ALL)
