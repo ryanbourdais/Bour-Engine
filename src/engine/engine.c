@@ -155,7 +155,21 @@ int engine_run(bool fullscreen, bool fps_enabled)
 
     window_get_framebuffer_size(engine.window, &viewport.width, &viewport.height);
 
-    if (renderer_init(engine.renderer, &viewport, &engine.camera) != 0)
+    RendererConfig renderer_config = {
+        .viewport = viewport,
+        .camera = &engine.camera,
+        .model_path = "assets/models/loft_japanese_11_free_interior/scene.gltf",
+        .skybox_faces = {
+            "assets/cubemaps/skybox/right.jpg",
+            "assets/cubemaps/skybox/left.jpg",
+            "assets/cubemaps/skybox/top.jpg",
+            "assets/cubemaps/skybox/bottom.jpg",
+            "assets/cubemaps/skybox/front.jpg",
+            "assets/cubemaps/skybox/back.jpg"
+        }
+    };
+
+    if (renderer_init(engine.renderer, &renderer_config) != 0)
     {
         fprintf(stderr, "Failed to initialize renderer\n");
         renderer_destroy(engine.renderer);

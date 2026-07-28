@@ -50,7 +50,7 @@ static float skybox_vertices[] = {
      1.0f, -1.0f,  1.0f
 };
 
-static int load_cubemap(GLuint *out_texture, const char *faces[6])
+static int load_cubemap(GLuint *out_texture, const char *const faces[6])
 {
     GLuint texture = 0;
     glGenTextures(1, &texture);
@@ -110,7 +110,7 @@ static int load_cubemap(GLuint *out_texture, const char *faces[6])
     return 0;
 }
 
-int skybox_init(Skybox *skybox, const char *faces[6])
+int skybox_init(Skybox *skybox, const char *const faces[6])
 {
     memset(skybox, 0, sizeof(Skybox));
 

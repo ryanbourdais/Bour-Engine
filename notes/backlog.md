@@ -25,7 +25,7 @@ Goal: finish the architecture work already started by moving camera/input owners
 - [X] Move framebuffer-size queries out of per-frame renderer code where practical.
 - [X] Give timing its own small abstraction.
 - [X] Keep GLFW details isolated to window/platform-facing code.
-- [ ] Make renderer initialization accept configuration instead of hardcoded debug state.
+- [X] Make renderer initialization accept configuration instead of hardcoded debug state.
 - [ ] Define the renderer’s input as scene/camera/light/renderable data, not gameplay state.
 
 ## Epic 2: Scene Management
