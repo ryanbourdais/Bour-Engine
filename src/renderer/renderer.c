@@ -252,7 +252,7 @@ void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
 
     render_target_unbind();
 
-    glViewport(0, 0, frame->framebuffer_width, frame->framebuffer_height);
+    glViewport(0, 0, frame->viewport.width, frame->viewport.height);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -369,19 +369,10 @@ static void init_lighting(struct RendererState *renderer)
     }
 }
 
-static void init_camera_projection(struct RendererState *renderer, GLFWwindow *window, const Camera *camera)
+static void init_camera_projection(struct RendererState *renderer, RendererViewport *viewport, const Camera *camera)
 {
 
-    int framebuffer_width = 0;
-    int framebuffer_height = 0;
-
-    glfwGetFramebufferSize(
-        window,
-        &framebuffer_width,
-        &framebuffer_height
-    );
-
-    glm_perspective(glm_rad(camera->cameraFOV), (float)framebuffer_width / (float)framebuffer_height, 0.1f, 100.0f, renderer->projection);
+    glm_perspective(glm_rad(camera->cameraFOV), (float)viewport->width / (float)viewport->height, 0.1f, 100.0f, renderer->projection);
 
     camera_ubo_init(&renderer->camera_ubo);
 
@@ -466,29 +457,19 @@ static int init_screen_quad(struct RendererState *renderer)
     return 0;
 }
 
-static int renderer_state_init(struct RendererState *renderer, GLFWwindow *window, const Camera *camera)
+static int renderer_state_init(struct RendererState *renderer, RendererViewport *viewport, const Camera *camera)
 {
     if (init_shader_program(renderer) != 0)
     {
         return 1;
     }
 
-    int framebuffer_width = 0;
-    int framebuffer_height = 0;
-
-    glfwGetFramebufferSize(
-        window,
-        &framebuffer_width,
-        &framebuffer_height
-    );
-
-
-    if (render_target_init(&renderer->scene_target, framebuffer_width, framebuffer_height) != 0)
+    if (render_target_init(&renderer->scene_target, viewport->width, viewport->height) != 0)
     {
         return 1;
     }
 
-    if (msaa_render_target_init(&renderer->scene_msaa_target, framebuffer_width, framebuffer_height, 4) != 0)
+    if (msaa_render_target_init(&renderer->scene_msaa_target, viewport->width, viewport->height, 4) != 0)
     {
         return 1;
     }
@@ -507,7 +488,7 @@ static int renderer_state_init(struct RendererState *renderer, GLFWwindow *windo
 
     init_lighting(renderer);
 
-    init_camera_projection(renderer, window, camera);
+    init_camera_projection(renderer, viewport, camera);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -575,9 +556,9 @@ static void renderer_state_shutdown(struct RendererState *renderer)
     glDeleteProgram(renderer->shader_program);
 }
 
-int renderer_init(Renderer *renderer, GLFWwindow *window, const Camera *camera)
+int renderer_init(Renderer *renderer, RendererViewport *viewport, const Camera *camera)
 {
-    if (renderer_state_init(renderer, window, camera) != 0)
+    if (renderer_state_init(renderer, viewport, camera) != 0)
     {
         renderer_state_shutdown(renderer);
         fprintf(stderr, "Failed to initialize renderer state\n");
