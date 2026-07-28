@@ -104,3 +104,8 @@ void window_present(GLFWwindow *window)
 {
     glfwSwapBuffers(window);
 }
+
+void window_get_framebuffer_size(GLFWwindow *window, int *width, int *height)
+{
+    glfwGetFramebufferSize(window, width, height);
+}

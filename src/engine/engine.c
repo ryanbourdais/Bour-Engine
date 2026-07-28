@@ -1,5 +1,5 @@
 #include "engine.h"
-//openGL 4.1 Core
+// openGL 4.1 Core
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
@@ -10,7 +10,8 @@
 #include "../renderer/camera.h"
 #include "../controller/input.h"
 
-struct EngineState {
+struct EngineState
+{
     GLFWwindow *window;
     Camera camera;
     Renderer *renderer;
@@ -21,11 +22,12 @@ struct EngineState {
     double title_countdown_time;
 };
 
-static void safe_exit() {
+static void safe_exit()
+{
     glfwTerminate();
 }
 
-static void error_callback(int error, const char* description)
+static void error_callback(int error, const char *description)
 {
     fprintf(stderr, "Error: %s\n", description);
 }
@@ -37,12 +39,12 @@ static void initialize_glfw()
 
 static void set_hints()
 {
-    glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 4 );
-    glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 1 );
-    glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
-    glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     // MSAA 8x
-    glfwWindowHint( GLFW_SAMPLES, 8 );
+    glfwWindowHint(GLFW_SAMPLES, 8);
 }
 
 static void fps_counter(double *delta_time, double *title_countdown_time, GLFWwindow *window)
@@ -69,7 +71,6 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     handle_mouse(&engine->camera, offsets, true);
 }
 
-
 static void update_frame_time(double current_time, double *previous_time, double *delta_time)
 {
     *delta_time = current_time - *previous_time;
@@ -83,8 +84,7 @@ static void engine_update(struct EngineState *engine)
     camera_movement(
         &engine->camera,
         movement_axis,
-        engine->delta_time
-    );
+        engine->delta_time);
 
     camera_update(&engine->camera);
 }
@@ -106,15 +106,20 @@ static void run_engine_loop(struct EngineState *engine)
 
         engine_update(engine);
 
-        renderer_render_frame(engine->renderer, engine->window, &engine->camera);
+        RendererFrame frame = {.camera = &engine->camera, .framebuffer_width = 0, .framebuffer_height = 0};
+
+        window_get_framebuffer_size(engine->window, &frame.framebuffer_width, &frame.framebuffer_height);
+
+        renderer_render_frame(engine->renderer, &frame);
 
         window_present(engine->window);
     }
 }
 
-int engine_run(bool fullscreen, bool fps_enabled) {
+int engine_run(bool fullscreen, bool fps_enabled)
+{
     initialize_glfw();
-    if(!glfwInit())
+    if (!glfwInit())
     {
         fprintf(stderr, "GLFW init failed");
         safe_exit();
@@ -122,9 +127,10 @@ int engine_run(bool fullscreen, bool fps_enabled) {
     }
 
     set_hints();
-    
+
     GLFWwindow *window = window_create(fullscreen);
-    if(window == NULL) {
+    if (window == NULL)
+    {
         safe_exit();
         return 1;
     }
@@ -134,8 +140,7 @@ int engine_run(bool fullscreen, bool fps_enabled) {
         .fps_enabled = fps_enabled,
         .previous_time = glfwGetTime(),
         .delta_time = 0.0,
-        .title_countdown_time = 0.1
-    };
+        .title_countdown_time = 0.1};
 
     glfwSetWindowUserPointer(window, &engine);
     glfwSetCursorPosCallback(window, mouse_callback);

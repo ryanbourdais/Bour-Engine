@@ -222,8 +222,8 @@ static void draw_screen_quad(struct RendererState *renderer)
     glEnable(GL_CULL_FACE);
 }
 
-void renderer_render_frame(Renderer *renderer, GLFWwindow *window, const Camera *camera)
-{   
+void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
+{
     // Wipe drawing surface clear
     msaa_render_target_bind(&renderer->scene_msaa_target);
     glEnable(GL_DEPTH_TEST);
@@ -234,7 +234,7 @@ void renderer_render_frame(Renderer *renderer, GLFWwindow *window, const Camera 
     // Put the shader program and VAO in focus in OpenGL's state machine
     glUseProgram(renderer->shader_program);
 
-    upload_camera_ubo(renderer->camera_ubo, camera, renderer->projection);
+    upload_camera_ubo(renderer->camera_ubo, frame->camera, renderer->projection);
 
     upload_directional_light(&renderer->directional_light, &renderer->directional_light_uniforms);
 
@@ -246,18 +246,13 @@ void renderer_render_frame(Renderer *renderer, GLFWwindow *window, const Camera 
     glm_mat4_identity(model_matrix);
 
     glUniform1i(renderer->use_instancing_location, 0);
-    draw_model(&renderer->test_model, renderer->model_location, &renderer->material_uniforms, model_matrix , camera->cameraPos.raw);
+    draw_model(&renderer->test_model, renderer->model_location, &renderer->material_uniforms, model_matrix , frame->camera->cameraPos.raw);
 
     msaa_render_target_resolve_to(&renderer->scene_msaa_target, &renderer->scene_target);
 
     render_target_unbind();
 
-    int framebuffer_width = 0;
-    int framebuffer_height = 0;
-
-    glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
-
-    glViewport(0, 0, framebuffer_width, framebuffer_height);
+    glViewport(0, 0, frame->framebuffer_width, frame->framebuffer_height);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
