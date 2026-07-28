@@ -23,7 +23,7 @@ Goal: finish the architecture work already started by moving camera/input owners
 - [X] Remove the renderer global singleton or hide it behind explicit renderer state ownership.
 - [X] Replace `renderer_render_frame(GLFWwindow *, Camera *)` with a render context or frame packet.
 - [X] Move framebuffer-size queries out of per-frame renderer code where practical.
-- [ ] Give timing its own small abstraction.
+- [X] Give timing its own small abstraction.
 - [X] Keep GLFW details isolated to window/platform-facing code.
 - [ ] Make renderer initialization accept configuration instead of hardcoded debug state.
 - [ ] Define the renderer’s input as scene/camera/light/renderable data, not gameplay state.
