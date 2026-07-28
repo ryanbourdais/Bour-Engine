@@ -195,15 +195,6 @@ vec3s spot_light_directions[] = {
 };
 
 
-const char *skybox_faces[6] = {
-    "assets/cubemaps/skybox/right.jpg",
-    "assets/cubemaps/skybox/left.jpg",
-    "assets/cubemaps/skybox/top.jpg",
-    "assets/cubemaps/skybox/bottom.jpg",
-    "assets/cubemaps/skybox/front.jpg",
-    "assets/cubemaps/skybox/back.jpg"
-};
-
 static void draw_screen_quad(struct RendererState *renderer)
 {
     glUseProgram(renderer->screen_shader_program);
@@ -369,14 +360,14 @@ static void init_lighting(struct RendererState *renderer)
     }
 }
 
-static void init_camera_projection(struct RendererState *renderer, RendererViewport *viewport, const Camera *camera)
+static void init_camera_projection(struct RendererState *renderer, const RendererConfig *config)
 {
 
-    glm_perspective(glm_rad(camera->cameraFOV), (float)viewport->width / (float)viewport->height, 0.1f, 100.0f, renderer->projection);
+    glm_perspective(glm_rad(config->camera->cameraFOV), (float)config->viewport.width / (float)config->viewport.height, 0.1f, 100.0f, renderer->projection);
 
     camera_ubo_init(&renderer->camera_ubo);
 
-    upload_camera_ubo(renderer->camera_ubo, camera, renderer->projection);
+    upload_camera_ubo(renderer->camera_ubo, config->camera, renderer->projection);
 }
 
 static void init_material(struct RendererState *renderer)
@@ -457,19 +448,19 @@ static int init_screen_quad(struct RendererState *renderer)
     return 0;
 }
 
-static int renderer_state_init(struct RendererState *renderer, RendererViewport *viewport, const Camera *camera)
+static int renderer_state_init(struct RendererState *renderer, const RendererConfig *config)
 {
     if (init_shader_program(renderer) != 0)
     {
         return 1;
     }
 
-    if (render_target_init(&renderer->scene_target, viewport->width, viewport->height) != 0)
+    if (render_target_init(&renderer->scene_target, config->viewport.width, config->viewport.height) != 0)
     {
         return 1;
     }
 
-    if (msaa_render_target_init(&renderer->scene_msaa_target, viewport->width, viewport->height, 4) != 0)
+    if (msaa_render_target_init(&renderer->scene_msaa_target, config->viewport.width, config->viewport.height, 4) != 0)
     {
         return 1;
     }
@@ -479,7 +470,7 @@ static int renderer_state_init(struct RendererState *renderer, RendererViewport 
         return 1;
     }
 
-    if (model_load_gltf(&renderer->test_model, "assets/models/loft_japanese_11_free_interior/scene.gltf") != 0)
+    if (model_load_gltf(&renderer->test_model, config->model_path) != 0)
     {
         fprintf(stderr, "Failed to load loft interior model\n");
         return 1;
@@ -488,7 +479,7 @@ static int renderer_state_init(struct RendererState *renderer, RendererViewport 
 
     init_lighting(renderer);
 
-    init_camera_projection(renderer, viewport, camera);
+    init_camera_projection(renderer, config);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -515,7 +506,7 @@ static int renderer_state_init(struct RendererState *renderer, RendererViewport 
 
     init_material(renderer);
 
-    if (skybox_init(&renderer->skybox, skybox_faces) != 0)
+    if (skybox_init(&renderer->skybox, config->skybox_faces) != 0)
     {
         fprintf(stderr, "Failed to initialize skybox\n");
         return 1;
@@ -556,9 +547,9 @@ static void renderer_state_shutdown(struct RendererState *renderer)
     glDeleteProgram(renderer->shader_program);
 }
 
-int renderer_init(Renderer *renderer, RendererViewport *viewport, const Camera *camera)
+int renderer_init(Renderer *renderer, const RendererConfig *config)
 {
-    if (renderer_state_init(renderer, viewport, camera) != 0)
+    if (renderer_state_init(renderer, config) != 0)
     {
         renderer_state_shutdown(renderer);
         fprintf(stderr, "Failed to initialize renderer state\n");

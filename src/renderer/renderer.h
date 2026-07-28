@@ -14,8 +14,16 @@ typedef struct RendererFrame {
     RendererViewport viewport;
 } RendererFrame;
 
+typedef struct RendererConfig {
+    RendererViewport viewport;
+    const Camera *camera;
+
+    const char *model_path;
+    const char *skybox_faces[6];
+} RendererConfig;
+
 Renderer *renderer_create(void);
-int renderer_init(Renderer *renderer, RendererViewport *viewport, const Camera *camera);
+int renderer_init(Renderer *renderer, const RendererConfig *config);
 void renderer_render_frame(Renderer *renderer, const RendererFrame *frame);
 void renderer_shutdown(Renderer *renderer);
 void renderer_destroy(Renderer *renderer);

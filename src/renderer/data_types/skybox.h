@@ -15,6 +15,6 @@ typedef struct Skybox
     GLint skybox_location;
 } Skybox;
 
-int skybox_init(Skybox *skybox, const char *faces[6]);
+int skybox_init(Skybox *skybox, const char *const faces[6]);
 void skybox_draw(Skybox *skybox, mat4 projection, mat4 view);
 void skybox_free(Skybox *skybox);
