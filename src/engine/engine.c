@@ -106,9 +106,9 @@ static void run_engine_loop(struct EngineState *engine)
 
         engine_update(engine);
 
-        RendererFrame frame = {.camera = &engine->camera, .framebuffer_width = 0, .framebuffer_height = 0};
+        RendererFrame frame = {.camera = &engine->camera, .viewport = {0}};
 
-        window_get_framebuffer_size(engine->window, &frame.framebuffer_width, &frame.framebuffer_height);
+        window_get_framebuffer_size(engine->window, &frame.viewport.width, &frame.viewport.height);
 
         renderer_render_frame(engine->renderer, &frame);
 
@@ -157,7 +157,11 @@ int engine_run(bool fullscreen, bool fps_enabled)
     camera_init(&engine.camera);
     camera_update(&engine.camera);
 
-    if (renderer_init(engine.renderer, window, &engine.camera) != 0)
+    RendererViewport viewport = {0};
+
+    window_get_framebuffer_size(engine.window, &viewport.width, &viewport.height);
+
+    if (renderer_init(engine.renderer, &viewport, &engine.camera) != 0)
     {
         fprintf(stderr, "Failed to initialize renderer\n");
         renderer_destroy(engine.renderer);
