@@ -32,8 +32,8 @@ Goal: finish the architecture work already started by moving camera/input owners
 
 Goal: create the runtime object model the editor will manipulate.
 
-- [ ] Introduce `Scene` as the owner of runtime entities and scene-level resources.
-- [ ] Add scene lifecycle: create, update, render-submit, destroy.
+- [X] Introduce `Scene` as the owner of runtime entities and scene-level resources.
+- [X] Add scene lifecycle: create, update, render-submit, destroy.
 - [ ] Move hardcoded model, skybox, cube positions, and debug lights into a scene setup path.
 - [ ] Add a default test scene that reproduces the current rendered output.
 - [ ] Add scene serialization format decision: start simple, likely JSON or a custom text format.

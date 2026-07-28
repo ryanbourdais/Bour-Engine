@@ -75,6 +75,8 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 
 static void engine_update(struct EngineState *engine)
 {
+    scene_update(&engine->scene, frame_clock_delta_time(&engine->clock));
+
     vec2s movement_axis = input_get_movement_axis();
 
     camera_movement(
@@ -159,17 +161,21 @@ int engine_run(bool fullscreen, bool fps_enabled)
 
     scene_init_default(&engine.scene);
 
+    SceneRenderConfig scene_render_config = {0};
+
+    scene_get_render_config(&engine.scene, &scene_render_config);
+
     RendererConfig renderer_config = {
         .viewport = viewport,
         .camera = &engine.camera,
-        .model_path = engine.scene.model_path,
+        .model_path = scene_render_config.model_path,
         .skybox_faces = {
-            engine.scene.skybox_faces[0],
-            engine.scene.skybox_faces[1],
-            engine.scene.skybox_faces[2],
-            engine.scene.skybox_faces[3],
-            engine.scene.skybox_faces[4],
-            engine.scene.skybox_faces[5],
+            scene_render_config.skybox_faces[0],
+            scene_render_config.skybox_faces[1],
+            scene_render_config.skybox_faces[2],
+            scene_render_config.skybox_faces[3],
+            scene_render_config.skybox_faces[4],
+            scene_render_config.skybox_faces[5],
         }
     };
 
