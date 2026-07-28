@@ -10,12 +10,14 @@
 #include "../renderer/camera.h"
 #include "../controller/input.h"
 #include "timing.h"
+#include "../scene/scene.h"
 
 struct EngineState
 {
     GLFWwindow *window;
     Camera camera;
     Renderer *renderer;
+    Scene scene;
 
     bool fps_enabled;
     FrameClock clock;
@@ -155,17 +157,19 @@ int engine_run(bool fullscreen, bool fps_enabled)
 
     window_get_framebuffer_size(engine.window, &viewport.width, &viewport.height);
 
+    scene_init_default(&engine.scene);
+
     RendererConfig renderer_config = {
         .viewport = viewport,
         .camera = &engine.camera,
-        .model_path = "assets/models/loft_japanese_11_free_interior/scene.gltf",
+        .model_path = engine.scene.model_path,
         .skybox_faces = {
-            "assets/cubemaps/skybox/right.jpg",
-            "assets/cubemaps/skybox/left.jpg",
-            "assets/cubemaps/skybox/top.jpg",
-            "assets/cubemaps/skybox/bottom.jpg",
-            "assets/cubemaps/skybox/front.jpg",
-            "assets/cubemaps/skybox/back.jpg"
+            engine.scene.skybox_faces[0],
+            engine.scene.skybox_faces[1],
+            engine.scene.skybox_faces[2],
+            engine.scene.skybox_faces[3],
+            engine.scene.skybox_faces[4],
+            engine.scene.skybox_faces[5],
         }
     };
 
@@ -173,6 +177,7 @@ int engine_run(bool fullscreen, bool fps_enabled)
     {
         fprintf(stderr, "Failed to initialize renderer\n");
         renderer_destroy(engine.renderer);
+        scene_shutdown(&engine.scene);
         window_destroy(window);
         safe_exit();
         return 1;
@@ -182,6 +187,7 @@ int engine_run(bool fullscreen, bool fps_enabled)
 
     renderer_shutdown(engine.renderer);
     renderer_destroy(engine.renderer);
+    scene_shutdown(&engine.scene);
     window_destroy(window);
     safe_exit();
 
