@@ -36,7 +36,7 @@ Goal: create the runtime object model the editor will manipulate.
 - [X] Add scene lifecycle: create, update, render-submit, destroy.
 - [X] Move hardcoded model, skybox, cube positions, and debug lights into a scene setup path.
 - [X] Add a default test scene that reproduces the current rendered output.
-- [ ] Add scene serialization format decision: start simple, likely JSON or a custom text format. Note: this is the first point where a Zig trial may be useful; keep runtime `Scene` in C and evaluate Zig only for file parsing, validation, and round-trip tooling behind a plain C-facing boundary.
+- [X] Add scene serialization format decision: [Decision: JSON, needs to be human readable for now] start simple, likely JSON or a custom text format. Note: this is the first point where a Zig trial may be useful; keep runtime `Scene` in C and evaluate Zig only for file parsing, validation, and round-trip tooling behind a plain C-facing boundary.
 - [ ] Add scene save/load for transforms, model paths, light values, and active camera. Note: serialization/save-load can be a contained sub-subsystem or tool; it should feed C-owned runtime scene data rather than rewrite the runtime scene model.
 - [ ] Add basic scene switching or scene reload during development.
 - [ ] Optional evaluation: prototype scene serialization in Zig behind a plain C-facing boundary.
@@ -45,7 +45,7 @@ Goal: create the runtime object model the editor will manipulate.
 
 Goal: introduce enough ECS to support editor workflows without overbuilding.
 
-- [ ] Define entity IDs and an entity registry.
+- [X] Define entity IDs and an entity registry.
 - [ ] Add core components: `Transform`, `Name`, `Camera`, `MeshRenderer`, `DirectionalLight`, `PointLight`, `SpotLight`.
 - [ ] Add component storage with create/get/remove/iterate operations.
 - [ ] Add transform helpers for position, rotation, scale, and model matrix generation.
