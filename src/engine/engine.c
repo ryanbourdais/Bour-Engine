@@ -176,7 +176,10 @@ int engine_run(bool fullscreen, bool fps_enabled)
             scene_render_config.skybox_faces[3],
             scene_render_config.skybox_faces[4],
             scene_render_config.skybox_faces[5],
-        }
+        },
+        .directional_light = scene_render_config.directional_light,
+        .point_lights = scene_render_config.point_lights,
+        .spot_lights = scene_render_config.spot_lights,
     };
 
     if (renderer_init(engine.renderer, &renderer_config) != 0)

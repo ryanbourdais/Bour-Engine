@@ -15,11 +15,8 @@
 
 #include "shaders.h"
 
-#define ACTIVE_SPOT_LIGHTS 2
-#define ACTIVE_POINT_LIGHTS 4
 struct RendererState
 {
-    RenderObjectArray render_objects;
     mat4 projection;
     Model test_model;
     Skybox skybox;
@@ -46,154 +43,9 @@ struct RendererState
     GLint point_light_count_location;
     GLint spot_light_count_location;
     GLint model_location;
-    // GLint projection_location;
-    // GLint view_location;
-    // GLint view_pos_location;
 
     GLint use_instancing_location;
 };
-
-Vertex cube[] = {
-    {.position = {-0.5f, -0.5f, 0.5f}, .color = {1.0f, 0.0f, 0.0f}, .uv = {0.0f, 0.0f}, .normal = {0.0f, 0.0f, 1.0f}},
-    {.position = {0.5f, -0.5f, 0.5f}, .color = {0.0f, 1.0f, 0.0f}, .uv = {1.0f, 0.0f}, .normal = {0.0f, 0.0f, 1.0f}},
-    {.position = {0.5f, 0.5f, 0.5f}, .color = {0.0f, 0.0f, 1.0f}, .uv = {1.0f, 1.0f}, .normal = {0.0f, 0.0f, 1.0f}},
-    {.position = {-0.5f, 0.5f, 0.5f}, .color = {1.0f, 1.0f, 0.0f}, .uv = {0.0f, 1.0f}, .normal = {0.0f, 0.0f, 1.0f}},
-
-    {.position = {0.5f, -0.5f, 0.5f}, .color = {0.0f, 1.0f, 1.0f}, .uv = {0.0f, 0.0f}, .normal = {1.0f, 0.0f, 0.0f}},
-    {.position = {0.5f, -0.5f, -0.5f}, .color = {1.0f, 0.0f, 1.0f}, .uv = {1.0f, 0.0f}, .normal = {1.0f, 0.0f, 0.0f}},
-    {.position = {0.5f, 0.5f, -0.5f}, .color = {1.0f, 1.0f, 1.0f}, .uv = {1.0f, 1.0f}, .normal = {1.0f, 0.0f, 0.0f}},
-    {.position = {0.5f, 0.5f, 0.5f}, .color = {0.2f, 0.2f, 0.2f}, .uv = {0.0f, 1.0f}, .normal = {1.0f, 0.0f, 0.0f}},
-
-    {.position = {0.5f, -0.5f, -0.5f}, .color = {1.0f, 0.5f, 0.0f}, .uv = {0.0f, 0.0f}, .normal = {0.0f, 0.0f, -1.0f}},
-    {.position = {-0.5f, -0.5f, -0.5f}, .color = {0.5f, 1.0f, 0.0f}, .uv = {1.0f, 0.0f}, .normal = {0.0f, 0.0f, -1.0f}},
-    {.position = {-0.5f, 0.5f, -0.5f}, .color = {0.0f, 0.5f, 1.0f}, .uv = {1.0f, 1.0f}, .normal = {0.0f, 0.0f, -1.0f}},
-    {.position = {0.5f, 0.5f, -0.5f}, .color = {1.0f, 0.0f, 0.5f}, .uv = {0.0f, 1.0f}, .normal = {0.0f, 0.0f, -1.0f}},
-
-    {.position = {-0.5f, -0.5f, -0.5f}, .color = {0.7f, 0.2f, 0.2f}, .uv = {0.0f, 0.0f}, .normal = {-1.0f, 0.0f, 0.0f}},
-    {.position = {-0.5f, -0.5f, 0.5f}, .color = {0.2f, 0.7f, 0.2f}, .uv = {1.0f, 0.0f}, .normal = {-1.0f, 0.0f, 0.0f}},
-    {.position = {-0.5f, 0.5f, 0.5f}, .color = {0.2f, 0.2f, 0.7f}, .uv = {1.0f, 1.0f}, .normal = {-1.0f, 0.0f, 0.0f}},
-    {.position = {-0.5f, 0.5f, -0.5f}, .color = {0.7f, 0.7f, 0.2f}, .uv = {0.0f, 1.0f}, .normal = {-1.0f, 0.0f, 0.0f}},
-
-    {.position = {-0.5f, 0.5f, 0.5f}, .color = {0.7f, 0.2f, 0.7f}, .uv = {0.0f, 0.0f}, .normal = {0.0f, 1.0f, 0.0f}},
-    {.position = {0.5f, 0.5f, 0.5f}, .color = {0.2f, 0.7f, 0.7f}, .uv = {1.0f, 0.0f}, .normal = {0.0f, 1.0f, 0.0f}},
-    {.position = {0.5f, 0.5f, -0.5f}, .color = {0.8f, 0.8f, 0.8f}, .uv = {1.0f, 1.0f}, .normal = {0.0f, 1.0f, 0.0f}},
-    {.position = {-0.5f, 0.5f, -0.5f}, .color = {0.3f, 0.3f, 0.3f}, .uv = {0.0f, 1.0f}, .normal = {0.0f, 1.0f, 0.0f}},
-
-    {.position = {-0.5f, -0.5f, -0.5f}, .color = {0.9f, 0.4f, 0.4f}, .uv = {0.0f, 0.0f}, .normal = {0.0f, -1.0f, 0.0f}},
-    {.position = {0.5f, -0.5f, -0.5f}, .color = {0.4f, 0.9f, 0.4f}, .uv = {1.0f, 0.0f}, .normal = {0.0f, -1.0f, 0.0f}},
-    {.position = {0.5f, -0.5f, 0.5f}, .color = {0.4f, 0.4f, 0.9f}, .uv = {1.0f, 1.0f}, .normal = {0.0f, -1.0f, 0.0f}},
-    {.position = {-0.5f, -0.5f, 0.5f}, .color = {0.9f, 0.9f, 0.4f}, .uv = {0.0f, 1.0f}, .normal = {0.0f, -1.0f, 0.0f}}};
-
-unsigned int cube_indices[] = {
-    0, 1, 2, 0, 2, 3,
-    4, 5, 6, 4, 6, 7,
-    8, 9, 10, 8, 10, 11,
-    12, 13, 14, 12, 14, 15,
-    16, 17, 18, 16, 18, 19,
-    20, 21, 22, 20, 22, 23};
-
-size_t cube_vertex_count = sizeof(cube) / sizeof(cube[0]);
-GLsizei cube_index_count = sizeof(cube_indices) / sizeof(cube_indices[0]);
-
-LightColor debug_sunlight = {
-    .ambient  = {{0.02f, 0.02f, 0.02f}},
-    .diffuse  = {{0.05f, 0.05f, 0.05f}},
-    .specular = {{0.02f, 0.02f, 0.02f}}
-};
-    
-LightColor sunlight = {
-    .ambient = {{0.18f, 0.18f, 0.18f}},
-    .diffuse = {{0.65f, 0.62f, 0.56f}},
-    .specular = {{0.25f, 0.25f, 0.25f}}
-};
-
-LightColor debug_point_light_colors[MAX_SHADER_POINT_LIGHTS] = {
-    {
-        .ambient  = {{0.00f, 0.00f, 0.00f}},
-        .diffuse  = {{3.00f, 0.20f, 0.20f}},
-        .specular = {{3.00f, 0.20f, 0.20f}}
-    },
-    {
-        .ambient  = {{0.00f, 0.00f, 0.00f}},
-        .diffuse  = {{0.20f, 3.00f, 0.20f}},
-        .specular = {{0.20f, 3.00f, 0.20f}}
-    },
-    {
-        .ambient  = {{0.00f, 0.00f, 0.00f}},
-        .diffuse  = {{0.20f, 0.20f, 3.00f}},
-        .specular = {{0.20f, 0.20f, 3.00f}}
-    },
-    {
-        .ambient  = {{0.00f, 0.00f, 0.00f}},
-        .diffuse  = {{3.00f, 1.80f, 0.40f}},
-        .specular = {{3.00f, 1.80f, 0.40f}}
-    }
-};
-
-LightColor point_light_colors[MAX_SHADER_POINT_LIGHTS] = {
-    {
-        .ambient = {{0.01f, 0.01f, 0.01f}},
-        .diffuse = {{0.75f, 0.70f, 0.62f}},
-        .specular = {{0.25f, 0.24f, 0.22f}}
-    },
-    {
-        .ambient = {{0.005f, 0.005f, 0.006f}},
-        .diffuse = {{0.35f, 0.38f, 0.45f}},
-        .specular = {{0.12f, 0.13f, 0.16f}}
-    },
-    {
-        .ambient = {{0.005f, 0.005f, 0.005f}},
-        .diffuse = {{0.28f, 0.30f, 0.32f}},
-        .specular = {{0.08f, 0.08f, 0.08f}}
-    },
-    {
-        .ambient = {{0.005f, 0.004f, 0.003f}},
-        .diffuse = {{0.45f, 0.36f, 0.28f}},
-        .specular = {{0.12f, 0.10f, 0.08f}}
-    }
-};
-
-
-vec3s point_light_positions[] = {
-    {{ 0.0f,  2.5f,  0.0f}},
-    {{ 3.0f,  2.0f,  0.0f}},
-    {{-3.0f,  2.0f,  0.0f}},
-    {{ 0.0f,  2.0f, -3.0f}}
-};
-
-LightColor debug_spot_light_colors[MAX_SHADER_SPOT_LIGHTS] = {
-    {// Hot magenta/pink
-     .ambient = {{0.0f, 0.0f, 0.0f}},
-     .diffuse = {{4.0f, 0.0f, 2.5f}},
-     .specular = {{4.0f, 0.0f, 2.5f}}},
-    {// Electric cyan/blue
-     .ambient = {{0.0f, 0.0f, 0.0f}},
-     .diffuse = {{0.0f, 3.0f, 4.0f}},
-     .specular = {{0.0f, 3.0f, 4.0f}}}};
-
-LightColor spot_light_colors[MAX_SHADER_SPOT_LIGHTS] = {
-    {
-        .ambient = {{0.0f, 0.0f, 0.0f}},
-        .diffuse = {{0.65f, 0.60f, 0.52f}},
-        .specular = {{0.22f, 0.20f, 0.18f}}
-    },
-    {
-        .ambient = {{0.0f, 0.0f, 0.0f}},
-        .diffuse = {{0.25f, 0.28f, 0.34f}},
-        .specular = {{0.08f, 0.09f, 0.11f}}
-    }
-};
-
-vec3s spot_light_positions[] = {
-    {{ 0.0f, 3.0f,  2.0f}},
-    {{ 0.0f, 3.0f, -2.0f}}
-};
-
-vec3s spot_light_directions[] = {
-    {{ 0.0f, -1.0f, -0.3f}},
-    {{ 0.0f, -1.0f,  0.3f}}
-};
-
 
 static void draw_screen_quad(struct RendererState *renderer)
 {
@@ -251,32 +103,6 @@ void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
     draw_screen_quad(renderer);
 }
 
-static int init_render_objects(struct RendererState *renderer)
-{
-    renderobject_array_initialize(&renderer->render_objects);
-    for (int i = 0; i < 10; i++)
-    {
-        RenderObject new_render_object = {0};
-
-        int mesh_status = create_mesh_from_vertices(&new_render_object.mesh, cube, cube_vertex_count, cube_indices, cube_index_count);
-        if (mesh_status != 0)
-        {
-            fprintf(stderr, "Mesh failed to be created, exiting!");
-            return 1;
-        }
-        if (create_texture_ex(&new_render_object.mesh, "assets/diffuse maps/container2.png", true) != 0)
-        {
-            return 1;
-        }
-        if (create_texture_ex(&new_render_object.mesh, "assets/specular maps/container2_specular.png", false) != 0)
-        {
-            return 1;
-        }
-        renderobject_array_append(&renderer->render_objects, new_render_object);
-    }
-    return 0;
-}
-
 static int bind_camera_uniform_block(GLuint shader_program)
 {
     GLuint camera_block_index = glGetUniformBlockIndex(shader_program, "CameraBlock");
@@ -316,50 +142,6 @@ static int init_shader_program(struct RendererState *renderer)
     return 0;
 }
 
-static void init_lighting(struct RendererState *renderer)
-{
-    directional_light_init(&renderer->directional_light, (vec3s){{-0.2f, -1.0f, -0.3f}}, debug_sunlight);
-
-    directional_light_uniforms_init(&renderer->directional_light_uniforms, renderer->shader_program);
-
-    point_light_collection_init(&renderer->point_lights);
-
-    for (size_t i = 0; i < ACTIVE_POINT_LIGHTS; i++)
-    {
-        PointLight light = {0};
-
-        point_light_init(&light, point_light_positions[i], debug_point_light_colors[i], 1.0f, 0.09f, 0.032f);
-
-        point_light_collection_add(&renderer->point_lights, light);
-    }
-
-    renderer->point_light_count_location = glGetUniformLocation(renderer->shader_program, "pointLightCount");
-
-    for (size_t i = 0; i < MAX_SHADER_POINT_LIGHTS; i++)
-    {
-        point_light_uniforms_init(&renderer->point_light_uniforms[i], renderer->shader_program, i);
-    }
-
-    spot_light_collection_init(&renderer->spot_lights);
-
-    for (size_t i = 0; i < ACTIVE_SPOT_LIGHTS; i++)
-    {
-        SpotLight light = {0};
-
-        spot_light_init(&light, spot_light_positions[i], spot_light_directions[i], debug_spot_light_colors[i], 1.0f, 0.09f, 0.032f, 25.0f, 45.0f);
-
-        spot_light_collection_add(&renderer->spot_lights, light);
-    }
-
-    renderer->spot_light_count_location =
-        glGetUniformLocation(renderer->shader_program, "spotLightCount");
-
-    for (size_t i = 0; i < MAX_SHADER_SPOT_LIGHTS; i++)
-    {
-        spot_light_uniforms_init(&renderer->spot_light_uniforms[i], renderer->shader_program, i);
-    }
-}
-
 static void init_camera_projection(struct RendererState *renderer, const RendererConfig *config)
 {
 
@@ -372,30 +154,9 @@ static void init_camera_projection(struct RendererState *renderer, const Rendere
 
 static void init_material(struct RendererState *renderer)
 {
+    glUseProgram(renderer->shader_program);
     material_uniforms_init(&renderer->material_uniforms, renderer->shader_program);
     upload_material_samplers(&renderer->material_uniforms);
-}
-
-static void init_scene_positions(struct RendererState *renderer)
-{
-    vec3s cubePositions[] = {
-        (vec3s){{0.0f, 0.0f, 0.0f}},
-        (vec3s){{2.0f, 5.0f, -15.0f}},
-        (vec3s){{-1.5f, -2.2f, -2.5f}},
-        (vec3s){{-3.8f, -2.0f, -12.3f}},
-        (vec3s){{2.4f, -0.4f, -3.5f}},
-        (vec3s){{-1.7f, 3.0f, -7.5f}},
-        (vec3s){{1.3f, -2.0f, -2.5f}},
-        (vec3s){{1.5f, 2.0f, -2.5f}},
-        (vec3s){{1.5f, 0.2f, -1.5f}},
-        (vec3s){{-1.3f, 1.0f, -1.5f}}};
-
-    for (int i = 0; i < renderer->render_objects.count; i++)
-    {
-        renderer->render_objects.items[i].position = cubePositions[i];
-        renderer->render_objects.items[i].rotation_angle = 0.0f;
-        renderer->render_objects.items[i].scale = (vec3s){{1.0f, 1.0f, 1.0f}};
-    }
 }
 
 static int init_screen_quad(struct RendererState *renderer)
@@ -448,12 +209,37 @@ static int init_screen_quad(struct RendererState *renderer)
     return 0;
 }
 
+static void init_lights(struct RendererState *renderer, const RendererConfig *config)
+{
+    renderer->directional_light = *config->directional_light;
+    renderer->point_lights = *config->point_lights;
+    renderer->spot_lights = *config->spot_lights;
+
+    directional_light_uniforms_init(&renderer->directional_light_uniforms, renderer->shader_program);
+
+    renderer->point_light_count_location = glGetUniformLocation(renderer->shader_program, "pointLightCount");
+
+    for (size_t i = 0; i < MAX_SHADER_POINT_LIGHTS; i++)
+    {
+        point_light_uniforms_init(&renderer->point_light_uniforms[i], renderer->shader_program, i);
+    }
+
+    renderer->spot_light_count_location = glGetUniformLocation(renderer->shader_program, "spotLightCount");
+
+    for (size_t j = 0; j < MAX_SHADER_SPOT_LIGHTS; j++)
+    {
+        spot_light_uniforms_init(&renderer->spot_light_uniforms[j], renderer->shader_program, j);
+    }
+}
+
 static int renderer_state_init(struct RendererState *renderer, const RendererConfig *config)
 {
     if (init_shader_program(renderer) != 0)
     {
         return 1;
     }
+
+    init_lights(renderer, config);
 
     if (render_target_init(&renderer->scene_target, config->viewport.width, config->viewport.height) != 0)
     {
@@ -475,9 +261,6 @@ static int renderer_state_init(struct RendererState *renderer, const RendererCon
         fprintf(stderr, "Failed to load loft interior model\n");
         return 1;
     }
-
-
-    init_lighting(renderer);
 
     init_camera_projection(renderer, config);
 
@@ -511,7 +294,6 @@ static int renderer_state_init(struct RendererState *renderer, const RendererCon
         fprintf(stderr, "Failed to initialize skybox\n");
         return 1;
     }
-    init_scene_positions(renderer);
 
     return 0;
 }

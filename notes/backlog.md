@@ -26,7 +26,7 @@ Goal: finish the architecture work already started by moving camera/input owners
 - [X] Give timing its own small abstraction.
 - [X] Keep GLFW details isolated to window/platform-facing code.
 - [X] Make renderer initialization accept configuration instead of hardcoded debug state.
-- [ ] Define the renderer’s input as scene/camera/light/renderable data, not gameplay state.
+- [X] Define the renderer’s input as scene/camera/light/renderable data, not gameplay state.
 
 ## Epic 2: Scene Management
 
@@ -36,8 +36,8 @@ Goal: create the runtime object model the editor will manipulate.
 - [X] Add scene lifecycle: create, update, render-submit, destroy.
 - [ ] Move hardcoded model, skybox, cube positions, and debug lights into a scene setup path.
 - [ ] Add a default test scene that reproduces the current rendered output.
-- [ ] Add scene serialization format decision: start simple, likely JSON or a custom text format.
-- [ ] Add scene save/load for transforms, model paths, light values, and active camera.
+- [ ] Add scene serialization format decision: start simple, likely JSON or a custom text format. Note: this is the first point where a Zig trial may be useful; keep runtime `Scene` in C and evaluate Zig only for file parsing, validation, and round-trip tooling behind a plain C-facing boundary.
+- [ ] Add scene save/load for transforms, model paths, light values, and active camera. Note: serialization/save-load can be a contained sub-subsystem or tool; it should feed C-owned runtime scene data rather than rewrite the runtime scene model.
 - [ ] Add basic scene switching or scene reload during development.
 - [ ] Optional evaluation: prototype scene serialization in Zig behind a plain C-facing boundary.
 
@@ -121,6 +121,8 @@ More detail lives in `notes/language-trials.md`.
 ## Evaluation Epic 1: Zig Scene Serialization
 
 Goal: test Zig on a small but editor-relevant subsystem.
+
+Note: this trial should start only after the C runtime scene has real data worth round-tripping. Zig is being evaluated for scene file parsing, validation, save/load, and tooling ergonomics, not for replacing the runtime `Scene` type during the editor foundation work.
 
 - [ ] Define the minimal scene data that needs to round-trip.
 - [ ] Serialize entity names, transforms, model paths, light values, and active camera.

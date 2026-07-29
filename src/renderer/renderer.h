@@ -2,6 +2,7 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 #include "camera.h"
+#include "data_types/lightObject.h"
 
 typedef struct RendererState Renderer;
 
@@ -20,6 +21,9 @@ typedef struct RendererConfig {
 
     const char *model_path;
     const char *skybox_faces[6];
+    const DirectionalLight *directional_light;
+    const PointLightCollection *point_lights;
+    const SpotLightCollection *spot_lights;
 } RendererConfig;
 
 Renderer *renderer_create(void);
