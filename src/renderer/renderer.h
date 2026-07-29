@@ -1,6 +1,5 @@
 #pragma once
 #include "glad/glad.h"
-#include "GLFW/glfw3.h"
 #include "camera.h"
 #include "data_types/lightObject.h"
 
