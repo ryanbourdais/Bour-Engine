@@ -33,6 +33,7 @@ add_executable(bour_engine
     renderer/camera.c
     engine/timing.c
     scene/scene.c
+    ecs/entity.c
 )
 
 add_subdirectory(external/cglm EXCLUDE_FROM_ALL)
