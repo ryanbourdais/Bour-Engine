@@ -47,7 +47,7 @@ Goal: introduce enough ECS to support editor workflows without overbuilding.
 
 - [X] Define entity IDs and an entity registry.
 - [X] Add core components: `Transform`, `Name`, `Camera`, `MeshRenderer`, `DirectionalLight`, `PointLight`, `SpotLight`.
-- [ ] Add component storage with create/get/remove/iterate operations.
+- [X] Add component storage with create/get/remove/iterate operations.
 - [ ] Add transform helpers for position, rotation, scale, and model matrix generation.
 - [ ] Convert the current debug model/light setup into ECS entities.
 - [ ] Add a render extraction step from ECS components into renderer-friendly draw data.
