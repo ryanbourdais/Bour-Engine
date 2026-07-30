@@ -6,6 +6,8 @@ Explore Odin, C++, and Zig through small subsystem implementations before decidi
 
 The current editor milestone should remain focused on engine ownership, scene management, ECS, UI, editor interaction, and completing the Phong-era renderer through shadow maps. Language trials should only enter that milestone when they directly support one of those goals without delaying it.
 
+Current direction: keep the engine core C-first. Odin is the front-runner for future game-level code, scripting-like behavior, custom components, and higher-level customization above the engine runtime. Zig remains a strong candidate for serialization, validation, asset tooling, and other file/tool-oriented boundaries.
+
 ## Trial Rules
 
 - Keep each trial behind a plain C-facing boundary.
@@ -72,6 +74,8 @@ Candidate work:
 - Keep component definitions compatible with C structs.
 
 Milestone fit: risky but possible. The main ECS should probably be written in C for the editor milestone, with Odin/Zig prototypes informing the design.
+
+Current status: defer this as an engine-storage replacement trial. The current C component storage is simple enough that Odin does not yet provide a meaningful architectural win. Revisit Odin here when the problem becomes query ergonomics, script-authored components, editor-exposed component metadata, or higher-level gameplay systems rather than raw storage.
 
 ### 4. Math And Transform Utilities
 
@@ -143,15 +147,18 @@ If Dear ImGui is chosen, C++ may become useful at the UI boundary. But the first
 
 Best for:
 
-- ECS experiments.
-- Data-oriented gameplay/runtime prototypes.
-- Transform and scene data experiments.
+- Game-level coding above the C engine core.
+- Scripting-like behavior and custom components.
+- Data-oriented gameplay/system prototypes.
+- Editor-exposed customization layers.
+- ECS/query experiments once component metadata and higher-level behavior become real pain points.
 
 Watch for:
 
 - Build-system integration with the existing CMake project.
 - C ABI comfort.
 - Long-term library ecosystem needs.
+- Avoiding accidental rewrites of stable C engine systems just because Odin is faster to iterate in.
 
 ### C++
 
@@ -185,7 +192,7 @@ Watch for:
 ## Suggested Trial Order
 
 1. Zig scene serialization spike.
-2. Odin ECS storage prototype.
+2. Odin custom-component or game-level scripting spike after the C ECS has scene data and update boundaries.
 3. C++ Dear ImGui/editor shell spike, only if Dear ImGui is selected.
 4. Zig or C++ asset manifest/import tool.
 5. Reassess after the editor can load, show, edit, and save a basic scene.
@@ -206,6 +213,6 @@ After each trial, answer:
 
 - PBR renderer rewrite experiments.
 - Physics subsystem language trial.
-- Scripting language/runtime decisions.
+- Scripting language/runtime decisions, with Odin currently the leading candidate for game-level code and custom components.
 - Full engine rewrite decision.
 - Cross-platform packaging implications.

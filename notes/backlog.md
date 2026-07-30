@@ -6,6 +6,8 @@ Build toward a usable editor by first separating engine state, scene data, and r
 
 Odin, C++, and Zig evaluations are allowed during this milestone only when they directly support editor foundation work. The goal is to learn from small, contained subsystem trials without turning the editor milestone into a rewrite milestone.
 
+Current language direction: keep engine/runtime architecture C-first. Odin remains the leading candidate for future game-level coding, custom components, and higher-level user customization above the engine core, rather than for replacing foundational engine systems prematurely.
+
 ## Milestone Exit Criteria
 
 - Engine owns the application loop, timing, input, active camera, and active scene.
@@ -52,7 +54,7 @@ Goal: introduce enough ECS to support editor workflows without overbuilding.
 - [ ] Convert the current debug model/light setup into ECS entities.
 - [ ] Add a render extraction step from ECS components into renderer-friendly draw data.
 - [ ] Keep systems simple: transform update, camera update, render submission.
-- [ ] Optional evaluation: prototype ECS component storage in Odin or Zig before committing to the C implementation.
+- [ ] Optional evaluation: prototype ECS component storage in Odin or Zig before committing to the C implementation. Note: deferred for now because the current ECS storage problem is not different enough from C to justify a language boundary; revisit when query ergonomics, custom components, or game-level scripting pressure appears.
 
 ## Epic 4: UI And Editor Shell
 
@@ -108,6 +110,8 @@ Goal: finish the pre-PBR rendering foundation before starting the PBR milestone.
 
 Use small, contained subsystem trials to evaluate Odin, C++, and Zig as possible future implementation languages. Keep the C engine as the reference implementation until a trial clearly proves that another language improves clarity, iteration speed, maintainability, or subsystem design.
 
+Current direction: C remains the engine-core language. Odin is the front-runner for future game-level code, scripting-like behavior, custom components, and higher-level customization layers that sit above the C engine/runtime. Zig remains strongest for serialization, validation, asset tooling, and other file/tool-oriented boundaries.
+
 More detail lives in `notes/language-trials.md`.
 
 ## Language Evaluation Exit Criteria
@@ -133,6 +137,8 @@ Note: this trial should start only after the C runtime scene has real data worth
 ## Evaluation Epic 2: Odin Or Zig ECS Prototype
 
 Goal: compare data-oriented ECS storage ergonomics without destabilizing the main editor milestone.
+
+Current note: the main ECS runtime should continue in C unless a concrete pain point appears. Odin is more compelling as a future game-level/custom-component layer than as a replacement for the current C component storage. Revisit this prototype when component queries, script-authored behavior, or editor-exposed custom components need a higher-level authoring model.
 
 - [ ] Prototype entity IDs and component storage outside the main runtime.
 - [ ] Compare simple fixed-capacity arrays, packed arrays, and sparse-set style storage.
