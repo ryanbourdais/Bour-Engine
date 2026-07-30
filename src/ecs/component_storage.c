@@ -1,16 +1,18 @@
 #include "component_storage.h"
 
 #include <stdlib.h>
+#include <string.h>
 
-void transform_storage_init(TransformStorage *storage)
+void component_storage_init(ComponentStorage *storage, size_t component_size)
 {
     storage->capacity = 0;
     storage->count = 0;
     storage->components = NULL;
     storage->entities = NULL;
+    storage->component_size = component_size;
 }
 
-static bool transform_storage_grow(TransformStorage *storage)
+static bool component_storage_grow(ComponentStorage *storage)
 {
     size_t new_capacity = storage->capacity == 0 ? 4 : storage->capacity * 2;
 
@@ -20,7 +22,7 @@ static bool transform_storage_grow(TransformStorage *storage)
         return false;
     }
 
-    TransformComponent *new_components = malloc(new_capacity * sizeof(TransformComponent));
+    void *new_components = malloc(new_capacity * storage->component_size);
     if (new_components == NULL)
     {
         free(new_entities);
@@ -30,7 +32,11 @@ static bool transform_storage_grow(TransformStorage *storage)
     for (size_t i = 0; i < storage->count; i++)
     {
         new_entities[i] = storage->entities[i];
-        new_components[i] = storage->components[i];
+    }
+
+    if (storage->components != NULL)
+    {
+        memcpy(new_components, storage->components, storage->count * storage->component_size);
     }
 
     free(storage->entities);
@@ -43,48 +49,67 @@ static bool transform_storage_grow(TransformStorage *storage)
     return true;
 }
 
-bool transform_storage_add(TransformStorage *storage, EntityId entity, TransformComponent component)
+bool component_storage_add(ComponentStorage *storage, EntityId entity, const void *component)
 {
     if (entity == INVALID_ENTITY_ID)
     {
         return false;
     }
 
-    if (transform_storage_get(storage, entity) != NULL)
+    if (component == NULL)
+    {
+        return false;
+    }
+
+    if (storage->component_size == 0)
+    {
+        return false;
+    }
+
+    if (component_storage_get(storage, entity) != NULL)
     {
         return false;
     }
 
     if (storage->count == storage->capacity)
     {
-        if (!transform_storage_grow(storage))
+        if (!component_storage_grow(storage))
         {
             return false;
         }
     }
 
     storage->entities[storage->count] = entity;
-    storage->components[storage->count] = component;
+
+    char *components = storage->components;
+    void *destination = components + storage->count * storage->component_size;
+
+    memcpy(destination, component, storage->component_size);
+
     storage->count++;
 
     return true;
 }
 
-TransformComponent *transform_storage_get(TransformStorage *storage, EntityId entity)
+void *component_storage_get(ComponentStorage *storage, EntityId entity)
 {
+    char *components = storage->components;
+
     for (size_t i = 0; i < storage->count; i++)
     {
         if (storage->entities[i] == entity)
         {
-            return &storage->components[i];
+            return components + i * storage->component_size;
         }
     }
 
     return NULL;
 }
 
-bool transform_storage_remove(TransformStorage *storage, EntityId entity)
+bool component_storage_remove(ComponentStorage *storage, EntityId entity)
 {
+    char *components = storage->components;
+
     for (size_t i = 0; i < storage->count; i++)
     {
         if (storage->entities[i] == entity)
@@ -92,7 +117,11 @@ bool transform_storage_remove(TransformStorage *storage, EntityId entity)
             size_t last = storage->count - 1;
 
             storage->entities[i] = storage->entities[last];
-            storage->components[i] = storage->components[last];
+
+            void *destination = components + i * storage->component_size;
+            void *source = components + last * storage->component_size;
+
+            memcpy(destination, source, storage->component_size);
 
             storage->count--;
 
@@ -103,13 +132,14 @@ bool transform_storage_remove(TransformStorage *storage, EntityId entity)
     return false;
 }
 
-void transform_storage_shutdown(TransformStorage *storage)
+void component_storage_shutdown(ComponentStorage *storage)
 {
     free(storage->entities);
     free(storage->components);
 
     storage->entities = NULL;
     storage->components = NULL;
+    storage->component_size = 0;
     storage->capacity = 0;
     storage->count = 0;
 }

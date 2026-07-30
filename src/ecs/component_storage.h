@@ -6,15 +6,16 @@
 #include "entity.h"
 #include "components.h"
 
-typedef struct TransformStorage {
+typedef struct ComponentStorage {
     EntityId *entities;
-    TransformComponent *components;
+    void *components;
+    size_t component_size;
     size_t count;
     size_t capacity;
-} TransformStorage;
+} ComponentStorage;
 
-void transform_storage_init(TransformStorage *storage);
-bool transform_storage_add(TransformStorage *storage, EntityId entity, TransformComponent component);
-TransformComponent *transform_storage_get(TransformStorage *storage, EntityId entity);
-bool transform_storage_remove(TransformStorage *storage, EntityId entity);
-void transform_storage_shutdown(TransformStorage *storage);
+void component_storage_init(ComponentStorage *storage, size_t component_size);
+bool component_storage_add(ComponentStorage *storage, EntityId entity, const void *component);
+void *component_storage_get(ComponentStorage *storage, EntityId entity);
+bool component_storage_remove(ComponentStorage *storage, EntityId entity);
+void component_storage_shutdown(ComponentStorage *storage);
