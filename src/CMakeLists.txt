@@ -34,6 +34,8 @@ add_executable(bour_engine
     engine/timing.c
     scene/scene.c
     ecs/entity.c
+    ecs/components.c
+    ecs/component_storage.c
 )
 
 add_subdirectory(external/cglm EXCLUDE_FROM_ALL)

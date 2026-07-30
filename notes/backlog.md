@@ -46,7 +46,7 @@ Goal: create the runtime object model the editor will manipulate.
 Goal: introduce enough ECS to support editor workflows without overbuilding.
 
 - [X] Define entity IDs and an entity registry.
-- [ ] Add core components: `Transform`, `Name`, `Camera`, `MeshRenderer`, `DirectionalLight`, `PointLight`, `SpotLight`.
+- [X] Add core components: `Transform`, `Name`, `Camera`, `MeshRenderer`, `DirectionalLight`, `PointLight`, `SpotLight`.
 - [ ] Add component storage with create/get/remove/iterate operations.
 - [ ] Add transform helpers for position, rotation, scale, and model matrix generation.
 - [ ] Convert the current debug model/light setup into ECS entities.
