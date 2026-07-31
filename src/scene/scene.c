@@ -137,6 +137,40 @@ static void init_scene_ecs_storage(Scene *scene)
     component_storage_init(&scene->cameras, sizeof(CameraComponent));
 }
 
+static void scene_extract_point_lights(Scene *scene)
+{
+    point_light_collection_init(&scene->render_point_lights);
+
+    for (size_t i = 0; i < scene->point_lights.count; i++)
+    {
+        const PointLightComponent *component = (const PointLightComponent *)component_storage_at_const(&scene->point_lights, i);
+
+        if (component == NULL)
+        {
+            continue;
+        }
+
+        point_light_collection_add(&scene->render_point_lights, component->light);
+    }
+}
+
+static void scene_extract_spot_lights(Scene *scene)
+{
+    spot_light_collection_init(&scene->render_spot_lights);
+
+    for (size_t i = 0; i < scene->spot_lights.count; i++)
+    {
+        const SpotLightComponent *component = (const SpotLightComponent *)component_storage_at_const(&scene->spot_lights, i);
+
+        if (component == NULL)
+        {
+            continue;
+        }
+
+        spot_light_collection_add(&scene->render_spot_lights, component->light);
+    }
+}
+
 static void init_default_scene_lighting(struct Scene *scene)
 {
     directional_light_init(&scene->legacy_directional_light, (vec3s){{-0.2f, -1.0f, -0.3f}}, default_sunlight);
@@ -181,18 +215,28 @@ void scene_init_default(Scene *scene)
     init_default_scene_ecs(scene);
 }
 
-void scene_get_render_config(const Scene *scene, SceneRenderConfig *out_config)
+void scene_get_render_config(Scene *scene, SceneRenderConfig *out_config)
 {
-    out_config->model_path = scene->model_path;
+    const MeshRendererComponent *mesh_renderer = (const MeshRendererComponent *)component_storage_first_const(&scene->mesh_renderers);
+
+    out_config->model_path = mesh_renderer != NULL ? mesh_renderer->model_path : scene->model_path;
+
     out_config->skybox_faces[0] = scene->skybox_faces[0];
     out_config->skybox_faces[1] = scene->skybox_faces[1];
     out_config->skybox_faces[2] = scene->skybox_faces[2];
     out_config->skybox_faces[3] = scene->skybox_faces[3];
     out_config->skybox_faces[4] = scene->skybox_faces[4];
     out_config->skybox_faces[5] = scene->skybox_faces[5];
-    out_config->directional_light = &scene->legacy_directional_light;
-    out_config->point_lights = &scene->legacy_point_lights;
-    out_config->spot_lights = &scene->legacy_spot_lights;
+
+    const DirectionalLightComponent *sun = (const DirectionalLightComponent *)component_storage_first_const(&scene->directional_lights);
+
+    out_config->directional_light = sun != NULL ? &sun->light : &scene->legacy_directional_light;
+
+    scene_extract_point_lights(scene);
+    scene_extract_spot_lights(scene);
+
+    out_config->point_lights = &scene->render_point_lights;
+    out_config->spot_lights = &scene->render_spot_lights;
 }
 
 void scene_update(Scene *scene, double delta_time)

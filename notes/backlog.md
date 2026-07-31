@@ -52,7 +52,8 @@ Goal: introduce enough ECS to support editor workflows without overbuilding.
 - [X] Add component storage with create/get/remove/iterate operations.
 - [X] Add transform helpers for position, rotation, scale, and model matrix generation.
 - [X] Convert the current debug model/light setup into ECS entities.
-- [ ] Add a render extraction step from ECS components into renderer-friendly draw data.
+- [X] Extract ECS lights into renderer-friendly light data.
+- [ ] Extract ECS mesh renderers and transforms into renderer-friendly draw data.
 - [ ] Keep systems simple: transform update, camera update, render submission.
 - [ ] Optional evaluation: prototype ECS component storage in Odin or Zig before committing to the C implementation. Note: deferred for now because the current ECS storage problem is not different enough from C to justify a language boundary; revisit when query ergonomics, custom components, or game-level scripting pressure appears.
 
