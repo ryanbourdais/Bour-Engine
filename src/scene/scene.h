@@ -1,13 +1,26 @@
 #pragma once
 #include "../renderer/data_types/lightObject.h"
+#include "../ecs/entity.h"
+#include "../ecs/component_storage.h"
+#include "../ecs/components.h"
 
 typedef struct Scene {
     const char *model_path;
     const char *skybox_faces[6];
 
-    DirectionalLight directional_light;
-    PointLightCollection point_lights;
-    SpotLightCollection spot_lights;
+    EntityRegistry entities;
+
+    DirectionalLight legacy_directional_light;
+    PointLightCollection legacy_point_lights;
+    SpotLightCollection legacy_spot_lights;
+
+    ComponentStorage transforms;
+    ComponentStorage names;
+    ComponentStorage mesh_renderers;
+    ComponentStorage directional_lights;
+    ComponentStorage point_lights;
+    ComponentStorage spot_lights;
+    ComponentStorage cameras;
 } Scene;
 
 typedef struct SceneRenderConfig {

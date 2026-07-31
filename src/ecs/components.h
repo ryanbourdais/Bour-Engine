@@ -35,3 +35,9 @@ typedef struct CameraComponent {
     float near_clip;
     float far_clip;
 } CameraComponent;
+
+void transform_component_init(TransformComponent *transform);
+void transform_component_set_position(TransformComponent *transform, vec3s position);
+void transform_component_set_rotation(TransformComponent *transform, vec3s rotation);
+void transform_component_set_scale(TransformComponent *transform, vec3s scale);
+mat4s transform_component_model_matrix(const TransformComponent *transform);
