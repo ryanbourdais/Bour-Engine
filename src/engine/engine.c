@@ -104,7 +104,16 @@ static void run_engine_loop(struct EngineState *engine)
 
         engine_update(engine);
 
-        RendererFrame frame = {.camera = &engine->camera, .viewport = {0}};
+        SceneRenderConfig scene_render_config = {0};
+
+        scene_get_render_config(&engine->scene, &scene_render_config);
+
+        RendererFrame frame = {
+            .camera = &engine->camera,
+            .viewport = {0},
+            .renderables = scene_render_config.renderables,
+            .renderable_count = scene_render_config.renderable_count,
+        };
 
         window_get_framebuffer_size(engine->window, &frame.viewport.width, &frame.viewport.height);
 
@@ -180,8 +189,6 @@ int engine_run(bool fullscreen, bool fps_enabled)
         .directional_light = scene_render_config.directional_light,
         .point_lights = scene_render_config.point_lights,
         .spot_lights = scene_render_config.spot_lights,
-        .renderables = scene_render_config.renderables,
-        .renderable_count = scene_render_config.renderable_count,
     };
 
     if (renderer_init(engine.renderer, &renderer_config) != 0)
