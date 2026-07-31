@@ -55,7 +55,7 @@ Goal: introduce enough ECS to support editor workflows without overbuilding.
 - [X] Extract ECS lights into renderer-friendly light data.
 - [X] Extract ECS mesh renderers and transforms into renderer-friendly draw data.
 - [X] Move ECS renderable submission into per-frame renderer input.
-- [ ] Remove stale init-time renderable/model-matrix paths from renderer setup.
+- [X] Remove stale init-time renderable/model-matrix paths from renderer setup.
 - [ ] Add a simple transform update path for ECS transform-derived render data.
 - [ ] Add a simple camera update path that keeps camera behavior outside the renderer.
 - [ ] Decide whether camera should remain engine-owned or become an ECS camera component bridge.

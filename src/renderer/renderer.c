@@ -96,19 +96,18 @@ void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
         renderable = &frame->renderables[0];
     }
 
-    mat4 model_matrix;
-    glm_mat4_identity(model_matrix);
+    mat4s model_matrix = glms_mat4_identity();
 
     if(renderable != NULL)
     {
-        glm_mat4_copy(renderable->model_matrix.raw, model_matrix);
+        model_matrix = renderable->model_matrix;
     }
 
     draw_model(
         &renderer->test_model,
         renderer->model_location,
         &renderer->material_uniforms,
-        model_matrix,
+        model_matrix.raw,
         frame->camera->cameraPos.raw
     );
 
