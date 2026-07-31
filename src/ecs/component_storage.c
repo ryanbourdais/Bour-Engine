@@ -132,6 +132,57 @@ bool component_storage_remove(ComponentStorage *storage, EntityId entity)
     return false;
 }
 
+void *component_storage_first(ComponentStorage *storage)
+{
+    if (storage->count == 0)
+    {
+        return NULL;
+    }
+    return storage->components;
+}
+
+const void *component_storage_first_const(const ComponentStorage *storage)
+{
+    if (storage->count == 0)
+    {
+        return NULL;
+    }
+
+    return storage->components;
+}
+
+void *component_storage_at(ComponentStorage *storage, size_t index)
+{
+    if (index >= storage->count)
+    {
+        return NULL;
+    }
+
+    char *components = storage->components;
+    return components + index * storage->component_size;
+}
+
+const void *component_storage_at_const(const ComponentStorage *storage, size_t index)
+{
+    if (index >= storage->count)
+    {
+        return NULL;
+    }
+
+    const char *components = storage->components;
+    return components + index * storage->component_size;
+}
+
+EntityId component_storage_entity_at(const ComponentStorage *storage, size_t index)
+{
+    if (index >= storage->count)
+    {
+        return INVALID_ENTITY_ID;
+    }
+
+    return storage->entities[index];
+}
+
 void component_storage_shutdown(ComponentStorage *storage)
 {
     free(storage->entities);

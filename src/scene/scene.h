@@ -14,6 +14,9 @@ typedef struct Scene {
     PointLightCollection legacy_point_lights;
     SpotLightCollection legacy_spot_lights;
 
+    PointLightCollection render_point_lights;
+    SpotLightCollection render_spot_lights;
+
     ComponentStorage transforms;
     ComponentStorage names;
     ComponentStorage mesh_renderers;
@@ -33,6 +36,6 @@ typedef struct SceneRenderConfig {
 } SceneRenderConfig;
 
 void scene_init_default(Scene *scene);
-void scene_get_render_config(const Scene *scene, SceneRenderConfig *out_config);
+void scene_get_render_config(Scene *scene, SceneRenderConfig *out_config);
 void scene_update(Scene *scene, double delta_time);
 void scene_shutdown(Scene *scene);
