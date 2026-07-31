@@ -180,6 +180,8 @@ int engine_run(bool fullscreen, bool fps_enabled)
         .directional_light = scene_render_config.directional_light,
         .point_lights = scene_render_config.point_lights,
         .spot_lights = scene_render_config.spot_lights,
+        .renderables = scene_render_config.renderables,
+        .renderable_count = scene_render_config.renderable_count,
     };
 
     if (renderer_init(engine.renderer, &renderer_config) != 0)

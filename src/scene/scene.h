@@ -1,8 +1,12 @@
 #pragma once
+
+#include <stddef.h>
+
 #include "../renderer/data_types/lightObject.h"
 #include "../ecs/entity.h"
 #include "../ecs/component_storage.h"
 #include "../ecs/components.h"
+#include "../renderer/renderer_data.h"
 
 typedef struct Scene {
     const char *model_path;
@@ -33,6 +37,9 @@ typedef struct SceneRenderConfig {
     const DirectionalLight *directional_light;
     const PointLightCollection *point_lights;
     const SpotLightCollection *spot_lights;
+
+    RenderableDrawData renderables[MAX_RENDERABLES];
+    size_t renderable_count;
 } SceneRenderConfig;
 
 void scene_init_default(Scene *scene);

@@ -1,7 +1,10 @@
 #pragma once
 #include "glad/glad.h"
+
+
 #include "camera.h"
 #include "data_types/lightObject.h"
+#include "renderer_data.h"
 
 typedef struct RendererState Renderer;
 
@@ -23,6 +26,9 @@ typedef struct RendererConfig {
     const DirectionalLight *directional_light;
     const PointLightCollection *point_lights;
     const SpotLightCollection *spot_lights;
+
+    const RenderableDrawData *renderables;
+    size_t renderable_count;
 } RendererConfig;
 
 Renderer *renderer_create(void);

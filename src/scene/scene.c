@@ -171,6 +171,37 @@ static void scene_extract_spot_lights(Scene *scene)
     }
 }
 
+static void scene_extract_renderables(Scene *scene, SceneRenderConfig *out_config)
+{
+    out_config->renderable_count = 0;
+
+    for (size_t i = 0; i < scene->mesh_renderers.count; i++)
+    {
+        if (out_config->renderable_count >= MAX_RENDERABLES)
+        {
+            break;
+        }
+
+        EntityId entity = component_storage_entity_at(&scene->mesh_renderers, i);
+
+        const MeshRendererComponent *mesh_renderer = component_storage_at_const(&scene->mesh_renderers, i);
+        
+        const TransformComponent *transform = component_storage_get(&scene->transforms, entity);
+
+        if (mesh_renderer == NULL || transform == NULL)
+        {
+            continue;
+        }
+
+        RenderableDrawData *renderable = &out_config->renderables[out_config->renderable_count];
+        
+        renderable->model_path = mesh_renderer->model_path;
+        renderable->model_matrix = transform_component_model_matrix(transform);
+
+        out_config->renderable_count++;
+    }
+}
+
 static void init_default_scene_lighting(struct Scene *scene)
 {
     directional_light_init(&scene->legacy_directional_light, (vec3s){{-0.2f, -1.0f, -0.3f}}, default_sunlight);
@@ -217,6 +248,8 @@ void scene_init_default(Scene *scene)
 
 void scene_get_render_config(Scene *scene, SceneRenderConfig *out_config)
 {
+    scene_extract_renderables(scene, out_config);
+
     const MeshRendererComponent *mesh_renderer = (const MeshRendererComponent *)component_storage_first_const(&scene->mesh_renderers);
 
     out_config->model_path = mesh_renderer != NULL ? mesh_renderer->model_path : scene->model_path;

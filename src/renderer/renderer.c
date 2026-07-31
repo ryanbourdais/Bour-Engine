@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cglm/struct.h>
+#include <cglm/mat4.h>
 
 #include "data_types/mesh.h"
 #include "data_types/texture.h"
@@ -17,6 +18,8 @@
 
 struct RendererState
 {
+    mat4s model_matrix;
+
     mat4 projection;
     Model test_model;
     Skybox skybox;
@@ -85,11 +88,9 @@ void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
 
     upload_spot_light_collection(&renderer->spot_lights, renderer->spot_light_uniforms, renderer->spot_light_count_location);
 
-    mat4 model_matrix;
-    glm_mat4_identity(model_matrix);
 
     glUniform1i(renderer->use_instancing_location, 0);
-    draw_model(&renderer->test_model, renderer->model_location, &renderer->material_uniforms, model_matrix , frame->camera->cameraPos.raw);
+    draw_model(&renderer->test_model, renderer->model_location, &renderer->material_uniforms, renderer->model_matrix.raw , frame->camera->cameraPos.raw);
 
     msaa_render_target_resolve_to(&renderer->scene_msaa_target, &renderer->scene_target);
 
@@ -256,10 +257,26 @@ static int renderer_state_init(struct RendererState *renderer, const RendererCon
         return 1;
     }
 
-    if (model_load_gltf(&renderer->test_model, config->model_path) != 0)
+    const RenderableDrawData *renderable = NULL;
+
+    if (config->renderable_count > 0)
     {
-        fprintf(stderr, "Failed to load loft interior model\n");
+        renderable = &config->renderables[0];
+    }
+
+    const char *model_path = renderable != NULL ? renderable->model_path : config->model_path;
+
+    if (model_load_gltf(&renderer->test_model, model_path) != 0)
+    {
         return 1;
+    }
+
+    if (renderable != NULL)
+    {
+        renderer->model_matrix = renderable->model_matrix;
+    }
+    else {
+        glm_mat4_identity(renderer->model_matrix.raw);
     }
 
     init_camera_projection(renderer, config);

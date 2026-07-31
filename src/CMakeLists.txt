@@ -36,6 +36,7 @@ add_executable(bour_engine
     ecs/entity.c
     ecs/components.c
     ecs/component_storage.c
+    renderer/renderer_data.h
 )
 
 add_subdirectory(external/cglm EXCLUDE_FROM_ALL)
