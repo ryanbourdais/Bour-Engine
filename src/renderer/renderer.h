@@ -12,9 +12,13 @@ typedef struct RendererViewport {
     int width;
     int height;
 } RendererViewport;
+
 typedef struct RendererFrame {
     const Camera *camera;
     RendererViewport viewport;
+
+    const RenderableDrawData *renderables;
+    size_t renderable_count;
 } RendererFrame;
 
 typedef struct RendererConfig {
@@ -26,9 +30,6 @@ typedef struct RendererConfig {
     const DirectionalLight *directional_light;
     const PointLightCollection *point_lights;
     const SpotLightCollection *spot_lights;
-
-    const RenderableDrawData *renderables;
-    size_t renderable_count;
 } RendererConfig;
 
 Renderer *renderer_create(void);
