@@ -276,12 +276,6 @@ void scene_update(Scene *scene, double delta_time)
 {
     (void)scene;
     (void)delta_time;
-    EntityId entity = component_storage_entity_at(&scene->mesh_renderers,0);
-    TransformComponent *transform = component_storage_get(&scene->transforms, entity);
-    if (transform != NULL)
-    {
-        transform->rotation.y += (float)delta_time * 15.0f;
-    }
 }
 
 void scene_shutdown(Scene *scene)

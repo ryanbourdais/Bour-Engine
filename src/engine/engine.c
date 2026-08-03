@@ -15,6 +15,7 @@
 struct EngineState
 {
     GLFWwindow *window;
+    // Active runtime/editor camera. ECS CameraComponent is scene data for future editor bridging.
     Camera camera;
     Renderer *renderer;
     Scene scene;
@@ -73,18 +74,18 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     handle_mouse(&engine->camera, offsets, true);
 }
 
+static void engine_update_camera(struct EngineState *engine)
+{
+    vec2s movement_axis = input_get_movement_axis();
+
+    camera_movement(&engine->camera, movement_axis, frame_clock_delta_time(&engine->clock));
+    camera_update(&engine->camera);
+}
+
 static void engine_update(struct EngineState *engine)
 {
     scene_update(&engine->scene, frame_clock_delta_time(&engine->clock));
-
-    vec2s movement_axis = input_get_movement_axis();
-
-    camera_movement(
-        &engine->camera,
-        movement_axis,
-        engine->clock.delta_time);
-
-    camera_update(&engine->camera);
+    engine_update_camera(engine);
 }
 
 static void run_engine_loop(struct EngineState *engine)

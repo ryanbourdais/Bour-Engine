@@ -60,10 +60,10 @@ Goal: introduce enough ECS to support editor workflows without overbuilding.
 - [X] Extract ECS mesh renderers and transforms into renderer-friendly draw data.
 - [X] Move ECS renderable submission into per-frame renderer input.
 - [X] Remove stale init-time renderable/model-matrix paths from renderer setup.
-- [ ] Add a simple transform update path for ECS transform-derived render data.
-- [ ] Add a simple camera update path that keeps camera behavior outside the renderer.
-- [ ] Decide whether camera should remain engine-owned or become an ECS camera component bridge.
-- [ ] Keep render submission as plain extracted data, not a full render system framework yet.
+- [X] Validate ECS transform updates flow into renderer draw data.
+- [X] Add a simple camera update path that keeps camera behavior outside the renderer.
+- [X] Decide whether camera should remain engine-owned or become an ECS camera component bridge.
+- [X] Keep render submission as plain extracted data, not a full render system framework yet.
 - [ ] Optional evaluation: prototype ECS component storage in Odin or Zig before committing to the C implementation. Note: deferred for now because the current ECS storage problem is not different enough from C to justify a language boundary; revisit when query ergonomics, custom components, or game-level scripting pressure appears.
 
 ## Epic 4: UI And Editor Shell
