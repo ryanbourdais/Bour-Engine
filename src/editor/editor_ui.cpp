@@ -23,11 +23,16 @@ int editor_ui_init(GLFWwindow *window)
     return 0;
 }
 
-void editor_ui_begin_frame(const EditorFrameData *frame)
+EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+
+    EditorFrameResult result = {
+        .selected_entity_id = frame != nullptr ? frame->selected_entity_id : 0,
+        .selection_changed = false,
+    };
 
     ImGui::SetNextWindowPos(ImVec2(10, 30), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(260, 300), ImGuiCond_FirstUseEver);
@@ -38,7 +43,12 @@ void editor_ui_begin_frame(const EditorFrameData *frame)
         for (size_t i = 0; i < frame->hierarchy_item_count; i++)
         {
             const EditorHierarchyItem *item = &frame->hierarchy_items[i];
-            ImGui::Text("%u: %s", item->entity_id, item->name);
+            bool selected = item->entity_id == frame->selected_entity_id;
+            if (ImGui::Selectable(item->name, selected))
+            {
+                result.selected_entity_id = item->entity_id;
+                result.selection_changed = true;
+            }
         }
     }
 
@@ -47,7 +57,36 @@ void editor_ui_begin_frame(const EditorFrameData *frame)
     ImGui::SetNextWindowPos(ImVec2(280, 30), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(300, 180), ImGuiCond_FirstUseEver);
     ImGui::Begin("Inspector");
-    ImGui::Text("No entity selected");
+    if (frame == nullptr || !frame->has_selected_entity)
+    {
+        ImGui::Text("No entity selected");
+    }
+    else {
+        ImGui::Text("Entity: %s", frame->selected_entity_name);
+        ImGui::Text("ID: %u", frame->selected_entity_id);
+
+        if (frame->selected_entity_has_transform)
+        {
+            ImGui::Text("Position: %.2f, %.2f, %.2f",
+                 frame->selected_position[0],
+                 frame->selected_position[1],
+                 frame->selected_position[2]
+                );
+            ImGui::Text("Rotation: %.2f, %.2f, %.2f",
+                 frame->selected_rotation[0],
+                 frame->selected_rotation[1],
+                 frame->selected_rotation[2]
+                );
+            ImGui::Text("Scale: %.2f, %.2f, %.2f",
+                 frame->selected_scale[0],
+                 frame->selected_scale[1],
+                 frame->selected_scale[2]
+                );
+        }
+        else {
+            ImGui::Text("No transform component");
+        }
+    }
     ImGui::End();
 
     ImGui::SetNextWindowPos(ImVec2(10, 340), ImGuiCond_FirstUseEver);
@@ -62,7 +101,7 @@ void editor_ui_begin_frame(const EditorFrameData *frame)
     }
 
     ImGui::End();
-
+    return result;
 }
 
 void editor_ui_render(void)

@@ -22,6 +22,7 @@ struct EngineState
     Renderer *renderer;
     Scene scene;
 
+    EntityId selected_entity;
     bool editor_enabled;
     bool fps_enabled;
     FrameClock clock;
@@ -138,10 +139,52 @@ static void run_engine_loop(struct EngineState *engine)
 
         double delta_time = frame_clock_delta_time(&engine->clock);
 
+        bool has_selected_entity = entity_registry_is_alive(&engine->scene.entities, engine->selected_entity);
+
+        const char *selected_entity_name = "No entity selected";
+        bool selected_entity_has_transform = false;
+
+        float selected_position[3] = {0};
+        float selected_rotation[3] = {0};
+        float selected_scale[3] = {0};
+
+        if (has_selected_entity)
+        {
+            const NameComponent *selected_name = (const NameComponent *)component_storage_get(&engine->scene.names, engine->selected_entity);
+            selected_entity_name = selected_name != NULL ? selected_name->value : "Unnamed Entity";
+            
+            const TransformComponent *selected_transform = (const TransformComponent *)component_storage_get(&engine->scene.transforms, engine->selected_entity);
+
+            if (selected_transform != NULL)
+            {
+                selected_entity_has_transform = true;
+
+                selected_position[0] = selected_transform->position.x;
+                selected_position[1] = selected_transform->position.y;
+                selected_position[2] = selected_transform->position.z;
+                
+                selected_rotation[0] = selected_transform->rotation.x;
+                selected_rotation[1] = selected_transform->rotation.y;
+                selected_rotation[2] = selected_transform->rotation.z;
+            
+                selected_scale[0] = selected_transform->scale.x;
+                selected_scale[1] = selected_transform->scale.y;
+                selected_scale[2] = selected_transform->scale.z;
+            }
+        }
+
+
         EditorFrameData editor_frame = {
             .delta_time = delta_time,
             .fps = delta_time > 0.0 ? 1.0 / delta_time : 0.0,
             .entity_count = engine->scene.entities.count,
+            .selected_entity_id = engine->selected_entity,
+            .has_selected_entity = has_selected_entity,
+            .selected_entity_has_transform = selected_entity_has_transform,
+            .selected_entity_name = selected_entity_name,
+            .selected_position = { selected_position[0], selected_position[1], selected_position[2] },
+            .selected_rotation = { selected_rotation[0], selected_rotation[1], selected_rotation[2] },
+            .selected_scale = { selected_scale[0], selected_scale[1], selected_scale[2] },
             .renderable_count = scene_render_config.renderable_count,
             .hierarchy_items = hierarchy_items,
             .hierarchy_item_count = hierarchy_count,
@@ -158,7 +201,12 @@ static void run_engine_loop(struct EngineState *engine)
 
         if (engine->editor_enabled)
         {
-            editor_ui_begin_frame(&editor_frame);
+            EditorFrameResult editor_result = editor_ui_begin_frame(&editor_frame);
+
+            if (editor_result.selection_changed)
+            {
+                engine->selected_entity = editor_result.selected_entity_id;
+            }
         }
         renderer_render_frame(engine->renderer, &frame);
 
@@ -192,6 +240,7 @@ int engine_run(bool fullscreen, bool fps_enabled)
     struct EngineState engine = {
         .window = window,
         .editor_enabled = true,
+        .selected_entity = INVALID_ENTITY_ID,
         .fps_enabled = fps_enabled,
         .fps_title_countdown_time = 0.1};
 

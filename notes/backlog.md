@@ -78,8 +78,8 @@ Goal: get the first usable editor surface on screen.
 - [X] Add editor mode toggle or editor executable entry path.
 - [X] Add simple panels: viewport, hierarchy, inspector, and timing/log output. Docking can wait if it slows commit 100.
 - [X] Display FPS/frame timing in UI instead of only the window title.
-- [ ] Add hierarchy listing and selection for ECS entities.
-- [ ] Add inspector display for selected entity name and transform.
+- [X] Add hierarchy listing and selection for ECS entities.
+- [X] Add inspector display for selected entity name and transform.
 - [ ] Add inspector editing for transform values.
 - [ ] Add basic editor mouse behavior gate: UI capture blocks camera mouse look; viewport camera requires focus, hover, or explicit capture.
 - [ ] Add inspector display/editing for light values.
