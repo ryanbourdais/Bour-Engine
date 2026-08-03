@@ -76,8 +76,8 @@ Goal: get the first usable editor surface on screen.
 - [X] If Dear ImGui is selected, evaluate whether the UI boundary should remain C-friendly or use a small C++ adapter.
 - [X] Add UI initialization/shutdown around the existing GLFW/OpenGL loop.
 - [X] Add editor mode toggle or editor executable entry path.
-- [ ] Add simple panels: viewport, hierarchy, inspector, and timing/log output. Docking can wait if it slows commit 100.
-- [ ] Display FPS/frame timing in UI instead of only the window title.
+- [X] Add simple panels: viewport, hierarchy, inspector, and timing/log output. Docking can wait if it slows commit 100.
+- [X] Display FPS/frame timing in UI instead of only the window title.
 - [ ] Add hierarchy listing and selection for ECS entities.
 - [ ] Add inspector display for selected entity name and transform.
 - [ ] Add inspector editing for transform values.

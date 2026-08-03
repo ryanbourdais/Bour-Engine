@@ -13,6 +13,7 @@
 #include "timing.h"
 #include "../scene/scene.h"
 
+#define MAX_EDITOR_HIERARCHY_ITEMS 256
 struct EngineState
 {
     GLFWwindow *window;
@@ -111,6 +112,41 @@ static void run_engine_loop(struct EngineState *engine)
 
         scene_get_render_config(&engine->scene, &scene_render_config);
 
+        size_t hierarchy_count = engine->scene.entities.count;
+        if (hierarchy_count > MAX_EDITOR_HIERARCHY_ITEMS)
+        {
+            hierarchy_count = (size_t)MAX_EDITOR_HIERARCHY_ITEMS;
+        }
+
+        EditorHierarchyItem hierarchy_items[MAX_EDITOR_HIERARCHY_ITEMS];
+
+        for(size_t i = 0; i < hierarchy_count; i++)
+        {
+            EntityId entity = engine->scene.entities.entities[i];
+            hierarchy_items[i].entity_id = entity;
+
+            const NameComponent *name = (const NameComponent *)component_storage_get(&engine->scene.names, entity);
+
+            if (name == NULL)
+            {
+                hierarchy_items[i].name = "Unnamed Entity";
+            }
+            else {
+                hierarchy_items[i].name = name->value;
+            }
+        }
+
+        double delta_time = frame_clock_delta_time(&engine->clock);
+
+        EditorFrameData editor_frame = {
+            .delta_time = delta_time,
+            .fps = delta_time > 0.0 ? 1.0 / delta_time : 0.0,
+            .entity_count = engine->scene.entities.count,
+            .renderable_count = scene_render_config.renderable_count,
+            .hierarchy_items = hierarchy_items,
+            .hierarchy_item_count = hierarchy_count,
+        };
+
         RendererFrame frame = {
             .camera = &engine->camera,
             .viewport = {0},
@@ -122,7 +158,7 @@ static void run_engine_loop(struct EngineState *engine)
 
         if (engine->editor_enabled)
         {
-            editor_ui_begin_frame();
+            editor_ui_begin_frame(&editor_frame);
         }
         renderer_render_frame(engine->renderer, &frame);
 

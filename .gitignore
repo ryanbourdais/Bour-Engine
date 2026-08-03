@@ -21,6 +21,7 @@ install_manifest.txt
 *.dll
 *.exe
 *.out
+*.ini
 
 # Editors and IDEs
 .vscode/
