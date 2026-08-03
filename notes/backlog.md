@@ -4,6 +4,10 @@
 
 Build toward a usable editor by first separating engine state, scene data, and rendering responsibilities. The editor should eventually be able to inspect, select, create, move, and save objects without hardcoding a debug scene inside the renderer.
 
+Near-term focus: commit 100 should produce a basic editor-capable runtime. The detailed commit-by-commit plan lives in `notes/editor-commit-100-plan.md`; keep this backlog and that plan in sync before starting each new slice.
+
+Branch rule: commit 90 is already on the remote. Any new commit after the commit-100 plan is commit 91 or later. Stay on `feat-scene-ecs-foundation` only for the remaining ECS/system proof slice, then switch to an editor-focused branch such as `feat-editor-commit-100` before UI integration.
+
 Odin, C++, and Zig evaluations are allowed during this milestone only when they directly support editor foundation work. The goal is to learn from small, contained subsystem trials without turning the editor milestone into a rewrite milestone.
 
 Current language direction: keep engine/runtime architecture C-first. Odin remains the leading candidate for future game-level coding, custom components, and higher-level user customization above the engine core, rather than for replacing foundational engine systems prematurely.
@@ -70,10 +74,13 @@ Goal: get the first usable editor surface on screen.
 - [ ] If Dear ImGui is selected, evaluate whether the UI boundary should remain C-friendly or use a small C++ adapter.
 - [ ] Add UI initialization/shutdown around the existing GLFW/OpenGL loop.
 - [ ] Add editor mode toggle or editor executable entry path.
-- [ ] Add dockable/simple panels: viewport, hierarchy, inspector, assets/log.
+- [ ] Add simple panels: viewport, hierarchy, inspector, and timing/log output. Docking can wait if it slows commit 100.
 - [ ] Display FPS/frame timing in UI instead of only the window title.
 - [ ] Add object selection from the hierarchy.
-- [ ] Add inspector editing for transform and light values.
+- [ ] Add inspector display for selected entity transform.
+- [ ] Add inspector editing for transform values.
+- [ ] Add inspector display/editing for light values.
+- [ ] Add selected entity name display/rename in the inspector.
 - [ ] Add basic viewport camera controls distinct from game camera behavior.
 
 ## Epic 5: Editor Interaction
