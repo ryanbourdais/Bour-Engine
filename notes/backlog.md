@@ -4,13 +4,15 @@
 
 Build toward a usable editor by first separating engine state, scene data, and rendering responsibilities. The editor should eventually be able to inspect, select, create, move, and save objects without hardcoding a debug scene inside the renderer.
 
-Near-term focus: commit 100 should produce a basic editor-capable runtime. The detailed commit-by-commit plan lives in `notes/editor-commit-100-plan.md`; keep this backlog and that plan in sync before starting each new slice.
+Near-term focus: commit 100 should produce a basic editor-capable runtime. The detailed commit-by-commit plan lives in [editor-commit-100-plan.md](editor-commit-100-plan.md); keep this backlog and that plan in sync before starting each new slice.
 
 Branch rule: commit 90 is already on the remote. Any new commit after the commit-100 plan is commit 91 or later. Stay on `feat-scene-ecs-foundation` only for the remaining ECS/system proof slice, then switch to an editor-focused branch such as `feat-editor-commit-100` before UI integration.
 
 Odin, C++, and Zig evaluations are allowed during this milestone only when they directly support editor foundation work. The goal is to learn from small, contained subsystem trials without turning the editor milestone into a rewrite milestone.
 
 Current language direction: keep engine/runtime architecture C-first. Odin remains the leading candidate for future game-level coding, custom components, and higher-level user customization above the engine core, rather than for replacing foundational engine systems prematurely.
+
+Editor input note: the current mouse behavior is not editor-safe. Camera mouse-look must stop responding while ImGui wants the mouse, and viewport camera controls should move behind viewport focus/hover or an explicit capture gesture such as holding right mouse. Track this before/with transform editing, because the current behavior will make editor interaction feel broken.
 
 ## Milestone Exit Criteria
 
@@ -73,12 +75,13 @@ Goal: get the first usable editor surface on screen.
 - [X] Choose immediate-mode UI path, likely Dear ImGui unless there is a strong reason not to.      Decision: use Dear ImGui through a small C++ adapter with a plain C-facing API.
 - [X] If Dear ImGui is selected, evaluate whether the UI boundary should remain C-friendly or use a small C++ adapter.
 - [X] Add UI initialization/shutdown around the existing GLFW/OpenGL loop.
-- [ ] Add editor mode toggle or editor executable entry path.
+- [X] Add editor mode toggle or editor executable entry path.
 - [ ] Add simple panels: viewport, hierarchy, inspector, and timing/log output. Docking can wait if it slows commit 100.
 - [ ] Display FPS/frame timing in UI instead of only the window title.
-- [ ] Add object selection from the hierarchy.
-- [ ] Add inspector display for selected entity transform.
+- [ ] Add hierarchy listing and selection for ECS entities.
+- [ ] Add inspector display for selected entity name and transform.
 - [ ] Add inspector editing for transform values.
+- [ ] Add basic editor mouse behavior gate: UI capture blocks camera mouse look; viewport camera requires focus, hover, or explicit capture.
 - [ ] Add inspector display/editing for light values.
 - [ ] Add selected entity name display/rename in the inspector.
 - [ ] Add basic viewport camera controls distinct from game camera behavior.
@@ -87,7 +90,7 @@ Goal: get the first usable editor surface on screen.
 
 Goal: make the editor useful, not just visible.
 
-- [ ] Add entity create/delete/rename.
+- [ ] Add simple entity create/delete/rename. Commit-100 target: create empty named entity; delete selected entity only if component cleanup stays simple.
 - [ ] Add transform editing through inspector fields.
 - [ ] Add viewport object picking or temporary hierarchy-first selection.
 - [ ] Add translate/rotate/scale gizmo support.

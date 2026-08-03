@@ -1,258 +1,172 @@
 # Editor By Commit 100 Plan
 
-Commit 90 marks the point where the engine/renderer/scene/ECS split became real enough to aim at an editor instead of continuing open-ended architecture cleanup.
+Commit 90 is the baseline already on the remote. Any commit after the planning reset counts toward the commit-100 editor alpha budget.
 
-The target for commit 100 is not a polished editor. The target is a visible, running editor shell that proves the engine can expose scene data to tools while the renderer remains a consumer of extracted render data.
-
-Use this plan together with `notes/backlog.md`: the backlog is the source of truth for milestone scope, and this file is the commit-91-through-100 execution path. If the two disagree, update both before continuing.
+This plan is intentionally linked to [backlog.md](backlog.md). If the backlog changes, this file should change with it so we do not drift into interesting-but-off-milestone work.
 
 ## Commit 100 Target
 
-By commit 100, Bour Engine should launch into a commit-100 v0.1 alpha editor with:
+By commit 100, Bour Engine should have a simple hierarchy-first editor alpha:
 
-- the existing rendered viewport still working;
-- a minimal UI layer initialized, rendered, and shut down cleanly;
-- a simple hierarchy view listing ECS entities by name;
-- hierarchy selection that persists across frames;
-- a simple inspector view showing the selected entity's transform;
-- editable transform values that update ECS data and affect rendering;
-- basic selected-light inspection or editing if the selected entity has a light component;
-- selected entity name display/rename through the inspector;
-- a short alpha stabilization pass that verifies the editor loop still works after the pieces are connected;
-- renderer, scene, ECS, and editor/UI responsibilities kept separate enough to continue safely.
+- the engine can launch with the editor UI enabled or disabled;
+- Dear ImGui is initialized and shut down through a small C-friendly adapter;
+- the editor has visible panels for hierarchy, inspector, and timing/status output;
+- ECS entities can be listed, selected, inspected, and edited through the UI;
+- transform edits made in the inspector affect what the renderer shows;
+- at least one editor interaction beyond display is present, such as renaming or creating an entity;
+- light data can be inspected or edited if the scene/light extraction path stays stable;
+- the final commit leaves the alpha demo buildable and explainable.
 
-If scope pressure appears, the fallback target is a naive editor shell:
+This does not need to be a polished editor. It should prove the architecture: editor UI -> engine/scene/ECS state -> renderer input data -> viewport result.
 
-- UI draws on top of or beside the viewport;
-- hierarchy is read-only;
-- inspector is read-only;
-- transform editing is deferred to commit 101+.
+## Mouse Behavior Warning
 
-## Baseline At Commit 90
+The current mouse behavior is not editor-safe. FPS-style cursor callbacks that always drive camera look are nonfunctional once the user can click editor panels, drag fields, or interact with a hierarchy.
 
-Commit 90 is the editor-foundation baseline:
+Before transform editing becomes a real editor workflow, mouse input must be gated so UI interaction does not move the camera. The commit-100 plan handles this as an explicit milestone item:
 
-- engine owns the application loop;
-- scene owns default entities/components;
-- renderer consumes scene-derived render data;
-- ECS renderables are submitted per frame;
-- stale init-time renderer model-matrix state has been removed.
+- ImGui mouse capture should block camera mouse-look behavior.
+- Viewport camera movement should require viewport focus, hover, or an explicit capture gesture such as holding right mouse.
+- The editor should be allowed to consume mouse input without the renderer/game camera also responding.
 
-That means commits 91 through 100 should stop extending the renderer/scene split and start turning the split into visible editor tooling.
+Commit 97 is the planned point to change mouse behavior, because that is when transform editing becomes interactive enough for the current behavior to get in the way.
 
-## Branch And Commit Rules
+## Branch Rules
 
-Commit 90 is already on the remote branch. Any new commit after this plan is commit 91 or later.
+- Stay on the current ECS/editor integration branch only for work that belongs to the commit-100 editor alpha.
+- Do not continue expanding the old scene/ECS foundation branch after it has been integrated into `main`.
+- Use a dedicated editor branch, currently `feat-editor-commit-100`, for UI/editor-facing commits.
+- If a task is not needed for the commit-100 editor alpha, move it back to [backlog.md](backlog.md) instead of spending one of the remaining commits on it.
 
-Current branch: `feat-scene-ecs-foundation`. Use it only for the remaining ECS/system proof work that naturally belongs to the current branch. After commit 91, or earlier if the ECS smoke path is skipped, create a new editor-focused branch before starting UI integration. Suggested branch name:
+## Commit Map
 
-```text
-feat-editor-commit-100
-```
+### Commit 91: Transform update smoke path
 
-Branch switch rule:
-
-- stay on `feat-scene-ecs-foundation` for commit 91 if it is the transform update smoke path;
-- switch to `feat-editor-commit-100` before the Dear ImGui/UI route decision or any editor lifecycle code;
-- do not mix large asset/LFS commits into the editor branch unless the editor task explicitly requires them.
-
-## Commit Budget
-
-There are ten commits from 91 through 100. The plan assumes each commit should be a small, reviewable slice.
-
-Commits 93 and 94 are intentionally combined because the UI route decision should immediately prove itself with a blank UI lifecycle. Commits 97 and 98 from the first draft are also combined because listing and selecting hierarchy entities are one coherent feature.
-
-The two recovered commits are used for light inspector support and selected-entity rename support. Commit 100 still includes an alpha stabilization pass, but stabilization is part of the acceptance criteria rather than the whole commit.
-
-### Commit 91: add a transform update smoke path
-
-Goal: prove ECS transform changes flow through per-frame render extraction into rendering.
+Goal: prove ECS transform changes can reach the renderer.
 
 Acceptance:
 
-- a transform can be changed during scene update or through a small debug helper;
-- rendered model matrix reflects the ECS transform without renderer knowing about ECS;
-- temporary/debug behavior is clearly marked.
+- A transform can be changed outside hardcoded renderer setup.
+- The visible model moves/rotates/scales from that state.
+- The renderer still consumes renderable scene data rather than owning gameplay state.
 
-Backlog item:
+### Commit 92: Camera update ownership
 
-- `Add a simple transform update path for ECS transform-derived render data.`
-
-### Commit 92: clarify camera update ownership
-
-Goal: keep camera behavior outside the renderer and document the bridge to future ECS/editor camera work.
+Goal: make camera update ownership clear before UI work.
 
 Acceptance:
 
-- camera update remains engine-owned or is wrapped by a small engine-side helper;
-- renderer receives camera data only through `RendererFrame`;
-- backlog records whether ECS camera bridging is now or later.
+- Camera state lives at the engine/editor-facing layer.
+- Renderer receives camera data as input.
+- Existing camera movement still works in non-editor mode.
 
-Backlog items:
+### Commit 93: UI route and minimal lifecycle
 
-- `Add a simple camera update path that keeps camera behavior outside the renderer.`
-- `Decide whether camera should remain engine-owned or become an ECS camera component bridge.`
-
-### Commit 93: choose UI route and add minimal UI lifecycle
-
-Goal: make the UI implementation choice and prove it by rendering a blank UI frame.
+Goal: select Dear ImGui and wire the thinnest possible lifecycle.
 
 Acceptance:
 
-- choose Dear ImGui unless a concrete blocker appears;
-- decide whether integration uses a C-friendly boundary or a small C++ adapter;
-- UI init happens after window/OpenGL setup;
-- UI frame begins/ends inside the engine loop;
-- UI shutdown happens during engine shutdown;
-- viewport rendering still works;
-- the decision is captured in backlog or a short note.
+- Dear ImGui path is documented as the active choice.
+- UI init/new-frame/render/shutdown are owned outside core renderer logic.
+- Renderer remains a rendering backend, not the UI owner.
 
-Backlog items:
+### Commit 94: Editor mode entry/toggle
 
-- `Choose immediate-mode UI path, likely Dear ImGui unless there is a strong reason not to.`
-- `If Dear ImGui is selected, evaluate whether the UI boundary should remain C-friendly or use a small C++ adapter.`
-- `Add UI initialization/shutdown around the existing GLFW/OpenGL loop.`
-
-### Commit 94: add editor mode entry or toggle
-
-Goal: make it explicit when the runtime is operating as an editor.
+Goal: allow editor UI to be enabled without making every run an editor run.
 
 Acceptance:
 
-- editor mode can be enabled by default, compile-time flag, launch flag, or simple runtime toggle;
-- editor code path is visible in engine coordination code;
-- game/runtime camera behavior is not permanently tangled with editor behavior.
+- Editor mode can be toggled or configured on/off.
+- UI rendering is skipped cleanly when disabled.
+- Non-editor rendering still behaves as before.
 
-Backlog item:
+### Commit 95: Panels, timing, and read-only hierarchy list
 
-- `Add editor mode toggle or editor executable entry path.`
-
-### Commit 95: add first editor panels and timing output
-
-Goal: get visible editor structure on screen.
+Goal: make the editor shell feel real without requiring mutation yet.
 
 Acceptance:
 
-- hierarchy panel exists;
-- inspector panel exists;
-- FPS/frame timing moves into UI or is duplicated there;
-- panels may be simple/non-dockable if docking setup is too much for the commit budget.
+- Show basic editor panels: hierarchy, inspector, and timing/status output.
+- Display frame timing/FPS in UI.
+- List ECS entities by name when possible, with a safe fallback label when unnamed.
+- It is acceptable for the hierarchy to be read-only in this commit.
 
-Backlog items:
+### Commit 96: Hierarchy selection and transform inspector display
 
-- `Add simple panels: viewport, hierarchy, inspector, and timing/log output. Docking can wait if it slows commit 100.`
-- `Display FPS/frame timing in UI instead of only the window title.`
-
-### Commit 96: list and select ECS entities in hierarchy
-
-Goal: expose scene/ECS data to the editor UI and establish selected-entity state.
+Goal: connect editor selection to ECS data.
 
 Acceptance:
 
-- hierarchy lists live entities;
-- names are shown when `NameComponent` exists;
-- unnamed entities have a stable fallback label;
-- clicking a hierarchy entry stores the selected entity;
-- selected state survives across frames;
-- invalid/deleted entity selection has a safe fallback;
-- inspector can query the selected entity;
-- no renderer dependency is introduced into ECS or scene data.
+- Clicking a hierarchy row stores a selected entity.
+- Inspector displays selected entity name and transform data.
+- Empty selection and deleted/invalid entities are handled safely.
+- No transform editing is required yet.
 
-Backlog item:
+### Commit 97: Editor mouse behavior gate and transform editing
 
-- `Add object selection from the hierarchy.`
-
-### Commit 97: show selected transform in inspector
-
-Goal: inspect selected entity transform data.
+Goal: make editor interaction usable and prove UI edits can drive scene state.
 
 Acceptance:
 
-- inspector shows transform position, rotation, and scale when present;
-- inspector has a clear empty state when no entity or no transform is selected;
-- transform display reads ECS data directly or through a small scene/editor query helper.
+- ImGui mouse capture blocks camera mouse look.
+- Viewport camera behavior only runs when editor rules allow it, such as viewport focus/hover or explicit right-mouse capture.
+- Inspector transform fields can edit position/rotation/scale.
+- Renderer output updates from the edited ECS transform.
 
-Backlog item:
+### Commit 98: Rename selected entity and create empty entity
 
-- `Add inspector display for selected entity transform.`
-
-### Commit 98: edit transform and see renderer update
-
-Goal: cross from read-only inspection to a naive but real editor loop.
+Goal: add a small but concrete scene-editing action.
 
 Acceptance:
 
-- inspector can edit transform position, rotation, or scale;
-- ECS transform changes are visible in the viewport;
-- renderer still consumes per-frame extracted draw data;
-- demo is: select entity, change transform, see scene update.
+- Inspector can rename the selected entity.
+- Hierarchy updates to show the new name.
+- A create action adds a new empty entity with at least name and transform components.
+- Created entities do not need mesh/render components yet.
 
-Backlog item:
+### Commit 99: Selected light inspection/editing
 
-- `Add inspector editing for transform values.`
-
-### Commit 99: inspect or edit selected light values
-
-Goal: make the inspector useful for more than transforms by exposing existing ECS light components.
+Goal: expose scene lighting through the editor path.
 
 Acceptance:
 
-- inspector detects directional, point, or spot light components on the selected entity;
-- inspector displays core light fields such as color, direction, position, attenuation, or cutoff values as applicable;
-- editing at least one simple light value is preferred, but read-only display is acceptable if UI integration risk is high;
-- renderer continues consuming extracted light data rather than editor-owned light state.
+- Selecting a light-backed entity shows relevant light fields.
+- At least one simple light value can be edited if the extraction path supports it cleanly.
+- Renderer light input still comes from scene/ECS extraction, not renderer-owned debug state.
 
-Backlog item:
+### Commit 100: Delete selected entity if safe, then alpha stabilization
 
-- `Add inspector display/editing for light values.`
-
-### Commit 100: rename selected entity and stabilize v0.1 alpha
-
-Goal: add one more small editor feature, then make the commit-100 demo coherent, reproducible, and safe to continue from.
+Goal: close the v0.1 editor alpha with one small interaction plus cleanup.
 
 Acceptance:
 
-- inspector displays the selected entity name when a `NameComponent` exists;
-- inspector can rename the selected entity through the `NameComponent`;
-- hierarchy reflects renamed entities;
-- build is clean;
-- app launches into editor-capable mode;
-- viewport still renders;
-- hierarchy selection works;
-- selected transform display works;
-- transform edit affects rendering;
-- light inspection does not break rendering;
-- backlog accurately marks completed commit-100 items;
-- any deferred editor work is explicitly left for commit 101+.
+- If ECS/component cleanup is straightforward, deleting the selected entity works safely.
+- If deletion exposes unsafe ownership or lifecycle gaps, defer deletion and document the gap instead of forcing it.
+- Build is clean.
+- Editor on/off behavior works.
+- A short demo path exists: launch editor, view hierarchy, select entity, inspect/edit transform, see viewport update.
 
-Backlog item:
+## Explicitly Not In Commit 100
 
-- `Add selected entity name display/rename in the inspector.`
-
-Stabilization pass:
-
-- run the commit-100 demo checklist before marking the alpha complete.
-
-## Not In Commit 100
-
-These are important, but they are not required for the commit-100 editor target:
+These are valid later tasks, but should not consume the commit-100 budget unless the plan is intentionally revised:
 
 - scene save/load;
-- scene switching/reload;
+- scene switching or hot reload;
 - asset browser;
-- gizmos;
-- object picking from viewport;
+- viewport picking;
+- transform gizmos;
+- docking polish;
 - physics;
-- scripting;
-- shadow maps;
-- polished docking layout.
+- scripting language bridge;
+- full custom component authoring;
+- shadow-map/editor lighting polish.
 
-## Guiding Principle
+## Post-100 Direction
 
-Commit 100 should prove the editor loop:
+After commit 100, the next milestone should move from "editor exists" to "editor can author and persist scenes":
 
-```text
-ECS scene data -> editor UI -> edited component -> render extraction -> renderer frame -> viewport
-```
-
-If that loop exists, even in a naive form, the editor milestone has crossed from architecture prep into usable tooling.
+1. scene serialization and load/save;
+2. editor-safe play/update separation;
+3. viewport picking or gizmos;
+4. asset/model assignment;
+5. scripting/custom component spike, with Odin still the current front-runner for game-level customization.
