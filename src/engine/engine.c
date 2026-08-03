@@ -9,6 +9,7 @@
 #include "../renderer/renderer.h"
 #include "../renderer/camera.h"
 #include "../controller/input.h"
+#include "../editor/editor_ui.h"
 #include "timing.h"
 #include "../scene/scene.h"
 
@@ -118,7 +119,11 @@ static void run_engine_loop(struct EngineState *engine)
 
         window_get_framebuffer_size(engine->window, &frame.viewport.width, &frame.viewport.height);
 
+        editor_ui_begin_frame();
+
         renderer_render_frame(engine->renderer, &frame);
+
+        editor_ui_render();
 
         window_present(engine->window);
     }
@@ -202,11 +207,17 @@ int engine_run(bool fullscreen, bool fps_enabled)
         return 1;
     }
 
+    if (editor_ui_init(engine.window) != 0)
+    {
+        fprintf(stderr, "Failed to initialize editor UI\n");
+    }
+
     run_engine_loop(&engine);
 
     renderer_shutdown(engine.renderer);
     renderer_destroy(engine.renderer);
     scene_shutdown(&engine.scene);
+    editor_ui_shutdown();
     window_destroy(window);
     safe_exit();
 

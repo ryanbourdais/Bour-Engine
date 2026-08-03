@@ -70,9 +70,9 @@ Goal: introduce enough ECS to support editor workflows without overbuilding.
 
 Goal: get the first usable editor surface on screen.
 
-- [ ] Choose immediate-mode UI path, likely Dear ImGui unless there is a strong reason not to.
-- [ ] If Dear ImGui is selected, evaluate whether the UI boundary should remain C-friendly or use a small C++ adapter.
-- [ ] Add UI initialization/shutdown around the existing GLFW/OpenGL loop.
+- [X] Choose immediate-mode UI path, likely Dear ImGui unless there is a strong reason not to.      Decision: use Dear ImGui through a small C++ adapter with a plain C-facing API.
+- [X] If Dear ImGui is selected, evaluate whether the UI boundary should remain C-friendly or use a small C++ adapter.
+- [X] Add UI initialization/shutdown around the existing GLFW/OpenGL loop.
 - [ ] Add editor mode toggle or editor executable entry path.
 - [ ] Add simple panels: viewport, hierarchy, inspector, and timing/log output. Docking can wait if it slows commit 100.
 - [ ] Display FPS/frame timing in UI instead of only the window title.

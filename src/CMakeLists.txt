@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(bour_engine C)
+project(bour_engine C CXX)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -37,6 +37,13 @@ add_executable(bour_engine
     ecs/components.c
     ecs/component_storage.c
     renderer/renderer_data.h
+    editor/editor_ui.cpp
+    external/imgui/imgui.cpp
+    external/imgui/imgui_draw.cpp
+    external/imgui/imgui_tables.cpp
+    external/imgui/imgui_widgets.cpp
+    external/imgui/backends/imgui_impl_glfw.cpp
+    external/imgui/backends/imgui_impl_opengl3.cpp
 )
 
 add_subdirectory(external/cglm EXCLUDE_FROM_ALL)
@@ -45,6 +52,8 @@ add_subdirectory(external/cglm EXCLUDE_FROM_ALL)
 target_include_directories(bour_engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
     ${CMAKE_CURRENT_SOURCE_DIR}/external/cgltf
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/backends
 )
 
 target_link_libraries(bour_engine PRIVATE
