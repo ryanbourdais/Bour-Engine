@@ -26,6 +26,14 @@ typedef struct EditorFrameData {
     float selected_position[3];
     float selected_rotation[3];
     float selected_scale[3];
+    bool editor_cursor_enabled;
+
+    double profile_engine_update_ms;
+    double profile_scene_extract_ms;
+    double profile_editor_begin_ms;
+    double profile_renderer_ms;
+    double profile_editor_render_ms;
+    double profile_present_ms;
 
     const EditorHierarchyItem *hierarchy_items;
     size_t hierarchy_item_count;
@@ -34,6 +42,12 @@ typedef struct EditorFrameData {
 typedef struct EditorFrameResult {
     unsigned int selected_entity_id;
     bool selection_changed;
+    bool toggle_editor_cursor;
+
+    bool transform_changed;
+    float edited_position[3];
+    float edited_rotation[3];
+    float edited_scale[3];
 } EditorFrameResult;
 
 int editor_ui_init(struct GLFWwindow *window);

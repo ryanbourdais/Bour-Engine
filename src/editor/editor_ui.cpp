@@ -32,6 +32,11 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
     EditorFrameResult result = {
         .selected_entity_id = frame != nullptr ? frame->selected_entity_id : 0,
         .selection_changed = false,
+        .toggle_editor_cursor = false,
+        .transform_changed = false,
+        .edited_position = {0.0f, 0.0f, 0.0f},
+        .edited_rotation = {0.0f, 0.0f, 0.0f},
+        .edited_scale = {0.0f, 0.0f, 0.0f},
     };
 
     ImGui::SetNextWindowPos(ImVec2(10, 30), ImGuiCond_FirstUseEver);
@@ -67,21 +72,45 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
 
         if (frame->selected_entity_has_transform)
         {
-            ImGui::Text("Position: %.2f, %.2f, %.2f",
-                 frame->selected_position[0],
-                 frame->selected_position[1],
-                 frame->selected_position[2]
-                );
-            ImGui::Text("Rotation: %.2f, %.2f, %.2f",
-                 frame->selected_rotation[0],
-                 frame->selected_rotation[1],
-                 frame->selected_rotation[2]
-                );
-            ImGui::Text("Scale: %.2f, %.2f, %.2f",
-                 frame->selected_scale[0],
-                 frame->selected_scale[1],
-                 frame->selected_scale[2]
-                );
+            float position[3] = {
+                frame->selected_position[0],
+                frame->selected_position[1],
+                frame->selected_position[2],
+            };
+
+            float rotation[3] = {
+                frame->selected_rotation[0],
+                frame->selected_rotation[1],
+                frame->selected_rotation[2],
+            };
+
+            float scale[3] = {
+                frame->selected_scale[0],
+                frame->selected_scale[1],
+                frame->selected_scale[2],
+            };
+            bool changed = false;
+
+            changed |= ImGui::DragFloat3("Position", position, 0.05f);
+            changed |= ImGui::DragFloat3("Rotation", rotation, 0.5f);
+            changed |= ImGui::DragFloat3("Scale", scale, 0.05f);
+
+            if (changed)
+            {
+                result.transform_changed = true;
+
+                result.edited_position[0] = position[0];
+                result.edited_position[1] = position[1];
+                result.edited_position[2] = position[2];
+
+                result.edited_rotation[0] = rotation[0];
+                result.edited_rotation[1] = rotation[1];
+                result.edited_rotation[2] = rotation[2];
+
+                result.edited_scale[0] = scale[0];
+                result.edited_scale[1] = scale[1];
+                result.edited_scale[2] = scale[2];
+            }
         }
         else {
             ImGui::Text("No transform component");
@@ -100,6 +129,28 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         ImGui::Text("Renderables: %zu", frame->renderable_count);
     }
 
+    ImGui::Separator();
+    ImGui::Text("Engine Update: %.3f ms", frame->profile_engine_update_ms);
+    ImGui::Text("Scene Extract: %.3f ms", frame->profile_scene_extract_ms);
+    ImGui::Text("Editor Begin: %.3f ms", frame->profile_editor_begin_ms);
+    ImGui::Text("Renderer: %.3f ms", frame->profile_renderer_ms);
+    ImGui::Text("Editor Render: %.3f ms", frame->profile_editor_render_ms);
+    ImGui::Text("Present: %.3f ms", frame->profile_present_ms);
+
+    ImGui::End();
+
+    ImGui::SetNextWindowPos(ImVec2(280, 340), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(220, 120), ImGuiCond_FirstUseEver);
+    ImGui::Begin("Camera Settings");
+
+    if (frame != nullptr)
+    {
+        ImGui::Text("Mouse Mode: %s", frame->editor_cursor_enabled ? "Editor" : "Camera");
+        if (ImGui::Button(frame->editor_cursor_enabled ? "Switch to Camera Mouse" : "Switch to Editor Mouse"))
+        {
+            result.toggle_editor_cursor = true;
+        }
+    }
     ImGui::End();
     return result;
 }

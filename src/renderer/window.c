@@ -33,7 +33,12 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-GLFWwindow *window_create(bool fullscreen)
+static void window_set_vsync(bool enabled)
+{
+    glfwSwapInterval(enabled ? 1 : 0);
+}
+
+GLFWwindow *window_create(bool fullscreen, bool vsync_enabled)
 {
     GLFWmonitor *mon = NULL;
     int win_w = 1024, win_h = 768; // Our window dimensions, in pixels.
@@ -70,6 +75,8 @@ GLFWwindow *window_create(bool fullscreen)
     }
 
     create_window_context(window);
+
+    window_set_vsync(vsync_enabled);
 
     glfwSetKeyCallback(window, key_callback);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
