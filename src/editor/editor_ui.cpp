@@ -51,14 +51,15 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         .create_empty_entity = false,
         .create_renderable_entity = false,
         .duplicate_selected_entity = false,
+        .delete_selected_entity = false,
         .transform_changed = false,
         .edited_position = {0.0f, 0.0f, 0.0f},
         .edited_rotation = {0.0f, 0.0f, 0.0f},
         .edited_scale = {0.0f, 0.0f, 0.0f},
     };
 
-    ImGui::SetNextWindowPos(ImVec2(margin, margin), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(hierarchy_size, ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(margin, margin), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(hierarchy_size, ImGuiCond_FirstUseEver);
     ImGui::Begin("Hierarchy");
 
     if (frame != nullptr)
@@ -82,8 +83,8 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
     ImGui::End();
 
 
-    ImGui::SetNextWindowPos(ImVec2(display_size.x - margin, margin), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
-    ImGui::SetNextWindowSize(inspector_size, ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(display_size.x - margin, margin), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
+    ImGui::SetNextWindowSize(inspector_size, ImGuiCond_FirstUseEver);
     ImGui::Begin("Inspector");
     if (frame == nullptr || !frame->has_selected_entity)
     {
@@ -239,8 +240,8 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
     }
     ImGui::End();
 
-    ImGui::SetNextWindowPos(ImVec2(margin, margin + hierarchy_size .y + margin), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(stats_size, ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(margin, margin + hierarchy_size .y + margin), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(stats_size, ImGuiCond_FirstUseEver);
     ImGui::Begin("Stats");
     if (frame != nullptr)
     {
@@ -260,8 +261,8 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
 
     ImGui::End();
 
-    ImGui::SetNextWindowPos(ImVec2(display_size.x * 0.5f, display_size.y - margin), ImGuiCond_Always, ImVec2(0.5f, 1.0f));
-    ImGui::SetNextWindowSize(camera_settings_size, ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(display_size.x * 0.5f, display_size.y - margin), ImGuiCond_FirstUseEver, ImVec2(0.5f, 1.0f));
+    ImGui::SetNextWindowSize(camera_settings_size, ImGuiCond_FirstUseEver);
     ImGui::Begin("Camera Settings");
 
     if (frame != nullptr)
@@ -274,8 +275,8 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
     }
     ImGui::End();
 
-    ImGui::SetNextWindowPos(ImVec2(display_size.x - margin, margin + inspector_size.y + margin), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
-    ImGui::SetNextWindowSize(scene_actions_size, ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(display_size.x - margin, margin + inspector_size.y + margin), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
+    ImGui::SetNextWindowSize(scene_actions_size, ImGuiCond_FirstUseEver);
     ImGui::Begin("Scene Actions");
 
     if (ImGui::Button("Create Empty Entity"))
@@ -288,9 +289,16 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
     }
     if (frame != nullptr && frame->has_selected_entity)
     {
-        if (ImGui::Button("Duplicate Selected"))
+        if (frame->selected_entity_is_renderable)
         {
-            result.duplicate_selected_entity = true;
+            if (ImGui::Button("Duplicate Selected"))
+            {
+                result.duplicate_selected_entity = true;
+            }
+        }
+        if (ImGui::Button("Delete Selected"))
+        {
+            result.delete_selected_entity = true;
         }
     }
 

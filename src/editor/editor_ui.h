@@ -30,6 +30,7 @@ typedef struct EditorFrameData {
     bool has_selected_entity;
     bool selected_entity_has_transform;
     const char *selected_entity_name;
+    bool selected_entity_is_renderable;
     float selected_position[3];
     float selected_rotation[3];
     float selected_scale[3];
@@ -65,6 +66,7 @@ typedef struct EditorFrameResult {
     bool create_empty_entity;
     bool create_renderable_entity;
     bool duplicate_selected_entity;
+    bool delete_selected_entity;
 
     bool light_changed;
     float edited_light_ambient[3];
