@@ -80,11 +80,11 @@ void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
 
     upload_camera_ubo(renderer->camera_ubo, frame->camera, renderer->projection);
 
-    upload_directional_light(&renderer->directional_light, &renderer->directional_light_uniforms);
+    upload_directional_light((DirectionalLight *)frame->directional_light, &renderer->directional_light_uniforms);
 
-    upload_point_light_collection(&renderer->point_lights, renderer->point_light_uniforms, renderer->point_light_count_location);
+    upload_point_light_collection((PointLightCollection *)frame->point_lights, renderer->point_light_uniforms, renderer->point_light_count_location);
 
-    upload_spot_light_collection(&renderer->spot_lights, renderer->spot_light_uniforms, renderer->spot_light_count_location);
+    upload_spot_light_collection((SpotLightCollection *)frame->spot_lights, renderer->spot_light_uniforms, renderer->spot_light_count_location);
 
 
     glUniform1i(renderer->use_instancing_location, 0);

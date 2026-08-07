@@ -31,6 +31,17 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+    ImGuiIO &io = ImGui::GetIO();
+    ImVec2 display_size = io.DisplaySize;
+
+    const float margin = 10.0f;
+
+    const ImVec2 hierarchy_size = ImVec2(260, 300);
+    const ImVec2 stats_size = ImVec2(260, 180);
+    const ImVec2 inspector_size = ImVec2(320, 300);
+    const ImVec2 scene_actions_size = ImVec2(320, 140);
+    const ImVec2 camera_settings_size = ImVec2(260, 100);
+
     EditorFrameResult result = {
         .selected_entity_id = frame != nullptr ? frame->selected_entity_id : 0,
         .selection_changed = false,
@@ -46,8 +57,8 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         .edited_scale = {0.0f, 0.0f, 0.0f},
     };
 
-    ImGui::SetNextWindowPos(ImVec2(10, 30), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(260, 300), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(margin, margin), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(hierarchy_size, ImGuiCond_Always);
     ImGui::Begin("Hierarchy");
 
     if (frame != nullptr)
@@ -70,8 +81,9 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
 
     ImGui::End();
 
-    ImGui::SetNextWindowPos(ImVec2(280, 30), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(300, 180), ImGuiCond_FirstUseEver);
+
+    ImGui::SetNextWindowPos(ImVec2(display_size.x - margin, margin), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+    ImGui::SetNextWindowSize(inspector_size, ImGuiCond_Always);
     ImGui::Begin("Inspector");
     if (frame == nullptr || !frame->has_selected_entity)
     {
@@ -108,6 +120,7 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
                 frame->selected_scale[1],
                 frame->selected_scale[2],
             };
+
             bool changed = false;
 
             changed |= ImGui::DragFloat3("Position", position, 0.05f);
@@ -134,11 +147,100 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         else {
             ImGui::Text("No transform component");
         }
+
+            if (frame->selected_light_type != EDITOR_SELECTED_LIGHT_NONE)
+            {
+                ImGui::Separator();
+                ImGui::Text("Light");
+
+                float ambient[3] = {
+                    frame->selected_light_ambient[0],
+                    frame->selected_light_ambient[1],
+                    frame->selected_light_ambient[2]
+                };
+                float diffuse[3] = {
+                    frame->selected_light_diffuse[0],
+                    frame->selected_light_diffuse[1],
+                    frame->selected_light_diffuse[2]
+                };
+                float light_direction[3] = {
+                    frame->selected_light_direction[0],
+                    frame->selected_light_direction[1],
+                    frame->selected_light_direction[2]
+                };
+                float light_position[3] = {
+                    frame->selected_light_position[0],
+                    frame->selected_light_position[1],
+                    frame->selected_light_position[2]
+                };
+                float specular[3] = {
+                    frame->selected_light_specular[0],
+                    frame->selected_light_specular[1],
+                    frame->selected_light_specular[2]
+                };
+
+                result.edited_light_ambient[0] = ambient[0];
+                result.edited_light_ambient[1] = ambient[1];
+                result.edited_light_ambient[2] = ambient[2];
+
+                result.edited_light_diffuse[0] = diffuse[0];
+                result.edited_light_diffuse[1] = diffuse[1];
+                result.edited_light_diffuse[2] = diffuse[2];
+
+                result.edited_light_specular[0] = specular[0];
+                result.edited_light_specular[1] = specular[1];
+                result.edited_light_specular[2] = specular[2];
+
+                result.edited_light_direction[0] = light_direction[0];
+                result.edited_light_direction[1] = light_direction[1];
+                result.edited_light_direction[2] = light_direction[2];
+
+                result.edited_light_position[0] = light_position[0];
+                result.edited_light_position[1] = light_position[1];
+                result.edited_light_position[2] = light_position[2];
+
+                if (ImGui::ColorEdit3("Ambient", ambient))
+                {
+                    result.light_changed = true;
+                    result.edited_light_ambient[0] = ambient[0];
+                    result.edited_light_ambient[1] = ambient[1];
+                    result.edited_light_ambient[2] = ambient[2];
+                }
+                if (ImGui::ColorEdit3("Diffuse", diffuse))
+                {
+                    result.light_changed = true;
+                    result.edited_light_diffuse[0] = diffuse[0];
+                    result.edited_light_diffuse[1] = diffuse[1];
+                    result.edited_light_diffuse[2] = diffuse[2];
+                }
+                if (ImGui::ColorEdit3("Specular", specular))
+                {
+                    result.light_changed = true;
+                    result.edited_light_specular[0] = specular[0];
+                    result.edited_light_specular[1] = specular[1];
+                    result.edited_light_specular[2] = specular[2];
+                }
+                if (frame->selected_light_type == EDITOR_SELECTED_LIGHT_DIRECTIONAL && ImGui::DragFloat3("Light Direction", light_direction))
+                {
+                    result.light_changed = true;
+                    result.edited_light_direction[0] = light_direction[0];
+                    result.edited_light_direction[1] = light_direction[1];
+                    result.edited_light_direction[2] = light_direction[2];
+                }
+                if ((frame->selected_light_type == EDITOR_SELECTED_LIGHT_POINT || frame->selected_light_type == EDITOR_SELECTED_LIGHT_SPOT ) && ImGui::DragFloat3("Light Position", light_position))
+                {
+                    result.light_changed = true;
+                    result.edited_light_position[0] = light_position[0];
+                    result.edited_light_position[1] = light_position[1];
+                    result.edited_light_position[2] = light_position[2];
+                }
+                
+            }
     }
     ImGui::End();
 
-    ImGui::SetNextWindowPos(ImVec2(10, 340), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(220, 120), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(margin, margin + hierarchy_size .y + margin), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(stats_size, ImGuiCond_Always);
     ImGui::Begin("Stats");
     if (frame != nullptr)
     {
@@ -158,8 +260,8 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
 
     ImGui::End();
 
-    ImGui::SetNextWindowPos(ImVec2(280, 340), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(220, 120), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(display_size.x * 0.5f, display_size.y - margin), ImGuiCond_Always, ImVec2(0.5f, 1.0f));
+    ImGui::SetNextWindowSize(camera_settings_size, ImGuiCond_Always);
     ImGui::Begin("Camera Settings");
 
     if (frame != nullptr)
@@ -172,8 +274,8 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
     }
     ImGui::End();
 
-    ImGui::SetNextWindowPos(ImVec2(520, 340), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(240, 140), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(display_size.x - margin, margin + inspector_size.y + margin), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+    ImGui::SetNextWindowSize(scene_actions_size, ImGuiCond_Always);
     ImGui::Begin("Scene Actions");
 
     if (ImGui::Button("Create Empty Entity"))

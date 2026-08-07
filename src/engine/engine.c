@@ -250,6 +250,70 @@ static void run_engine_loop(struct EngineState *engine)
             }
         }
 
+        DirectionalLightComponent *directional = component_storage_get(&engine->scene.directional_lights, engine->selected_entity);
+        PointLightComponent *point = component_storage_get(&engine->scene.point_lights, engine->selected_entity);
+        SpotLightComponent *spot = component_storage_get(&engine->scene.spot_lights, engine->selected_entity);
+
+        float selected_light_ambient[3] = {0};
+        float selected_light_diffuse[3] = {0};
+        float selected_light_specular[3] = {0};
+        float selected_light_direction[3] = {0};
+        float selected_light_position[3] = {0};
+
+        EditorSelectedLightType selected_light_type = EDITOR_SELECTED_LIGHT_NONE;
+
+        if(directional != NULL)
+        {
+            selected_light_type = EDITOR_SELECTED_LIGHT_DIRECTIONAL;
+            selected_light_ambient[0] = directional->light.color.ambient.r;
+            selected_light_ambient[1] = directional->light.color.ambient.g;
+            selected_light_ambient[2] = directional->light.color.ambient.b;
+            selected_light_diffuse[0] = directional->light.color.diffuse.r;
+            selected_light_diffuse[1] = directional->light.color.diffuse.g;
+            selected_light_diffuse[2] = directional->light.color.diffuse.b;
+            selected_light_specular[0] = directional->light.color.specular.r;
+            selected_light_specular[1] = directional->light.color.specular.g;
+            selected_light_specular[2] = directional->light.color.specular.b;
+            selected_light_direction[0] = directional->light.direction.x;
+            selected_light_direction[1] = directional->light.direction.y;
+            selected_light_direction[2] = directional->light.direction.z;
+        }
+        if(point != NULL)
+        {
+            selected_light_type = EDITOR_SELECTED_LIGHT_POINT;
+            selected_light_ambient[0] = point->light.color.ambient.r;
+            selected_light_ambient[1] = point->light.color.ambient.g;
+            selected_light_ambient[2] = point->light.color.ambient.b;
+            selected_light_diffuse[0] = point->light.color.diffuse.r;
+            selected_light_diffuse[1] = point->light.color.diffuse.g;
+            selected_light_diffuse[2] = point->light.color.diffuse.b;
+            selected_light_specular[0] = point->light.color.specular.r;
+            selected_light_specular[1] = point->light.color.specular.g;
+            selected_light_specular[2] = point->light.color.specular.b;
+            selected_light_position[0] = point->light.position.x; 
+            selected_light_position[1] = point->light.position.y;
+            selected_light_position[2] = point->light.position.z;
+        }
+        if(spot != NULL)
+        {
+            selected_light_type = EDITOR_SELECTED_LIGHT_SPOT;
+            selected_light_ambient[0] = spot->light.color.ambient.r;
+            selected_light_ambient[1] = spot->light.color.ambient.g;
+            selected_light_ambient[2] = spot->light.color.ambient.b;
+            selected_light_diffuse[0] = spot->light.color.diffuse.r;
+            selected_light_diffuse[1] = spot->light.color.diffuse.g;
+            selected_light_diffuse[2] = spot->light.color.diffuse.b;
+            selected_light_specular[0] = spot->light.color.specular.r;
+            selected_light_specular[1] = spot->light.color.specular.g;
+            selected_light_specular[2] = spot->light.color.specular.b;
+            selected_light_direction[0] = spot->light.direction.x;
+            selected_light_direction[1] = spot->light.direction.y;
+            selected_light_direction[2] = spot->light.direction.z;
+            selected_light_position[0] = spot->light.position.x; 
+            selected_light_position[1] = spot->light.position.y;
+            selected_light_position[2] = spot->light.position.z;
+        }
+
 
         EditorFrameData editor_frame = {
             .delta_time = delta_time,
@@ -262,6 +326,12 @@ static void run_engine_loop(struct EngineState *engine)
             .selected_position = { selected_position[0], selected_position[1], selected_position[2] },
             .selected_rotation = { selected_rotation[0], selected_rotation[1], selected_rotation[2] },
             .selected_scale = { selected_scale[0], selected_scale[1], selected_scale[2] },
+            .selected_light_ambient = {selected_light_ambient[0],selected_light_ambient[1], selected_light_ambient[2]},
+            .selected_light_diffuse = {selected_light_diffuse[0],selected_light_diffuse[1], selected_light_diffuse[2]},
+            .selected_light_direction = {selected_light_direction[0],selected_light_direction[1], selected_light_direction[2]},
+            .selected_light_position = {selected_light_position[0],selected_light_position[1], selected_light_position[2]},
+            .selected_light_specular = {selected_light_specular[0],selected_light_specular[1], selected_light_specular[2]},
+            .selected_light_type = selected_light_type,
             .renderable_count = scene_render_config.renderable_count,
             .editor_cursor_enabled = engine->editor_cursor_enabled,
             .profile_engine_update_ms = engine->profile.engine_update_ms,
@@ -279,6 +349,9 @@ static void run_engine_loop(struct EngineState *engine)
             .viewport = {0},
             .renderables = scene_render_config.renderables,
             .renderable_count = scene_render_config.renderable_count,
+            .directional_light = scene_render_config.directional_light,
+            .spot_lights = scene_render_config.spot_lights,
+            .point_lights = scene_render_config.point_lights,
         };
 
         window_get_framebuffer_size(engine->window, &frame.viewport.width, &frame.viewport.height);
@@ -376,6 +449,69 @@ static void run_engine_loop(struct EngineState *engine)
                                     editor_result.edited_scale[1],
                                     editor_result.edited_scale[2]}}
                         );
+                    }
+                }
+            
+                if (editor_result.light_changed)
+                {
+                    DirectionalLightComponent *directional = component_storage_get(&engine->scene.directional_lights, engine->selected_entity);
+                    PointLightComponent *point = component_storage_get(&engine->scene.point_lights, engine->selected_entity);
+                    SpotLightComponent *spot = component_storage_get(&engine->scene.spot_lights, engine->selected_entity);
+                
+                    vec3s ambient = {{
+                        editor_result.edited_light_ambient[0],
+                        editor_result.edited_light_ambient[1],
+                        editor_result.edited_light_ambient[2]
+                    }};
+                    vec3s diffuse = {{
+                        editor_result.edited_light_diffuse[0],
+                        editor_result.edited_light_diffuse[1],
+                        editor_result.edited_light_diffuse[2]
+                    }};
+                    vec3s specular = {{
+                        editor_result.edited_light_specular[0],
+                        editor_result.edited_light_specular[1],
+                        editor_result.edited_light_specular[2]
+                    }};
+
+                    vec3s direction = {0};
+                    vec3s position = {0};
+                    if (directional)
+                    {
+                        direction = (vec3s){{
+                            editor_result.edited_light_direction[0],
+                            editor_result.edited_light_direction[1],
+                            editor_result.edited_light_direction[2],
+                        }};
+                    }
+                    else {
+                        position = (vec3s){{
+                            editor_result.edited_light_position[0],
+                            editor_result.edited_light_position[1],
+                            editor_result.edited_light_position[2],
+                        }};
+                    }
+
+                    if (directional != NULL)
+                    {
+                        directional->light.color.ambient = ambient;
+                        directional->light.color.diffuse = diffuse;
+                        directional->light.color.specular = specular;
+                        directional->light.direction = direction;
+                    }
+                    else if (point != NULL)
+                    {
+                        point->light.color.ambient = ambient;
+                        point->light.color.diffuse = diffuse;
+                        point->light.color.specular = specular;
+                        point->light.position = position;
+                    }
+                    else if (spot != NULL)
+                    {
+                        spot->light.color.ambient = ambient;
+                        spot->light.color.diffuse = diffuse;
+                        spot->light.color.specular = specular;
+                        spot->light.position = position;
                     }
                 }
             }

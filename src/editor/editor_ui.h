@@ -14,6 +14,13 @@ typedef struct EditorHierarchyItem {
     const char *name;
 } EditorHierarchyItem;
 
+typedef enum EditorSelectedLightType {
+    EDITOR_SELECTED_LIGHT_NONE = 0,
+    EDITOR_SELECTED_LIGHT_DIRECTIONAL,
+    EDITOR_SELECTED_LIGHT_POINT,
+    EDITOR_SELECTED_LIGHT_SPOT,
+} EditorSelectedLightType;
+
 typedef struct EditorFrameData {
     double delta_time;
     double fps;
@@ -27,6 +34,13 @@ typedef struct EditorFrameData {
     float selected_rotation[3];
     float selected_scale[3];
     bool editor_cursor_enabled;
+
+    EditorSelectedLightType selected_light_type;
+    float selected_light_ambient[3];
+    float selected_light_diffuse[3];
+    float selected_light_specular[3];
+    float selected_light_direction[3];
+    float selected_light_position[3];
 
     double profile_engine_update_ms;
     double profile_scene_extract_ms;
@@ -51,6 +65,13 @@ typedef struct EditorFrameResult {
     bool create_empty_entity;
     bool create_renderable_entity;
     bool duplicate_selected_entity;
+
+    bool light_changed;
+    float edited_light_ambient[3];
+    float edited_light_diffuse[3];
+    float edited_light_specular[3];
+    float edited_light_direction[3];
+    float edited_light_position[3];
 
     bool transform_changed;
     float edited_position[3];

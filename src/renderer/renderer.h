@@ -19,6 +19,10 @@ typedef struct RendererFrame {
 
     const RenderableDrawData *renderables;
     size_t renderable_count;
+
+    const DirectionalLight *directional_light;
+    const PointLightCollection *point_lights;
+    const SpotLightCollection *spot_lights;
 } RendererFrame;
 
 typedef struct RendererConfig {
