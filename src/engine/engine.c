@@ -130,6 +130,35 @@ static void engine_update(struct EngineState *engine)
     engine_update_camera(engine);
 }
 
+static EntityId engine_create_empty_entity(struct EngineState *engine, const char *name_value)
+{
+    EntityId entity = entity_registry_create(&engine->scene.entities);
+
+    NameComponent name = {0};
+    snprintf(name.value, ENTITY_NAME_MAX_LENGTH, "%s", name_value);
+
+    TransformComponent transform;
+    transform_component_init(&transform);
+
+    component_storage_add(&engine->scene.names, entity, &name);
+    component_storage_add(&engine->scene.transforms, entity, &transform);
+
+    return entity;
+}
+
+static EntityId engine_create_renderable_entity(struct EngineState *engine, const char *name_value)
+{
+    EntityId entity = engine_create_empty_entity(engine, name_value);
+
+    MeshRendererComponent mesh_renderer = {
+        .model_path = engine->scene.model_path,
+    };
+
+    component_storage_add(&engine->scene.mesh_renderers, entity, &mesh_renderer);
+
+    return entity;
+}
+
 static void run_engine_loop(struct EngineState *engine)
 {
     while (!window_should_close(engine->window))
@@ -141,6 +170,11 @@ static void run_engine_loop(struct EngineState *engine)
         if (engine->fps_enabled)
         {
             fps_counter(&engine->clock.delta_time, &engine->fps_title_countdown_time, engine->window);
+        }
+        else {
+            char title[256];
+            sprintf(title, "Bour Engine");
+            glfwSetWindowTitle(engine->window, title);
         }
 
         window_poll_events();
@@ -254,6 +288,98 @@ static void run_engine_loop(struct EngineState *engine)
             start = glfwGetTime();
             EditorFrameResult editor_result = editor_ui_begin_frame(&editor_frame);
 
+            EntityId result_entity = editor_frame.selected_entity_id;
+
+            bool result_entity_alive = entity_registry_is_alive(&engine->scene.entities, result_entity);
+
+            if (editor_result.create_empty_entity)
+            {
+                engine->selected_entity = engine_create_empty_entity(engine, "Empty Entity");
+            }
+
+            if (editor_result.create_renderable_entity)
+            {
+                engine->selected_entity = engine_create_renderable_entity(engine, "Renderable Entity");
+            }
+
+            if(result_entity_alive)
+            {
+                if (editor_result.duplicate_selected_entity)
+                {
+                    TransformComponent *source_transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, result_entity);
+                    
+                    MeshRendererComponent *source_mesh = (MeshRendererComponent *)component_storage_get(&engine->scene.mesh_renderers, result_entity);
+
+                    if (source_transform != NULL)
+                    {
+                        EntityId duplicate = engine_create_empty_entity(engine, "Duplicated Entity");
+
+                        TransformComponent *duplicate_transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, duplicate);
+
+                        if (duplicate_transform != NULL)
+                        {
+                            *duplicate_transform = *source_transform;
+                            duplicate_transform->position.x += 1.0f;
+                        }
+
+                        if (source_mesh != NULL)
+                        {
+                            MeshRendererComponent mesh_renderer = {
+                                .model_path = source_mesh->model_path,
+                            };
+
+                            component_storage_add(&engine->scene.mesh_renderers, duplicate, &mesh_renderer);
+                        }
+
+                        engine->selected_entity = duplicate;
+                    }
+                }
+
+                if (editor_result.rename_selected_entity)
+                {
+                    NameComponent *name = (NameComponent *)component_storage_get(&engine->scene.names, result_entity);
+
+                    if (name == NULL)
+                    {
+                        NameComponent new_name = {0};
+                        snprintf(new_name.value, ENTITY_NAME_MAX_LENGTH, "%s", editor_result.edited_name);
+                        component_storage_add(&engine->scene.names, result_entity, &new_name);
+                    }
+                    else
+                    {
+                        snprintf(name->value, ENTITY_NAME_MAX_LENGTH, "%s", editor_result.edited_name);
+                    }
+                }
+
+                if (editor_result.transform_changed)
+                {
+                    TransformComponent *transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, result_entity);
+                    if (transform != NULL)
+                    {
+                        transform_component_set_position(
+                            transform,
+                            (vec3s){{editor_result.edited_position[0],
+                                    editor_result.edited_position[1],
+                                    editor_result.edited_position[2]}}
+                        );
+
+                        transform_component_set_rotation(
+                            transform,
+                            (vec3s){{editor_result.edited_rotation[0],
+                                    editor_result.edited_rotation[1],
+                                    editor_result.edited_rotation[2]}}
+                        );
+
+                        transform_component_set_scale(
+                            transform,
+                            (vec3s){{editor_result.edited_scale[0],
+                                    editor_result.edited_scale[1],
+                                    editor_result.edited_scale[2]}}
+                        );
+                    }
+                }
+            }
+
             engine->profile.editor_begin_ms = elapsed_ms(start, glfwGetTime());
 
             if (editor_result.toggle_editor_cursor)
@@ -266,34 +392,6 @@ static void run_engine_loop(struct EngineState *engine)
             if (editor_result.selection_changed)
             {
                 engine->selected_entity = editor_result.selected_entity_id;
-            }
-
-            if (editor_result.transform_changed && entity_registry_is_alive(&engine->scene.entities, engine->selected_entity))
-            {
-                TransformComponent *transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, engine->selected_entity);
-                if (transform != NULL)
-                {
-                    transform_component_set_position(
-                        transform,
-                        (vec3s){{editor_result.edited_position[0],
-                                editor_result.edited_position[1],
-                                editor_result.edited_position[2]}}
-                    );
-
-                    transform_component_set_rotation(
-                        transform,
-                        (vec3s){{editor_result.edited_rotation[0],
-                                editor_result.edited_rotation[1],
-                                editor_result.edited_rotation[2]}}
-                    );
-
-                    transform_component_set_scale(
-                        transform,
-                        (vec3s){{editor_result.edited_scale[0],
-                                editor_result.edited_scale[1],
-                                editor_result.edited_scale[2]}}
-                    );
-                }
             }
         }
         start = glfwGetTime();

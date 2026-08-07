@@ -89,27 +89,23 @@ void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
 
     glUniform1i(renderer->use_instancing_location, 0);
 
-    const RenderableDrawData *renderable = NULL;
-
-    if (frame->renderable_count > 0)
+    for (size_t i = 0; i < frame->renderable_count; i++)
     {
-        renderable = &frame->renderables[0];
+        const RenderableDrawData *renderable = &frame->renderables[i];
+
+        mat4s model_matrix = renderable->model_matrix;
+
+        draw_model(
+            &renderer->test_model,
+            renderer->model_location,
+            &renderer->material_uniforms,
+            model_matrix.raw,
+            frame->camera->cameraPos.raw
+        );
     }
 
-    mat4s model_matrix = glms_mat4_identity();
-
-    if(renderable != NULL)
-    {
-        model_matrix = renderable->model_matrix;
-    }
-
-    draw_model(
-        &renderer->test_model,
-        renderer->model_location,
-        &renderer->material_uniforms,
-        model_matrix.raw,
-        frame->camera->cameraPos.raw
-    );
+    mat4s skybox_view = frame->camera->view;
+    skybox_draw(&renderer->skybox, renderer->projection, skybox_view.raw);
 
     msaa_render_target_resolve_to(&renderer->scene_msaa_target, &renderer->scene_target);
 

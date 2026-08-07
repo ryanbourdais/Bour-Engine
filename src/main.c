@@ -2,5 +2,5 @@
 
 int main()
 {
-    return engine_run(false, true, false);
+    return engine_run(false, false, false);
 }

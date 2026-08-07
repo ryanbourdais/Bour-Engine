@@ -68,7 +68,7 @@ static void init_default_scene_ecs(Scene *scene)
     EntityId model_entity = entity_registry_create(&scene->entities);
 
     NameComponent name = {0};
-    snprintf(name.value, ENTITY_NAME_MAX_LENGTH, "Loft Model");
+    snprintf(name.value, ENTITY_NAME_MAX_LENGTH, "Japanese Loft");
 
     TransformComponent transform;
     transform_component_init(&transform);

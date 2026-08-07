@@ -113,16 +113,20 @@ Acceptance:
 - Inspector transform fields can edit position/rotation/scale.
 - Renderer output updates from the edited ECS transform.
 
-### Commit 98: Rename selected entity and create empty entity
+### Commit 98: Runtime entity creation, duplication, and rename
 
-Goal: add a small but concrete scene-editing action.
+Goal: make the editor capable of instantiating and modifying runtime ECS entities without adding arbitrary asset loading yet.
 
 Acceptance:
 
 - Inspector can rename the selected entity.
 - Hierarchy updates to show the new name.
-- A create action adds a new empty entity with at least name and transform components.
-- Created entities do not need mesh/render components yet.
+- A create-empty action adds a new entity with at least `NameComponent` and `TransformComponent`.
+- A create-renderable action adds a new entity with `NameComponent`, `TransformComponent`, and `MeshRendererComponent`.
+- Newly created entities become selected immediately.
+- Renderable entities appear in the viewport by reusing already-supported/default model data.
+- If duplication is included, duplicating a selected renderable copies the selected transform and mesh-renderer data, offsets the new transform slightly, assigns a distinct name, and selects the duplicate.
+- This commit does not add arbitrary model picking, asset browsing, runtime glTF resource loading, or a renderer-side model cache.
 
 ### Commit 99: Selected light inspection/editing
 
@@ -134,17 +138,18 @@ Acceptance:
 - At least one simple light value can be edited if the extraction path supports it cleanly.
 - Renderer light input still comes from scene/ECS extraction, not renderer-owned debug state.
 
-### Commit 100: Delete selected entity if safe, then alpha stabilization
+### Commit 100: Delete selected entity if safe, commit alpha asset, then stabilization
 
-Goal: close the v0.1 editor alpha with one small interaction plus cleanup.
+Goal: close the v0.1 editor alpha with the remaining small scene interaction, the planned asset commit, and a coherent stabilization pass.
 
 Acceptance:
 
 - If ECS/component cleanup is straightforward, deleting the selected entity works safely.
 - If deletion exposes unsafe ownership or lifecycle gaps, defer deletion and document the gap instead of forcing it.
+- The planned commit-100 asset addition is included only if it is intentional, LFS-safe, and does not obscure the editor changes.
 - Build is clean.
 - Editor on/off behavior works.
-- A short demo path exists: launch editor, view hierarchy, select entity, inspect/edit transform, see viewport update.
+- A short demo path exists: launch editor, view hierarchy, select entity, inspect/edit transform, create or duplicate a renderable entity, see viewport update, and verify the app exits cleanly.
 
 ## Explicitly Not In Commit 100
 

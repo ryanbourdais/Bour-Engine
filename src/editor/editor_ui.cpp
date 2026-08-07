@@ -3,6 +3,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <cstdio>
+
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
@@ -33,6 +35,11 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         .selected_entity_id = frame != nullptr ? frame->selected_entity_id : 0,
         .selection_changed = false,
         .toggle_editor_cursor = false,
+        .rename_selected_entity = false,
+        .edited_name = {0},
+        .create_empty_entity = false,
+        .create_renderable_entity = false,
+        .duplicate_selected_entity = false,
         .transform_changed = false,
         .edited_position = {0.0f, 0.0f, 0.0f},
         .edited_rotation = {0.0f, 0.0f, 0.0f},
@@ -48,12 +55,16 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         for (size_t i = 0; i < frame->hierarchy_item_count; i++)
         {
             const EditorHierarchyItem *item = &frame->hierarchy_items[i];
+            
+            ImGui::PushID((int)item->entity_id);
+            
             bool selected = item->entity_id == frame->selected_entity_id;
             if (ImGui::Selectable(item->name, selected))
             {
                 result.selected_entity_id = item->entity_id;
                 result.selection_changed = true;
             }
+            ImGui::PopID();
         }
     }
 
@@ -67,7 +78,15 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         ImGui::Text("No entity selected");
     }
     else {
-        ImGui::Text("Entity: %s", frame->selected_entity_name);
+        char name_buffer[EDITOR_ENTITY_NAME_MAX_LENGTH] = {0};
+        snprintf(name_buffer, sizeof(name_buffer), "%s", frame->selected_entity_name);
+
+        if (ImGui::InputText("Name", name_buffer, sizeof(name_buffer)))
+        {
+            result.rename_selected_entity = true;
+            snprintf(result.edited_name, sizeof(result.edited_name), "%s", name_buffer);
+        }
+
         ImGui::Text("ID: %u", frame->selected_entity_id);
 
         if (frame->selected_entity_has_transform)
@@ -152,6 +171,29 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         }
     }
     ImGui::End();
+
+    ImGui::SetNextWindowPos(ImVec2(520, 340), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(240, 140), ImGuiCond_FirstUseEver);
+    ImGui::Begin("Scene Actions");
+
+    if (ImGui::Button("Create Empty Entity"))
+    {
+        result.create_empty_entity = true;
+    }
+    if (ImGui::Button("Create Renderable Entity"))
+    {
+        result.create_renderable_entity = true;
+    }
+    if (frame != nullptr && frame->has_selected_entity)
+    {
+        if (ImGui::Button("Duplicate Selected"))
+        {
+            result.duplicate_selected_entity = true;
+        }
+    }
+
+    ImGui::End();
+
     return result;
 }
 

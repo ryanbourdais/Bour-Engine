@@ -39,10 +39,18 @@ typedef struct EditorFrameData {
     size_t hierarchy_item_count;
 } EditorFrameData;
 
+#define EDITOR_ENTITY_NAME_MAX_LENGTH 64
 typedef struct EditorFrameResult {
     unsigned int selected_entity_id;
     bool selection_changed;
     bool toggle_editor_cursor;
+
+    bool rename_selected_entity;
+    char edited_name[EDITOR_ENTITY_NAME_MAX_LENGTH];
+
+    bool create_empty_entity;
+    bool create_renderable_entity;
+    bool duplicate_selected_entity;
 
     bool transform_changed;
     float edited_position[3];
