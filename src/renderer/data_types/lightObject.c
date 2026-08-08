@@ -3,7 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 
-void upload_directional_light(DirectionalLight *light, DirectionalLightUniforms *uniform)
+void upload_directional_light(const DirectionalLight *light, const DirectionalLightUniforms *uniform)
 {
     glUniform3fv(
         uniform->direction,
@@ -45,7 +45,7 @@ void directional_light_uniforms_init(DirectionalLightUniforms *uniforms, GLuint 
         glGetUniformLocation(shader_program, "directionalLight.specular");
 }
 
-void upload_point_light_collection(PointLightCollection *point_lights, PointLightUniforms *uniforms, GLint point_light_location)
+void upload_point_light_collection(const PointLightCollection *point_lights, const PointLightUniforms *uniforms, GLint point_light_location)
 {
     glUniform1i(point_light_location, (GLint)point_lights->count);
     for (size_t i = 0; i < point_lights->count; i++)
@@ -54,7 +54,7 @@ void upload_point_light_collection(PointLightCollection *point_lights, PointLigh
     }
 }
 
-void upload_point_light(PointLight *light, PointLightUniforms *uniforms)
+void upload_point_light(const PointLight *light, const PointLightUniforms *uniforms)
 {
     glUniform3fv(
         uniforms->position,
@@ -142,7 +142,7 @@ bool point_light_collection_add(PointLightCollection *lights, PointLight light)
     return true;
 }
 
-void upload_spot_light_collection(SpotLightCollection *spot_lights, SpotLightUniforms *uniforms, GLint spot_light_count_location)
+void upload_spot_light_collection(const SpotLightCollection *spot_lights, const SpotLightUniforms *uniforms, GLint spot_light_count_location)
 {
     glUniform1i(spot_light_count_location, (GLint)spot_lights->count);
     for (size_t i = 0; i < spot_lights->count; i++)
@@ -151,7 +151,7 @@ void upload_spot_light_collection(SpotLightCollection *spot_lights, SpotLightUni
     }
 }
 
-void upload_spot_light(SpotLight *spot, SpotLightUniforms *uniform)
+void upload_spot_light(const SpotLight *spot, const SpotLightUniforms *uniform)
 {
     glUniform3fv(uniform->position, 1, spot->position.raw);
     glUniform3fv(uniform->direction, 1, spot->direction.raw);
