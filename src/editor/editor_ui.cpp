@@ -9,12 +9,7 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
-static void copy_float3(float dest[3], const float src[3])
-{
-    dest[0] = src[0];
-    dest[1] = src[1];
-    dest[2] = src[2];
-}
+#include "../utils/math_utils.h"
 
 int editor_ui_init(GLFWwindow *window)
 {

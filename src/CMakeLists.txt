@@ -15,6 +15,7 @@ add_executable(bour_engine
     external/stb/stb_image.c
     external/cgltf/cgltf.c
     utils/helpers/file_reader.c
+    utils/math_utils.c
     renderer/window.c
     renderer/shaders.c
     renderer/data_types/mesh.c
