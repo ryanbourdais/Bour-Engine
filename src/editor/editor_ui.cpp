@@ -9,6 +9,13 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
+static void copy_float3(float dest[3], const float src[3])
+{
+    dest[0] = src[0];
+    dest[1] = src[1];
+    dest[2] = src[2];
+}
+
 int editor_ui_init(GLFWwindow *window)
 {
     IMGUI_CHECKVERSION();
@@ -41,6 +48,12 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
     const ImVec2 inspector_size = ImVec2(320, 300);
     const ImVec2 scene_actions_size = ImVec2(320, 140);
     const ImVec2 camera_settings_size = ImVec2(260, 100);
+    
+    const ImVec2 hierarchy_pos = ImVec2(margin, margin);
+    const ImVec2 inspector_pos = ImVec2(display_size.x - margin, margin);
+    const ImVec2 stats_pos = ImVec2(margin, margin + hierarchy_size.y + margin);
+    const ImVec2 camera_settings_pos = ImVec2(display_size.x * 0.5f, display_size.y - margin);
+    const ImVec2 scene_actions_pos = ImVec2(display_size.x - margin, margin + inspector_size.y + margin);
 
     EditorFrameResult result = {
         .selected_entity_id = frame != nullptr ? frame->selected_entity_id : 0,
@@ -58,7 +71,7 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         .edited_scale = {0.0f, 0.0f, 0.0f},
     };
 
-    ImGui::SetNextWindowPos(ImVec2(margin, margin), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(hierarchy_pos, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(hierarchy_size, ImGuiCond_FirstUseEver);
     ImGui::Begin("Hierarchy");
 
@@ -82,15 +95,15 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
 
     ImGui::End();
 
-
-    ImGui::SetNextWindowPos(ImVec2(display_size.x - margin, margin), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
+    ImGui::SetNextWindowPos(inspector_pos, ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
     ImGui::SetNextWindowSize(inspector_size, ImGuiCond_FirstUseEver);
     ImGui::Begin("Inspector");
     if (frame == nullptr || !frame->has_selected_entity)
     {
         ImGui::Text("No entity selected");
     }
-    else {
+    else 
+    {
         char name_buffer[EDITOR_ENTITY_NAME_MAX_LENGTH] = {0};
         snprintf(name_buffer, sizeof(name_buffer), "%s", frame->selected_entity_name);
 
@@ -104,23 +117,14 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
 
         if (frame->selected_entity_has_transform)
         {
-            float position[3] = {
-                frame->selected_position[0],
-                frame->selected_position[1],
-                frame->selected_position[2],
-            };
+            float position[3];
+            copy_float3(position, frame->selected_position);
 
-            float rotation[3] = {
-                frame->selected_rotation[0],
-                frame->selected_rotation[1],
-                frame->selected_rotation[2],
-            };
+            float rotation[3];
+            copy_float3(rotation, frame->selected_rotation);
 
-            float scale[3] = {
-                frame->selected_scale[0],
-                frame->selected_scale[1],
-                frame->selected_scale[2],
-            };
+            float scale[3];
+            copy_float3(scale, frame->selected_scale);
 
             bool changed = false;
 
@@ -132,115 +136,74 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
             {
                 result.transform_changed = true;
 
-                result.edited_position[0] = position[0];
-                result.edited_position[1] = position[1];
-                result.edited_position[2] = position[2];
+                copy_float3(result.edited_position, position);
 
-                result.edited_rotation[0] = rotation[0];
-                result.edited_rotation[1] = rotation[1];
-                result.edited_rotation[2] = rotation[2];
+                copy_float3(result.edited_rotation, rotation);
 
-                result.edited_scale[0] = scale[0];
-                result.edited_scale[1] = scale[1];
-                result.edited_scale[2] = scale[2];
+                copy_float3(result.edited_scale, scale);
             }
         }
-        else {
+        else 
+        {
             ImGui::Text("No transform component");
         }
 
-            if (frame->selected_light_type != EDITOR_SELECTED_LIGHT_NONE)
+        if (frame->selected_light_type != EDITOR_SELECTED_LIGHT_NONE)
+        { 
+            ImGui::Separator();
+            ImGui::Text("Light");
+
+            float ambient[3];
+            copy_float3(ambient, frame->selected_light_ambient);
+            copy_float3(result.edited_light_ambient, ambient);
+
+            float diffuse[3];
+            copy_float3(diffuse, frame->selected_light_diffuse);
+            copy_float3(result.edited_light_diffuse, diffuse);
+
+            float specular[3];
+            copy_float3(specular, frame->selected_light_specular);
+            copy_float3(result.edited_light_specular, specular);
+
+            float light_direction[3];
+            copy_float3(light_direction, frame->selected_light_direction);
+            copy_float3(result.edited_light_direction, light_direction);
+
+            float light_position[3]; 
+            copy_float3(light_position, frame->selected_light_position);
+            copy_float3(result.edited_light_position, light_position);
+
+            if (ImGui::ColorEdit3("Ambient", ambient))
             {
-                ImGui::Separator();
-                ImGui::Text("Light");
-
-                float ambient[3] = {
-                    frame->selected_light_ambient[0],
-                    frame->selected_light_ambient[1],
-                    frame->selected_light_ambient[2]
-                };
-                float diffuse[3] = {
-                    frame->selected_light_diffuse[0],
-                    frame->selected_light_diffuse[1],
-                    frame->selected_light_diffuse[2]
-                };
-                float light_direction[3] = {
-                    frame->selected_light_direction[0],
-                    frame->selected_light_direction[1],
-                    frame->selected_light_direction[2]
-                };
-                float light_position[3] = {
-                    frame->selected_light_position[0],
-                    frame->selected_light_position[1],
-                    frame->selected_light_position[2]
-                };
-                float specular[3] = {
-                    frame->selected_light_specular[0],
-                    frame->selected_light_specular[1],
-                    frame->selected_light_specular[2]
-                };
-
-                result.edited_light_ambient[0] = ambient[0];
-                result.edited_light_ambient[1] = ambient[1];
-                result.edited_light_ambient[2] = ambient[2];
-
-                result.edited_light_diffuse[0] = diffuse[0];
-                result.edited_light_diffuse[1] = diffuse[1];
-                result.edited_light_diffuse[2] = diffuse[2];
-
-                result.edited_light_specular[0] = specular[0];
-                result.edited_light_specular[1] = specular[1];
-                result.edited_light_specular[2] = specular[2];
-
-                result.edited_light_direction[0] = light_direction[0];
-                result.edited_light_direction[1] = light_direction[1];
-                result.edited_light_direction[2] = light_direction[2];
-
-                result.edited_light_position[0] = light_position[0];
-                result.edited_light_position[1] = light_position[1];
-                result.edited_light_position[2] = light_position[2];
-
-                if (ImGui::ColorEdit3("Ambient", ambient))
-                {
-                    result.light_changed = true;
-                    result.edited_light_ambient[0] = ambient[0];
-                    result.edited_light_ambient[1] = ambient[1];
-                    result.edited_light_ambient[2] = ambient[2];
-                }
-                if (ImGui::ColorEdit3("Diffuse", diffuse))
-                {
-                    result.light_changed = true;
-                    result.edited_light_diffuse[0] = diffuse[0];
-                    result.edited_light_diffuse[1] = diffuse[1];
-                    result.edited_light_diffuse[2] = diffuse[2];
-                }
-                if (ImGui::ColorEdit3("Specular", specular))
-                {
-                    result.light_changed = true;
-                    result.edited_light_specular[0] = specular[0];
-                    result.edited_light_specular[1] = specular[1];
-                    result.edited_light_specular[2] = specular[2];
-                }
-                if (frame->selected_light_type == EDITOR_SELECTED_LIGHT_DIRECTIONAL && ImGui::DragFloat3("Light Direction", light_direction))
-                {
-                    result.light_changed = true;
-                    result.edited_light_direction[0] = light_direction[0];
-                    result.edited_light_direction[1] = light_direction[1];
-                    result.edited_light_direction[2] = light_direction[2];
-                }
-                if ((frame->selected_light_type == EDITOR_SELECTED_LIGHT_POINT || frame->selected_light_type == EDITOR_SELECTED_LIGHT_SPOT ) && ImGui::DragFloat3("Light Position", light_position))
-                {
-                    result.light_changed = true;
-                    result.edited_light_position[0] = light_position[0];
-                    result.edited_light_position[1] = light_position[1];
-                    result.edited_light_position[2] = light_position[2];
-                }
-                
+                result.light_changed = true;
+                copy_float3(result.edited_light_ambient, ambient);
             }
+            if (ImGui::ColorEdit3("Diffuse", diffuse))
+            {
+                result.light_changed = true;
+                copy_float3(result.edited_light_diffuse, diffuse);
+            }
+            if (ImGui::ColorEdit3("Specular", specular))
+            {
+                result.light_changed = true;
+                copy_float3(result.edited_light_specular, specular);
+            }
+            if (frame->selected_light_type == EDITOR_SELECTED_LIGHT_DIRECTIONAL && ImGui::DragFloat3("Light Direction", light_direction))
+            {
+                result.light_changed = true;
+                copy_float3(result.edited_light_direction, light_direction);
+            }
+            if ((frame->selected_light_type == EDITOR_SELECTED_LIGHT_POINT || frame->selected_light_type == EDITOR_SELECTED_LIGHT_SPOT ) && ImGui::DragFloat3("Light Position", light_position))
+            {
+                result.light_changed = true;
+                copy_float3(result.edited_light_position, light_position);
+            }
+            
+        }
     }
     ImGui::End();
 
-    ImGui::SetNextWindowPos(ImVec2(margin, margin + hierarchy_size .y + margin), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(stats_pos, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(stats_size, ImGuiCond_FirstUseEver);
     ImGui::Begin("Stats");
     if (frame != nullptr)
@@ -261,7 +224,7 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
 
     ImGui::End();
 
-    ImGui::SetNextWindowPos(ImVec2(display_size.x * 0.5f, display_size.y - margin), ImGuiCond_FirstUseEver, ImVec2(0.5f, 1.0f));
+    ImGui::SetNextWindowPos(camera_settings_pos, ImGuiCond_FirstUseEver, ImVec2(0.5f, 1.0f));
     ImGui::SetNextWindowSize(camera_settings_size, ImGuiCond_FirstUseEver);
     ImGui::Begin("Camera Settings");
 
@@ -275,7 +238,7 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
     }
     ImGui::End();
 
-    ImGui::SetNextWindowPos(ImVec2(display_size.x - margin, margin + inspector_size.y + margin), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
+    ImGui::SetNextWindowPos(scene_actions_pos, ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
     ImGui::SetNextWindowSize(scene_actions_size, ImGuiCond_FirstUseEver);
     ImGui::Begin("Scene Actions");
 

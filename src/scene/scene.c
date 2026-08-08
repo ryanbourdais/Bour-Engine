@@ -73,7 +73,7 @@ static void init_default_scene_ecs(Scene *scene)
     TransformComponent transform;
     transform_component_init(&transform);
     MeshRendererComponent mesh_renderer = {
-        .model_path = "assets/models/3d_wall_panel/scene.gltf"
+        .model_path = "assets/models/loft_japanese_11_free_interior/scene.gltf"
     };
 
     component_storage_add(&scene->names, model_entity, &name);
@@ -227,7 +227,7 @@ static void init_default_scene_lighting(struct Scene *scene)
 
 static void init_default_scene_assets(Scene *scene)
 {
-    scene->model_path = "assets/models/3d_wall_panel/scene.gltf";
+    scene->model_path = "assets/models/loft_japanese_11_free_interior/scene.gltf";
     scene->skybox_faces[0] = "assets/cubemaps/skybox/right.jpg";
     scene->skybox_faces[1] = "assets/cubemaps/skybox/left.jpg";
     scene->skybox_faces[2] = "assets/cubemaps/skybox/top.jpg";

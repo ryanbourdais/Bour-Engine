@@ -1,107 +1,218 @@
 # Backlog
 
-## Next Major Milestone: Editor Foundation
+## Current Milestone: Editor Foundation
 
-Build toward a usable editor by first separating engine state, scene data, and rendering responsibilities. The editor should eventually be able to inspect, select, create, move, and save objects without hardcoding a debug scene inside the renderer.
+Commit 100 completed the first hierarchy-first editor alpha. The milestone is still active: the editor now exists, but it cannot yet author reusable scene data or support a clean scene-editing workflow.
 
-Near-term focus: commit 100 should produce a basic editor-capable runtime. The detailed commit-by-commit plan lives in [editor-commit-100-plan.md](editor-commit-100-plan.md); keep this backlog and that plan in sync before starting each new slice.
+The backlog is organized as deliverable sets instead of broad epics. Each deliverable set should be small enough to become one branch or a short sequence of related branches. If a task does not contribute to the deliverable set's exit criteria, move it to a later set instead of expanding the branch.
 
-Branch rule: commit 90 is already on the remote. Any new commit after the commit-100 plan is commit 91 or later. Stay on `feat-scene-ecs-foundation` only for the remaining ECS/system proof slice, then switch to an editor-focused branch such as `feat-editor-commit-100` before UI integration.
-
-Odin, C++, and Zig evaluations are allowed during this milestone only when they directly support editor foundation work. The goal is to learn from small, contained subsystem trials without turning the editor milestone into a rewrite milestone.
-
-Current language direction: keep engine/runtime architecture C-first. Odin remains the leading candidate for future game-level coding, custom components, and higher-level user customization above the engine core, rather than for replacing foundational engine systems prematurely.
-
-Editor input note: the current mouse behavior is not editor-safe. Camera mouse-look must stop responding while ImGui wants the mouse, and viewport camera controls should move behind viewport focus/hover or an explicit capture gesture such as holding right mouse. Track this before/with transform editing, because the current behavior will make editor interaction feel broken.
+Current language direction: keep engine/runtime architecture C-first. Odin is the chosen direction for future game-level scripting/customization above the engine core with Lua as a backup/secondary scripting language. Dear ImGui is the locked-in editor UI path for the current editor foundation milestone.
 
 ## Milestone Exit Criteria
+
+Editor Foundation is complete when:
 
 - Engine owns the application loop, timing, input, active camera, and active scene.
 - Renderer consumes renderable scene data instead of owning hardcoded models/lights.
 - A minimal ECS exists for entities, transforms, cameras, mesh renderers, and lights.
 - A minimal UI/editor shell can run beside the viewport.
-- A scene can be created, loaded, edited at a basic level, and saved.
+- A scene can be created, edited at a basic level, saved, loaded, and rendered again.
+- Editor camera/input behavior is usable without fighting ImGui interaction.
+- Asset/model assignment exists at a basic level for mesh-renderer entities.
 - The LearnOpenGL Phong-era renderer work is complete through shadow maps.
 - PBR is explicitly deferred to a later milestone.
 
-## Epic 1: Engine And Renderer Boundary
+## Completed Foundation Slices
 
-Goal: finish the architecture work already started by moving camera/input ownership out of the renderer.
+These are considered delivered and should not become new branches unless cleanup work is explicitly called out in an active deliverable set.
 
-- [X] Remove the renderer global singleton or hide it behind explicit renderer state ownership.
-- [X] Replace `renderer_render_frame(GLFWwindow *, Camera *)` with a render context or frame packet.
-- [X] Move framebuffer-size queries out of per-frame renderer code where practical.
-- [X] Give timing its own small abstraction.
-- [X] Keep GLFW details isolated to window/platform-facing code.
-- [X] Make renderer initialization accept configuration instead of hardcoded debug state.
-- [X] Define the renderer’s input as scene/camera/light/renderable data, not gameplay state.
+- [X] Engine owns the application loop, timing, active camera, active scene, and top-level editor mode.
+- [X] Renderer global/singleton ownership was removed or hidden behind explicit renderer state.
+- [X] Renderer frame input uses camera, viewport, renderables, and lights rather than gameplay state.
+- [X] Renderer initialization accepts scene-derived configuration instead of hardcoded debug state.
+- [X] Scene owns runtime entities and scene-level resources.
+- [X] Default scene setup reproduces the original rendered output.
+- [X] ECS supports entity IDs, component storage, names, transforms, mesh renderers, cameras, and light components.
+- [X] ECS transforms, mesh renderers, and lights extract into renderer-friendly frame data.
+- [X] Dear ImGui is selected and integrated through a small C++ adapter with a C-facing API.
+- [X] Editor mode can be enabled/disabled around the renderer loop.
+- [X] Editor panels exist for hierarchy, inspector, timing/status, scene actions, and camera settings.
+- [X] Hierarchy lists ECS entities and supports selection.
+- [X] Inspector displays and edits selected entity name and transform.
+- [X] Inspector displays and edits selected light values.
+- [X] Editor supports create empty, create renderable, duplicate renderable, and delete selected entity.
+- [X] Editor/camera cursor mode toggle prevents UI interaction from always driving camera look.
 
-## Epic 2: Scene Management
+## Deliverable Set 1: Editor Alpha Stabilization And Cleanup
 
-Goal: create the runtime object model the editor will manipulate.
+Suggested branch: `cleanup-editor-alpha`
 
-- [X] Introduce `Scene` as the owner of runtime entities and scene-level resources.
-- [X] Add scene lifecycle: create, update, render-submit, destroy.
-- [X] Move hardcoded model, skybox, cube positions, and debug lights into a scene setup path.
-- [X] Add a default test scene that reproduces the current rendered output.
-- [X] Add scene serialization format decision: [Decision: JSON, needs to be human readable for now] start simple, likely JSON or a custom text format. Note: this is the first point where a Zig trial may be useful; keep runtime `Scene` in C and evaluate Zig only for file parsing, validation, and round-trip tooling behind a plain C-facing boundary.
-- [ ] Add scene save/load for transforms, model paths, light values, and active camera. Note: serialization/save-load can be a contained sub-subsystem or tool; it should feed C-owned runtime scene data rather than rewrite the runtime scene model.
+Goal: pay down the rough edges introduced while racing to commit 100 so future scene persistence and editor features do not pile onto a tangled `engine.c` loop.
+
+Exit criteria:
+
+- Commit-100 editor behavior still works after cleanup.
+- Build is clean.
+- Editor state gathering and action application are easier to read.
+- Renderer no longer keeps obviously stale ownership copies for data now supplied per frame.
+
+Tasks:
+
+- [X] Remove stale renderer-owned light copies now that light data is passed through `RendererFrame`.
+- [X] Make renderer upload functions accept `const` light/render data where they do not mutate inputs.
+- [X] Normalize editor UI formatting and layout code after commit-100 iteration.
+- [ ] Extract repeated selected-entity/component gathering from `engine.c` into helper functions.
+- [ ] Extract editor action application paths from the main engine loop where practical.
+- [ ] Add small debug/assert helpers for invalid entity/component access.
+- [ ] Review fixed-size editor arrays and document current limits.
+- [ ] Revisit `imgui.ini` tracking policy.
+- [ ] Move stats/timeline tooling to a clean location, such as `tools/` or `scripts/`.
+- [ ] Audit large assets and LFS tracking before the next asset-heavy commit.
+- [ ] Remove or quarantine old renderer/data types that are now legacy or unused.
+
+## Deliverable Set 2: Scene Persistence V0
+
+Suggested branch: `feat-scene-persistence-v0`
+
+Goal: make the editor alpha capable of saving and loading reusable scene data without replacing the C-owned runtime scene model.
+
+Exit criteria:
+
+- Runtime scene data can be saved to disk.
+- A saved scene can be loaded into C-owned scene/ECS state.
+- Names, transforms, mesh renderer model paths, light values, and active camera state round-trip.
+- The loaded scene renders successfully.
+- JSON remains the default human-readable v0 format unless a documented decision changes it.
+
+Tasks:
+
+- [ ] Define v0 scene file schema for entities, names, transforms, mesh renderers, light values, and active camera.
+- [ ] Add scene save path from current runtime ECS scene to disk.
+- [ ] Add scene load path from disk into C-owned runtime scene data.
+- [ ] Add save/load round-trip validation for save -> load -> render.
+- [ ] Add editor action for save/load once the runtime path works.
 - [ ] Add basic scene switching or scene reload during development.
-- [ ] Optional evaluation: prototype scene serialization in Zig behind a plain C-facing boundary.
 
-## Epic 3: ECS Foundation
+## Deliverable Set 3: Editor Camera And Input V1
 
-Goal: introduce enough ECS to support editor workflows without overbuilding.
+Suggested branch: `feat-editor-camera-input-v1`
 
-- [X] Define entity IDs and an entity registry.
-- [X] Add core components: `Transform`, `Name`, `Camera`, `MeshRenderer`, `DirectionalLight`, `PointLight`, `SpotLight`.
-- [X] Add component storage with create/get/remove/iterate operations.
-- [X] Add transform helpers for position, rotation, scale, and model matrix generation.
-- [X] Convert the current debug model/light setup into ECS entities.
-- [X] Extract ECS lights into renderer-friendly light data.
-- [X] Extract ECS mesh renderers and transforms into renderer-friendly draw data.
-- [X] Move ECS renderable submission into per-frame renderer input.
-- [X] Remove stale init-time renderable/model-matrix paths from renderer setup.
-- [X] Validate ECS transform updates flow into renderer draw data.
-- [X] Add a simple camera update path that keeps camera behavior outside the renderer.
-- [X] Decide whether camera should remain engine-owned or become an ECS camera component bridge.
-- [X] Keep render submission as plain extracted data, not a full render system framework yet.
-- [ ] Optional evaluation: prototype ECS component storage in Odin or Zig before committing to the C implementation. Note: deferred for now because the current ECS storage problem is not different enough from C to justify a language boundary; revisit when query ergonomics, custom components, or game-level scripting pressure appears.
+Goal: make editor navigation and UI interaction feel intentional instead of relying only on the commit-100 Tab toggle.
 
-## Epic 4: UI And Editor Shell
+Exit criteria:
 
-Goal: get the first usable editor surface on screen.
+- Editor cursor mode and camera mode are explicit and understandable in the UI.
+- Viewport camera movement requires viewport-focused interaction or an explicit capture gesture.
+- Typing into ImGui fields does not move the camera.
+- Existing non-editor camera movement still works.
 
-- [X] Choose immediate-mode UI path, likely Dear ImGui unless there is a strong reason not to.      Decision: use Dear ImGui through a small C++ adapter with a plain C-facing API.
-- [X] If Dear ImGui is selected, evaluate whether the UI boundary should remain C-friendly or use a small C++ adapter.
-- [X] Add UI initialization/shutdown around the existing GLFW/OpenGL loop.
-- [X] Add editor mode toggle or editor executable entry path.
-- [X] Add simple panels: viewport, hierarchy, inspector, and timing/log output. Docking can wait if it slows commit 100.
-- [X] Display FPS/frame timing in UI instead of only the window title.
-- [X] Add hierarchy listing and selection for ECS entities.
-- [X] Add inspector display for selected entity name and transform.
-- [ ] Add inspector editing for transform values.
-- [ ] Add basic editor mouse behavior gate: UI capture blocks camera mouse look; viewport camera requires focus, hover, or explicit capture.
-- [ ] Add inspector display/editing for light values.
-- [ ] Add selected entity name display/rename in the inspector.
-- [ ] Add basic viewport camera controls distinct from game camera behavior.
+Tasks:
 
-## Epic 5: Editor Interaction
+- [X] Add editor/camera cursor mode toggle.
+- [ ] Add viewport-focused camera controls using viewport hover/focus or right-mouse capture.
+- [ ] Prevent keyboard movement while typing in ImGui text fields.
+- [ ] Decide whether editor camera and game camera should be separate states.
+- [ ] Add UI-visible camera/input mode indicators if current display is insufficient.
+- [ ] Document manual camera/input test cases.
 
-Goal: make the editor useful, not just visible.
+## Deliverable Set 4: Asset And Mesh Assignment V0
 
-- [ ] Add simple entity create/delete/rename. Commit-100 target: create empty named entity; delete selected entity only if component cleanup stays simple.
-- [ ] Add transform editing through inspector fields.
-- [ ] Add viewport object picking or temporary hierarchy-first selection.
-- [ ] Add translate/rotate/scale gizmo support.
-- [ ] Add asset/model path selection for mesh-renderer entities.
-- [ ] Optional evaluation: build a small Zig or C++ asset/scene validation utility if it improves editor workflow.
+Suggested branch: `feat-editor-asset-assignment-v0`
+
+Goal: let mesh-renderer entities choose from known assets without building a full asset browser or runtime glTF cache yet.
+
+Exit criteria:
+
+- MeshRenderer entities can display and change their model path from the editor.
+- Assignment uses known/supported assets only.
+- Renderer behavior remains within current model-loading constraints.
+- The branch does not become a full asset database/import pipeline.
+
+Tasks:
+
+- [ ] Define a small known-asset list or manifest for editor assignment.
+- [ ] Display selected entity `MeshRendererComponent` details in the inspector.
+- [ ] Add model path/asset selection for mesh-renderer entities.
+- [ ] Decide how assignment interacts with current single-loaded-model renderer limitation.
+- [ ] Add validation for missing asset/model paths.
+
+## Deliverable Set 5: Scene Editing Workflow V1
+
+Suggested branch: `feat-editor-scene-workflow-v1`
+
+Goal: improve common editing workflows after persistence exists: dirty state, protected deletes, component summaries, and multi-entity operations.
+
+Exit criteria:
+
+- Editor clearly communicates selected entity/component state.
+- Scene modifications can mark the scene dirty.
+- Destructive actions have clear rules.
+- Multi-select/group transform editing is either implemented or explicitly deferred with design notes.
+
+Tasks:
+
+- [ ] Add selected entity/component summary in inspector.
+- [ ] Add component presence indicators for Transform, MeshRenderer, Light, and Camera.
 - [ ] Add scene dirty state and save confirmation behavior.
-- [ ] Add editor-safe play/update separation so editing does not require game simulation.
+- [ ] Add safe delete rules for protected/default scene entities if needed.
+- [ ] Add multi-select and group transform editing.
+- [ ] Add undo/redo design note, even if implementation waits.
+- [ ] Add editor milestone demo checklist/documentation.
 
-## Epic 6: Complete LearnOpenGL Phong Section
+## Deliverable Set 6: Viewport Selection And Transform Tools
 
-Goal: finish the pre-PBR rendering foundation before starting the PBR milestone.
+Suggested branch: `feat-editor-viewport-tools-v1`
+
+Goal: move beyond hierarchy-first editing toward direct viewport interaction.
+
+Exit criteria:
+
+- Viewport object picking exists or a deliberate alternative is documented.
+- Transform tooling is usable enough to move selected objects without relying only on numeric inspector fields.
+- Hierarchy-first selection remains available as fallback.
+
+Tasks:
+
+- [X] Add temporary hierarchy-first selection.
+- [ ] Add viewport object picking.
+- [ ] Add translate/rotate/scale gizmo support.
+- [ ] Decide whether gizmos are custom, ImGuizmo-based, or deferred.
+- [ ] Add manual tests for picking and transform tool behavior.
+
+## Deliverable Set 7: Editor Play/Simulation Separation
+
+Suggested branch: `feat-editor-play-simulation-v1`
+
+Goal: separate editing state from simulation/update state so editing does not require gameplay-like scene updates forever.
+
+Exit criteria:
+
+- Editor mode and play/simulation mode responsibilities are defined.
+- Scene update can be paused or gated during editing.
+- Renderer still receives valid scene data in both modes.
+- UI exposes the current mode.
+
+Tasks:
+
+- [ ] Define editor mode vs play/simulation mode responsibilities.
+- [ ] Gate `scene_update` so editing can pause simulation.
+- [ ] Add UI-visible editor/play state.
+- [ ] Ensure renderer still receives scene data in both editor and play modes.
+
+## Deliverable Set 8: Phong Shadow Maps
+
+Suggested branch: `feat-phong-shadow-maps`
+
+Goal: finish the pre-PBR LearnOpenGL Phong section before starting the PBR milestone.
+
+Exit criteria:
+
+- Directional shadow mapping works with the current loaded scene.
+- Shadow map resources have clear lifecycle ownership.
+- Debugging/validation path exists for the shadow map.
+- PBR remains explicitly deferred.
+
+Tasks:
 
 - [ ] Resume at shadow maps.
 - [ ] Implement directional shadow mapping.
@@ -121,71 +232,5 @@ Goal: finish the pre-PBR rendering foundation before starting the PBR milestone.
 - Networking.
 - Distribution/build packaging.
 - Advanced asset database/import pipeline.
-
-## Following Milestone: Language Evaluation Spikes
-
-Use small, contained subsystem trials to evaluate Odin, C++, and Zig as possible future implementation languages. Keep the C engine as the reference implementation until a trial clearly proves that another language improves clarity, iteration speed, maintainability, or subsystem design.
-
-Current direction: C remains the engine-core language. Odin is the front-runner for future game-level code, scripting-like behavior, custom components, and higher-level customization layers that sit above the C engine/runtime. Zig remains strongest for serialization, validation, asset tooling, and other file/tool-oriented boundaries.
-
-More detail lives in `notes/language-trials.md`.
-
-## Language Evaluation Exit Criteria
-
-- Each trial has a narrow subsystem boundary.
-- Each trial exposes or plans a plain C-facing API.
-- Each trial records build-system friction, debugging experience, memory ownership clarity, and API readability.
-- No renderer-core or engine-loop rewrite happens before their current boundaries stabilize.
-- The result is a recommendation, not an automatic rewrite.
-
-## Evaluation Epic 1: Zig Scene Serialization
-
-Goal: test Zig on a small but editor-relevant subsystem.
-
-Note: this trial should start only after the C runtime scene has real data worth round-tripping. Zig is being evaluated for scene file parsing, validation, save/load, and tooling ergonomics, not for replacing the runtime `Scene` type during the editor foundation work.
-
-- [ ] Define the minimal scene data that needs to round-trip.
-- [ ] Serialize entity names, transforms, model paths, light values, and active camera.
-- [ ] Load scene data into C-owned runtime structures or an intermediate C-compatible representation.
-- [ ] Add save/load round-trip checks.
-- [ ] Decide whether Zig should own scene serialization, remain a tooling language, or be dropped for this area.
-
-## Evaluation Epic 2: Odin Or Zig ECS Prototype
-
-Goal: compare data-oriented ECS storage ergonomics without destabilizing the main editor milestone.
-
-Current note: the main ECS runtime should continue in C unless a concrete pain point appears. Odin is more compelling as a future game-level/custom-component layer than as a replacement for the current C component storage. Revisit this prototype when component queries, script-authored behavior, or editor-exposed custom components need a higher-level authoring model.
-
-- [ ] Prototype entity IDs and component storage outside the main runtime.
-- [ ] Compare simple fixed-capacity arrays, packed arrays, and sparse-set style storage.
-- [ ] Keep component shapes compatible with C structs.
-- [ ] Measure whether the prototype makes iteration and ownership clearer than the C design.
-- [ ] Feed lessons back into the main ECS implementation.
-
-## Evaluation Epic 3: C++ Editor Boundary
-
-Goal: evaluate C++ only where it has obvious leverage, especially around editor UI libraries.
-
-- [ ] If Dear ImGui is selected, test a minimal C++ adapter around UI initialization, frame rendering, and shutdown.
-- [ ] Keep the engine-facing surface plain C.
-- [ ] Confirm CMake integration remains understandable.
-- [ ] Decide whether C++ should own editor UI glue, editor tools, neither, or a later renderer-adjacent layer.
-
-## Evaluation Epic 4: Asset Import And Validation Tooling
-
-Goal: trial Zig or C++ on offline/editor-adjacent tools.
-
-- [ ] Build a small model or asset manifest inspector.
-- [ ] Validate model paths, texture references, and material metadata.
-- [ ] Emit a simple intermediate manifest the editor can read later.
-- [ ] Compare Zig and C++ fit for strings, paths, file IO, error reporting, and build integration.
-
-## Evaluation Epic 5: Rewrite Decision Notes
-
-Goal: make the rewrite question evidence-based.
-
-- [ ] For each language, write what felt better than C.
-- [ ] For each language, write what made the project harder.
-- [ ] Identify which subsystems are good rewrite candidates.
-- [ ] Identify which subsystems should stay C for now.
-- [ ] Decide whether the next major milestone remains C-first, mixed-language, or targeted-rewrite.
+- Odin scripting/custom component bridge.
+- Zig/C++ tooling experiments, only if a concrete tool need appears.

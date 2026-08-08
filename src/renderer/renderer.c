@@ -21,9 +21,7 @@ struct RendererState
     mat4 projection;
     Model test_model;
     Skybox skybox;
-    DirectionalLight directional_light;
-    PointLightCollection point_lights;
-    SpotLightCollection spot_lights;
+
     Model instance_model;
     InstancedModel instance_instances;
     RenderTarget scene_target;
@@ -80,11 +78,11 @@ void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
 
     upload_camera_ubo(renderer->camera_ubo, frame->camera, renderer->projection);
 
-    upload_directional_light((DirectionalLight *)frame->directional_light, &renderer->directional_light_uniforms);
+    upload_directional_light(frame->directional_light, &renderer->directional_light_uniforms);
 
-    upload_point_light_collection((PointLightCollection *)frame->point_lights, renderer->point_light_uniforms, renderer->point_light_count_location);
+    upload_point_light_collection(frame->point_lights, renderer->point_light_uniforms, renderer->point_light_count_location);
 
-    upload_spot_light_collection((SpotLightCollection *)frame->spot_lights, renderer->spot_light_uniforms, renderer->spot_light_count_location);
+    upload_spot_light_collection(frame->spot_lights, renderer->spot_light_uniforms, renderer->spot_light_count_location);
 
 
     glUniform1i(renderer->use_instancing_location, 0);
@@ -227,9 +225,6 @@ static int init_screen_quad(struct RendererState *renderer)
 
 static void init_lights(struct RendererState *renderer, const RendererConfig *config)
 {
-    renderer->directional_light = *config->directional_light;
-    renderer->point_lights = *config->point_lights;
-    renderer->spot_lights = *config->spot_lights;
 
     directional_light_uniforms_init(&renderer->directional_light_uniforms, renderer->shader_program);
 
