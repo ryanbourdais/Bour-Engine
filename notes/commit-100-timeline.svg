@@ -1,0 +1,250 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1580" viewBox="0 0 1400 1580">
+<rect width="100%" height="100%" fill="#0d1117"/>
+<text x="150" y="92" fill="#f0f6fc" font-family="monospace" font-size="32" font-weight="700">Commit 100 Milestone Timeline</text>
+<text x="150" y="121" fill="#8b949e" font-family="monospace" font-size="16">2026-03-11 → 2026-08-07</text>
+<text x="150" y="151" fill="#c9d1d9" font-family="monospace" font-size="14">100 commits · 150 days · +76743 / -3732</text>
+<rect x="880" y="35" width="440" height="245" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+<text x="898" y="63" fill="#f0f6fc" font-family="monospace" font-size="14">Commit 100 snapshot</text>
+<text x="898" y="90" fill="#c9d1d9" font-family="monospace" font-size="12">source files: 50</text>
+<text x="898" y="108" fill="#c9d1d9" font-family="monospace" font-size="12">lines:        5206</text>
+<text x="898" y="126" fill="#c9d1d9" font-family="monospace" font-size="12">characters:   156565</text>
+<text x="898" y="153" fill="#8b949e" font-family="monospace" font-size="12">source lines by lane</text>
+<text x="898" y="175" fill="#c9d1d9" font-family="monospace" font-size="10">engine:</text>
+<text x="1068" y="175" text-anchor="end" fill="#c9d1d9" font-family="monospace" font-size="10">712</text>
+<text x="898" y="190" fill="#c9d1d9" font-family="monospace" font-size="10">scene/ecs:</text>
+<text x="1068" y="190" text-anchor="end" fill="#c9d1d9" font-family="monospace" font-size="10">736</text>
+<text x="898" y="205" fill="#c9d1d9" font-family="monospace" font-size="10">editor:</text>
+<text x="1068" y="205" text-anchor="end" fill="#c9d1d9" font-family="monospace" font-size="10">412</text>
+<text x="898" y="220" fill="#c9d1d9" font-family="monospace" font-size="10">renderer/core:</text>
+<text x="1068" y="220" text-anchor="end" fill="#c9d1d9" font-family="monospace" font-size="10">734</text>
+<text x="898" y="235" fill="#c9d1d9" font-family="monospace" font-size="10">renderer/model:</text>
+<text x="1068" y="235" text-anchor="end" fill="#c9d1d9" font-family="monospace" font-size="10">1297</text>
+<text x="898" y="250" fill="#c9d1d9" font-family="monospace" font-size="10">renderer/lights:</text>
+<text x="1068" y="250" text-anchor="end" fill="#c9d1d9" font-family="monospace" font-size="10">356</text>
+<text x="1112" y="175" fill="#c9d1d9" font-family="monospace" font-size="10">renderer/targets:</text>
+<text x="1282" y="175" text-anchor="end" fill="#c9d1d9" font-family="monospace" font-size="10">185</text>
+<text x="1112" y="190" fill="#c9d1d9" font-family="monospace" font-size="10">renderer/skybox:</text>
+<text x="1282" y="190" text-anchor="end" fill="#c9d1d9" font-family="monospace" font-size="10">214</text>
+<text x="1112" y="205" fill="#c9d1d9" font-family="monospace" font-size="10">renderer/shaders:</text>
+<text x="1282" y="205" text-anchor="end" fill="#c9d1d9" font-family="monospace" font-size="10">114</text>
+<text x="1112" y="220" fill="#c9d1d9" font-family="monospace" font-size="10">renderer/window:</text>
+<text x="1282" y="220" text-anchor="end" fill="#c9d1d9" font-family="monospace" font-size="10">128</text>
+<text x="1112" y="235" fill="#c9d1d9" font-family="monospace" font-size="10">renderer/camera:</text>
+<text x="1282" y="235" text-anchor="end" fill="#c9d1d9" font-family="monospace" font-size="10">193</text>
+<text x="1112" y="250" fill="#c9d1d9" font-family="monospace" font-size="10">other:</text>
+<text x="1282" y="250" text-anchor="end" fill="#c9d1d9" font-family="monospace" font-size="10">125</text>
+<line x1="150" y1="350.0" x2="1320" y2="350.0" stroke="#30363d" stroke-width="1"/>
+<text x="30" y="355.0" fill="#8b949e" font-family="monospace" font-size="15">docs</text>
+<line x1="150" y1="430.0" x2="1320" y2="430.0" stroke="#30363d" stroke-width="1"/>
+<text x="30" y="435.0" fill="#58a6ff" font-family="monospace" font-size="15">engine</text>
+<line x1="150" y1="510.0" x2="1320" y2="510.0" stroke="#30363d" stroke-width="1"/>
+<text x="30" y="515.0" fill="#a5d6ff" font-family="monospace" font-size="15">scene/ecs</text>
+<line x1="150" y1="590.0" x2="1320" y2="590.0" stroke="#30363d" stroke-width="1"/>
+<text x="30" y="595.0" fill="#d2a8ff" font-family="monospace" font-size="15">editor</text>
+<line x1="150" y1="670.0" x2="1320" y2="670.0" stroke="#30363d" stroke-width="1"/>
+<text x="30" y="675.0" fill="#f78166" font-family="monospace" font-size="15">renderer/core</text>
+<line x1="150" y1="750.0" x2="1320" y2="750.0" stroke="#30363d" stroke-width="1"/>
+<text x="30" y="755.0" fill="#ffab70" font-family="monospace" font-size="15">renderer/model</text>
+<line x1="150" y1="830.0" x2="1320" y2="830.0" stroke="#30363d" stroke-width="1"/>
+<text x="30" y="835.0" fill="#f2cc60" font-family="monospace" font-size="15">renderer/lights</text>
+<line x1="150" y1="910.0" x2="1320" y2="910.0" stroke="#30363d" stroke-width="1"/>
+<text x="30" y="915.0" fill="#ff7b72" font-family="monospace" font-size="15">renderer/targets</text>
+<line x1="150" y1="990.0" x2="1320" y2="990.0" stroke="#30363d" stroke-width="1"/>
+<text x="30" y="995.0" fill="#79c0ff" font-family="monospace" font-size="15">renderer/skybox</text>
+<line x1="150" y1="1070.0" x2="1320" y2="1070.0" stroke="#30363d" stroke-width="1"/>
+<text x="30" y="1075.0" fill="#ffa657" font-family="monospace" font-size="15">renderer/shaders</text>
+<line x1="150" y1="1150.0" x2="1320" y2="1150.0" stroke="#30363d" stroke-width="1"/>
+<text x="30" y="1155.0" fill="#db6d28" font-family="monospace" font-size="15">renderer/window</text>
+<line x1="150" y1="1230.0" x2="1320" y2="1230.0" stroke="#30363d" stroke-width="1"/>
+<text x="30" y="1235.0" fill="#bc8cff" font-family="monospace" font-size="15">renderer/camera</text>
+<line x1="150" y1="1310.0" x2="1320" y2="1310.0" stroke="#30363d" stroke-width="1"/>
+<text x="30" y="1315.0" fill="#7ee787" font-family="monospace" font-size="15">assets</text>
+<line x1="150" y1="1390.0" x2="1320" y2="1390.0" stroke="#30363d" stroke-width="1"/>
+<text x="30" y="1395.0" fill="#6e7681" font-family="monospace" font-size="15">other</text>
+<line x1="150" y1="1465" x2="1320" y2="1465" stroke="#30363d" stroke-width="1"/>
+<line x1="182.14" y1="310" x2="182.14" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="182.14" y1="1459" x2="182.14" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="182.14" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 182.14 1493)">Mar 16</text>
+<line x1="237.18" y1="310" x2="237.18" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="237.18" y1="1459" x2="237.18" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="237.18" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 237.18 1493)">Mar 23</text>
+<line x1="292.23" y1="310" x2="292.23" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="292.23" y1="1459" x2="292.23" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="292.23" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 292.23 1493)">Mar 30</text>
+<line x1="347.27" y1="310" x2="347.27" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="347.27" y1="1459" x2="347.27" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="347.27" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 347.27 1493)">Apr 06</text>
+<line x1="402.31" y1="310" x2="402.31" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="402.31" y1="1459" x2="402.31" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="402.31" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 402.31 1493)">Apr 13</text>
+<line x1="457.36" y1="310" x2="457.36" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="457.36" y1="1459" x2="457.36" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="457.36" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 457.36 1493)">Apr 20</text>
+<line x1="512.40" y1="310" x2="512.40" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="512.40" y1="1459" x2="512.40" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="512.40" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 512.40 1493)">Apr 27</text>
+<line x1="567.44" y1="310" x2="567.44" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="567.44" y1="1459" x2="567.44" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="567.44" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 567.44 1493)">May 04</text>
+<line x1="622.49" y1="310" x2="622.49" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="622.49" y1="1459" x2="622.49" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="622.49" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 622.49 1493)">May 11</text>
+<line x1="677.53" y1="310" x2="677.53" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="677.53" y1="1459" x2="677.53" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="677.53" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 677.53 1493)">May 18</text>
+<line x1="732.57" y1="310" x2="732.57" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="732.57" y1="1459" x2="732.57" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="732.57" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 732.57 1493)">May 25</text>
+<line x1="787.62" y1="310" x2="787.62" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="787.62" y1="1459" x2="787.62" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="787.62" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 787.62 1493)">Jun 01</text>
+<line x1="842.66" y1="310" x2="842.66" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="842.66" y1="1459" x2="842.66" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="842.66" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 842.66 1493)">Jun 08</text>
+<line x1="897.70" y1="310" x2="897.70" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="897.70" y1="1459" x2="897.70" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="897.70" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 897.70 1493)">Jun 15</text>
+<line x1="952.75" y1="310" x2="952.75" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="952.75" y1="1459" x2="952.75" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="952.75" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 952.75 1493)">Jun 22</text>
+<line x1="1007.79" y1="310" x2="1007.79" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="1007.79" y1="1459" x2="1007.79" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="1007.79" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 1007.79 1493)">Jun 29</text>
+<line x1="1062.83" y1="310" x2="1062.83" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="1062.83" y1="1459" x2="1062.83" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="1062.83" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 1062.83 1493)">Jul 06</text>
+<line x1="1117.88" y1="310" x2="1117.88" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="1117.88" y1="1459" x2="1117.88" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="1117.88" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 1117.88 1493)">Jul 13</text>
+<line x1="1172.92" y1="310" x2="1172.92" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="1172.92" y1="1459" x2="1172.92" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="1172.92" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 1172.92 1493)">Jul 20</text>
+<line x1="1227.96" y1="310" x2="1227.96" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="1227.96" y1="1459" x2="1227.96" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="1227.96" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 1227.96 1493)">Jul 27</text>
+<line x1="1283.01" y1="310" x2="1283.01" y2="1430" stroke="#21262d" stroke-width="1"/>
+<line x1="1283.01" y1="1459" x2="1283.01" y2="1471" stroke="#8b949e" stroke-width="1"/>
+<text x="1283.01" y="1493" text-anchor="end" fill="#8b949e" font-family="monospace" font-size="10" transform="rotate(-35 1283.01 1493)">Aug 03</text>
+<circle cx="150.00" cy="350.00" r="5.00" fill="#8b949e" opacity="0.85"><title>8c5b09f\n2026-03-11\ninitial commit\n+0 -0\n3 files</title></circle>
+<text x="150.00" y="337.00" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">1</text>
+<circle cx="150.14" cy="350.00" r="12.69" fill="#8b949e" opacity="0.85"><title>c062639\n2026-03-11\ninitial notes\n+32 -0\n4 files</title></circle>
+<circle cx="213.09" cy="670.00" r="23.00" fill="#f78166" opacity="0.85"><title>4b3ad33\n2026-03-19\nfeat: initial renderer\n+4661 -0\n9 files</title></circle>
+<circle cx="213.14" cy="1070.00" r="13.17" fill="#ffa657" opacity="0.85"><title>bdda00c\n2026-03-19\nadded init.md and moved shaders to files\n+40 -0\n3 files</title></circle>
+<circle cx="225.09" cy="1070.00" r="17.06" fill="#ffa657" opacity="0.85"><title>9cf8e57\n2026-03-21\nfeat: moved shaders to own files\n+206 -33\n8 files</title></circle>
+<text x="225.09" y="1044.94" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">5</text>
+<circle cx="225.95" cy="670.00" r="14.47" fill="#f78166" opacity="0.85"><title>c85e100\n2026-03-21\nfeat: fps counter and resizing\n+63 -10\n3 files</title></circle>
+<circle cx="226.16" cy="1070.00" r="19.17" fill="#ffa657" opacity="0.85"><title>1d99074\n2026-03-21\nfeat: refactor\n+302 -323\n12 files</title></circle>
+<circle cx="227.04" cy="1070.00" r="19.00" fill="#ffa657" opacity="0.85"><title>a89c7aa\n2026-03-21\nrefactor: added better error handling, clearer naming, and cleaned up public apis\n+499 -81\n14 files</title></circle>
+<circle cx="236.35" cy="1070.00" r="15.60" fill="#ffa657" opacity="0.85"><title>b6fc5be\n2026-03-22\nfeat: inited input system and modified shaders\n+108 -15\n6 files</title></circle>
+<circle cx="241.85" cy="670.00" r="8.54" fill="#f78166" opacity="0.85"><title>d541e19\n2026-03-23\nAdd TODO for MeshPool struct in renderer\n+3 -1\n1 files</title></circle>
+<text x="241.85" y="653.46" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">10</text>
+<circle cx="241.86" cy="670.00" r="11.59" fill="#f78166" opacity="0.85"><title>b084df4\n2026-03-23\nAdd TODO for Mesh and Mesh Pool implementation\n+18 -1\n1 files</title></circle>
+<circle cx="242.25" cy="350.00" r="13.00" fill="#8b949e" opacity="0.85"><title>6e16b60\n2026-03-23\nCreate README\n+37 -0\n1 files</title></circle>
+<circle cx="242.25" cy="350.00" r="6.52" fill="#8b949e" opacity="0.85"><title>e252f2c\n2026-03-23\nAdd CMake to tech stack in README\n+1 -0\n1 files</title></circle>
+<circle cx="242.31" cy="350.00" r="9.83" fill="#8b949e" opacity="0.85"><title>2c6d0c7\n2026-03-23\nUpdate tech stack in README.md\n+4 -4\n1 files</title></circle>
+<circle cx="249.04" cy="750.00" r="18.21" fill="#ffab70" opacity="0.85"><title>bc6deb2\n2026-03-24\nfeat: mesh generation absorbing multiple vbos, added pragma once to headers\n+344 -60\n15 files</title></circle>
+<text x="249.04" y="723.79" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">15</text>
+<circle cx="249.09" cy="1070.00" r="12.94" fill="#ffa657" opacity="0.85"><title>237152d\n2026-03-24\nfeat: modified shaders, added renderer state config func, enabled winding and back face culling CCW\n+22 -14\n3 files</title></circle>
+<circle cx="251.61" cy="750.00" r="13.22" fill="#ffab70" opacity="0.85"><title>502be58\n2026-03-24\nfeat: ebo implementation\n+31 -10\n4 files</title></circle>
+<circle cx="272.04" cy="750.00" r="23.00" fill="#ffab70" opacity="0.85"><title>7be93de\n2026-03-27\nfeat: textures\n+8192 -16\n16 files</title></circle>
+<circle cx="275.54" cy="670.00" r="13.73" fill="#f78166" opacity="0.85"><title>72095d2\n2026-03-27\nadded cglm and vec3 math\n+52 -0\n4 files</title></circle>
+<circle cx="275.60" cy="750.00" r="15.15" fill="#ffab70" opacity="0.85"><title>b5c4b75\n2026-03-27\nmigrate to cglm\n+20 -80\n4 files</title></circle>
+<text x="275.60" y="726.85" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">20</text>
+<circle cx="298.61" cy="750.00" r="16.86" fill="#ffab70" opacity="0.85"><title>7af0cd1\n2026-03-30\nfeat: moved from single object to renderobjects\n+165 -53\n9 files</title></circle>
+<circle cx="303.93" cy="670.00" r="13.06" fill="#f78166" opacity="0.85"><title>8071add\n2026-03-31\nClean up renderer code and add TODOs for refactoring\n+2 -36\n1 files</title></circle>
+<circle cx="311.97" cy="670.00" r="11.80" fill="#f78166" opacity="0.85"><title>0d272cf\n2026-04-01\nRefactor model matrix updates into separate functions\n+16 -5\n1 files</title></circle>
+<circle cx="322.86" cy="1070.00" r="13.69" fill="#ffa657" opacity="0.85"><title>349455c\n2026-04-02\nfeat: added perspective projection, multiple objects with different positions, rotations, and scales\n+44 -7\n2 files</title></circle>
+<circle cx="326.68" cy="750.00" r="16.18" fill="#ffab70" opacity="0.85"><title>2aafc16\n2026-04-03\nrefactor: cleaned up mesh file and ownership model\n+36 -124\n7 files</title></circle>
+<text x="326.68" y="725.82" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">25</text>
+<circle cx="335.13" cy="1230.00" r="14.56" fill="#bc8cff" opacity="0.85"><title>4f4f24c\n2026-04-04\nfeat: orbit camera\n+68 -8\n4 files</title></circle>
+<circle cx="359.18" cy="1230.00" r="14.67" fill="#bc8cff" opacity="0.85"><title>527b4d0\n2026-04-07\nfeat: keyboard camera movement\n+64 -16\n5 files</title></circle>
+<circle cx="366.32" cy="1230.00" r="14.35" fill="#bc8cff" opacity="0.85"><title>be4d1bd\n2026-04-08\ninit: initialized mouse handling\n+65 -4\n5 files</title></circle>
+<circle cx="366.35" cy="1150.00" r="10.28" fill="#db6d28" opacity="0.85"><title>7d9d93d\n2026-04-08\nfeat: mouse  camera control\n+8 -2\n3 files</title></circle>
+<circle cx="367.58" cy="1230.00" r="11.36" fill="#bc8cff" opacity="0.85"><title>2d0f434\n2026-04-08\nfeat: added camera settings updater\n+14 -3\n3 files</title></circle>
+<text x="367.58" y="1210.64" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">30</text>
+<circle cx="377.89" cy="830.00" r="12.69" fill="#f2cc60" opacity="0.85"><title>667e4cb\n2026-04-09\nfeat: initialized light class\n+32 -0\n3 files</title></circle>
+<circle cx="382.95" cy="1070.00" r="13.56" fill="#ffa657" opacity="0.85"><title>9e7564a\n2026-04-10\nrefactor: cleaned up renderer and vertex shader\n+28 -20\n2 files</title></circle>
+<circle cx="437.23" cy="750.00" r="16.01" fill="#ffab70" opacity="0.85"><title>575ed9a\n2026-04-17\nfeat: added lighting\n+115 -33\n7 files</title></circle>
+<circle cx="889.78" cy="1070.00" r="15.64" fill="#ffa657" opacity="0.85"><title>5837d59\n2026-06-13\nfeat: lamp creation\n+117 -8\n6 files</title></circle>
+<circle cx="920.66" cy="1070.00" r="15.20" fill="#ffa657" opacity="0.85"><title>88990a4\n2026-06-17\nfeat: materials\n+75 -27\n2 files</title></circle>
+<text x="920.66" y="1046.80" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">35</text>
+<circle cx="925.28" cy="1390.00" r="23.00" fill="#6e7681" opacity="0.85"><title>409613f\n2026-06-18\nwindows init changes\n+7275 -5\n3 files</title></circle>
+<circle cx="925.28" cy="430.00" r="5.00" fill="#58a6ff" opacity="0.85"><title>e797b84\n2026-06-18\nMerge branch 'main' of https://github.com/ryanbourdais/Bour-Engine\n+0 -0\n0 files</title></circle>
+<circle cx="926.51" cy="1070.00" r="12.17" fill="#ffa657" opacity="0.85"><title>32b4bc4\n2026-06-18\nfeat: diffuse maps\n+12 -13\n5 files</title></circle>
+<circle cx="927.55" cy="1070.00" r="12.25" fill="#ffa657" opacity="0.85"><title>c3c9fe2\n2026-06-18\nfeat: specular map\n+10 -16\n2 files</title></circle>
+<circle cx="937.04" cy="1150.00" r="8.05" fill="#db6d28" opacity="0.85"><title>a7a36c5\n2026-06-20\nrefactor: small cleanup and windowing change\n+1 -2\n2 files</title></circle>
+<text x="937.04" y="1133.95" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">40</text>
+<circle cx="937.29" cy="830.00" r="16.26" fill="#f2cc60" opacity="0.85"><title>a95cffb\n2026-06-20\nfeat: Directional Light\n+139 -27\n4 files</title></circle>
+<circle cx="937.53" cy="830.00" r="16.93" fill="#f2cc60" opacity="0.85"><title>8242013\n2026-06-20\nfeat: point light\n+190 -36\n4 files</title></circle>
+<circle cx="940.69" cy="830.00" r="17.56" fill="#f2cc60" opacity="0.85"><title>7c3fa4f\n2026-06-20\nfeat: spotlight\n+224 -76\n4 files</title></circle>
+<circle cx="943.95" cy="830.00" r="17.02" fill="#f2cc60" opacity="0.85"><title>ffed6ce\n2026-06-20\nfeat: multiple point lights\n+134 -101\n6 files</title></circle>
+<circle cx="943.96" cy="670.00" r="12.33" fill="#f78166" opacity="0.85"><title>843ae6e\n2026-06-20\ndebug: added different colors for each point light\n+22 -5\n1 files</title></circle>
+<text x="943.96" y="649.67" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">45</text>
+<circle cx="959.10" cy="830.00" r="16.95" fill="#f2cc60" opacity="0.85"><title>cd8620d\n2026-06-22\nfeat: multiple spot lights\n+143 -85\n4 files</title></circle>
+<circle cx="959.56" cy="830.00" r="12.82" fill="#f2cc60" opacity="0.85"><title>60122bb\n2026-06-22\nquick clarifying change\n+17 -17\n4 files</title></circle>
+<circle cx="959.57" cy="670.00" r="13.06" fill="#f78166" opacity="0.85"><title>60fe4d2\n2026-06-22\nfeat: moved drawing render objects to renderobject.c/h\n+19 -19\n3 files</title></circle>
+<circle cx="959.63" cy="830.00" r="17.22" fill="#f2cc60" opacity="0.85"><title>276f5da\n2026-06-22\nfeat: cleaned up render loop\n+119 -138\n5 files</title></circle>
+<circle cx="960.08" cy="830.00" r="14.44" fill="#f2cc60" opacity="0.85"><title>16948c1\n2026-06-22\nrefactor: clean up draw loop\n+40 -32\n6 files</title></circle>
+<text x="960.08" y="807.56" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">50</text>
+<circle cx="965.63" cy="830.00" r="16.40" fill="#f2cc60" opacity="0.85"><title>d0e201f\n2026-06-23\nfeat: moved most of light out of renderer.c\n+95 -82\n3 files</title></circle>
+<circle cx="967.67" cy="830.00" r="15.28" fill="#f2cc60" opacity="0.85"><title>5b27519\n2026-06-23\nrefactor: more renderer cleanup, added TODO.md\n+21 -85\n5 files</title></circle>
+<circle cx="975.57" cy="750.00" r="18.80" fill="#ffab70" opacity="0.85"><title>c800620\n2026-06-24\nrefactor: cleaned up renderer init, added static helper methods to orchestrate better\n+287 -241\n8 files</title></circle>
+<circle cx="975.66" cy="830.00" r="10.96" fill="#f2cc60" opacity="0.85"><title>74bd957\n2026-06-24\nfix: mismatch with main\n+7 -7\n2 files</title></circle>
+<circle cx="983.65" cy="750.00" r="23.00" fill="#ffab70" opacity="0.85"><title>52de323\n2026-06-25\nfeat: loading geometry using cgltf\n+7659 -15\n8 files</title></circle>
+<text x="983.65" y="719.00" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">55</text>
+<circle cx="990.27" cy="750.00" r="23.00" fill="#ffab70" opacity="0.85"><title>ce7744d\n2026-06-26\nfeat: complete cgltf implementation\n+21478 -110\n40 files</title></circle>
+<circle cx="991.40" cy="750.00" r="15.48" fill="#ffab70" opacity="0.85"><title>2e9b18e\n2026-06-26\ncleanup: added proper diags to model loading\n+102 -14\n3 files</title></circle>
+<circle cx="998.43" cy="750.00" r="23.00" fill="#ffab70" opacity="0.85"><title>83f7478\n2026-06-27\nfeat:  face culling, blending, and depth testing\n+6882 -44\n13 files</title></circle>
+<circle cx="1010.04" cy="750.00" r="18.03" fill="#ffab70" opacity="0.85"><title>74bde74\n2026-06-29\nfeat: interleaved vbos, implemented cubemap skybox\n+304 -68\n15 files</title></circle>
+<circle cx="1015.05" cy="750.00" r="23.00" fill="#ffab70" opacity="0.85"><title>a563cc9\n2026-06-29\nfeat: added instancing\n+4604 -4\n71 files</title></circle>
+<text x="1015.05" y="719.00" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">60</text>
+<circle cx="1047.20" cy="910.00" r="18.59" fill="#ff7b72" opacity="0.85"><title>8301e8f\n2026-07-04\nfeat: camera ubo, framebuffer, and antialiasing\n+461 -20\n10 files</title></circle>
+<circle cx="1077.21" cy="750.00" r="23.00" fill="#ffab70" opacity="0.85"><title>0b80416\n2026-07-07\nfeat: debug lighting scene and blinn phong\n+7080 -82\n37 files</title></circle>
+<circle cx="1085.06" cy="750.00" r="14.69" fill="#ffab70" opacity="0.85"><title>082ab22\n2026-07-08\nfeat: implemented gamma correction\n+57 -24\n6 files</title></circle>
+<circle cx="1191.53" cy="350.00" r="6.52" fill="#8b949e" opacity="0.85"><title>73c44a4\n2026-07-22\ndocs: added wip.md for breakpoint\n+1 -0\n1 files</title></circle>
+<circle cx="1210.19" cy="1150.00" r="15.00" fill="#db6d28" opacity="0.85"><title>c2b2ce6\n2026-07-24\nrefactor: expose window lifecycle operations\n+60 -33\n4 files</title></circle>
+<text x="1210.19" y="1127.00" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">65</text>
+<circle cx="1212.61" cy="1150.00" r="16.45" fill="#db6d28" opacity="0.85"><title>4eab2ab\n2026-07-25\nrefactor: expose renderer frame lifecycle\n+80 -101\n4 files</title></circle>
+<circle cx="1212.77" cy="670.00" r="15.66" fill="#f78166" opacity="0.85"><title>3a2f97a\n2026-07-25\nrefactor: move application loop into engine coordinator\n+56 -70\n3 files</title></circle>
+<circle cx="1212.82" cy="670.00" r="12.55" fill="#f78166" opacity="0.85"><title>f9e2f30\n2026-07-25\nrefactor: establish engine coordinator module\n+18 -12\n6 files</title></circle>
+<circle cx="1216.29" cy="430.00" r="12.62" fill="#58a6ff" opacity="0.85"><title>06de0b3\n2026-07-25\nrefactor: intoduce engine state\n+24 -7\n1 files</title></circle>
+<circle cx="1225.15" cy="1230.00" r="15.06" fill="#bc8cff" opacity="0.85"><title>44be4e1\n2026-07-26\nfeat: moved camera to engine ownership\n+53 -43\n5 files</title></circle>
+<text x="1225.15" y="1206.94" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">70</text>
+<circle cx="1233.04" cy="750.00" r="19.39" fill="#ffab70" opacity="0.85"><title>f7a005c\n2026-07-27\nrefactor: give engine explicit renderer ownership, and added project management\n+547 -145\n8 files</title></circle>
+<circle cx="1234.51" cy="1150.00" r="14.47" fill="#db6d28" opacity="0.85"><title>4c6094a\n2026-07-27\nrefactor: pass renderer frame data explicitly\n+42 -31\n5 files</title></circle>
+<circle cx="1234.67" cy="670.00" r="14.15" fill="#f78166" opacity="0.85"><title>44674ce\n2026-07-27\nrefactor: initialize renderer from viewport data\n+26 -37\n4 files</title></circle>
+<circle cx="1235.20" cy="430.00" r="13.78" fill="#58a6ff" opacity="0.85"><title>d838010\n2026-07-27\nrefactor: introduce engine frame clock\n+37 -16\n5 files</title></circle>
+<circle cx="1239.91" cy="990.00" r="14.28" fill="#79c0ff" opacity="0.85"><title>06fcfbb\n2026-07-28\nrefactor: pass debug render assets through config\n+40 -27\n6 files</title></circle>
+<text x="1239.91" y="967.72" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">75</text>
+<circle cx="1240.19" cy="510.00" r="13.52" fill="#a5d6ff" opacity="0.85"><title>32261c4\n2026-07-28\nrefactor: introduce default scene config\n+40 -7\n4 files</title></circle>
+<circle cx="1240.30" cy="510.00" r="13.56" fill="#a5d6ff" opacity="0.85"><title>efcfac1\n2026-07-28\nrefactor: add basic scene lifecycle hooks\n+39 -9\n4 files</title></circle>
+<circle cx="1242.27" cy="670.00" r="18.10" fill="#f78166" opacity="0.85"><title>c6e403d\n2026-07-28\nrefactor: move debug scene setup out of renderer\n+137 -248\n6 files</title></circle>
+<circle cx="1242.29" cy="670.00" r="8.05" fill="#f78166" opacity="0.85"><title>75923c1\n2026-07-28\nquick backlog mark and renderer api fix\n+1 -2\n2 files</title></circle>
+<circle cx="1242.33" cy="510.00" r="12.62" fill="#a5d6ff" opacity="0.85"><title>9f4ded0\n2026-07-28\nrefactor: formalize default scene setup\n+18 -13\n2 files</title></circle>
+<text x="1242.33" y="489.38" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">80</text>
+<circle cx="1247.57" cy="510.00" r="14.95" fill="#a5d6ff" opacity="0.85"><title>ec5d4c4\n2026-07-29\nfeat: add ECS entity registry\n+89 -2\n4 files</title></circle>
+<circle cx="1256.40" cy="510.00" r="16.39" fill="#a5d6ff" opacity="0.85"><title>9bcaf69\n2026-07-30\nfeat: add ECS component definitions and transform storage\n+175 -1\n6 files</title></circle>
+<circle cx="1256.63" cy="510.00" r="14.53" fill="#a5d6ff" opacity="0.85"><title>2794211\n2026-07-30\nfeat: add generic ECS component storage\n+53 -22\n3 files</title></circle>
+<circle cx="1256.80" cy="350.00" r="15.62" fill="#8b949e" opacity="0.85"><title>c333919\n2026-07-30\ndocs: clarify language trial direction\n+118 -6\n3 files</title></circle>
+<circle cx="1263.55" cy="510.00" r="16.47" fill="#a5d6ff" opacity="0.85"><title>feae2a2\n2026-07-31\nfeat: convert default scene setup to ECS entities\n+167 -16\n5 files</title></circle>
+<text x="1263.55" y="485.53" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">85</text>
+<circle cx="1264.20" cy="670.00" r="15.51" fill="#f78166" opacity="0.85"><title>21e59ef\n2026-07-31\nrefactor: extract ECS light data for renderer config\n+111 -7\n5 files</title></circle>
+<circle cx="1264.47" cy="670.00" r="17.47" fill="#f78166" opacity="0.85"><title>ffbb603\n2026-07-31\nrefactor: extract ECS mesh renderers into renderer draw data and added git lfs for large assets\n+283 -6\n74 files</title></circle>
+<circle cx="1264.47" cy="1390.00" r="5.00" fill="#6e7681" opacity="0.85"><title>4d97557\n2026-07-31\nfix: add back assets\n+0 -0\n11 files</title></circle>
+<circle cx="1264.62" cy="670.00" r="14.44" fill="#f78166" opacity="0.85"><title>5bd1f86\n2026-07-31\nrefactor: submit ECS renderables per frame and redefined backlog\n+44 -28\n4 files</title></circle>
+<circle cx="1265.15" cy="670.00" r="10.07" fill="#f78166" opacity="0.85"><title>5b2d919\n2026-07-31\nrefactor: remove stale renderer model matrix state\n+4 -5\n2 files</title></circle>
+<text x="1265.15" y="651.93" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">90</text>
+<circle cx="1288.26" cy="670.00" r="17.36" fill="#f78166" opacity="0.85"><title>88a01c0\n2026-08-03\nfeat: prove ECS transform updates reach renderer\n+273 -2\n3 files</title></circle>
+<circle cx="1288.40" cy="590.00" r="12.62" fill="#d2a8ff" opacity="0.85"><title>2dd9344\n2026-08-03\nrefactor: clarify editor foundation update boundaries\n+13 -18\n3 files</title></circle>
+<circle cx="1288.50" cy="590.00" r="15.34" fill="#d2a8ff" opacity="0.85"><title>bb1813b\n2026-08-03\nfeat: add Dear ImGui editor UI lifecycle\n+105 -4\n8 files</title></circle>
+<circle cx="1288.57" cy="590.00" r="17.72" fill="#d2a8ff" opacity="0.85"><title>159709f\n2026-08-03\nfeat: add editor mode lifecycle gate\n+126 -197\n3 files</title></circle>
+<circle cx="1288.75" cy="590.00" r="15.13" fill="#d2a8ff" opacity="0.85"><title>97686aa\n2026-08-03\nfeat: add editor panels and hierarchy stats\n+92 -7\n5 files</title></circle>
+<text x="1288.75" y="566.87" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">95</text>
+<circle cx="1289.01" cy="590.00" r="15.81" fill="#d2a8ff" opacity="0.85"><title>df67195\n2026-08-03\nfeat: add hierarchy selection and transform inspector\n+124 -11\n5 files</title></circle>
+<circle cx="1312.57" cy="590.00" r="16.84" fill="#d2a8ff" opacity="0.85"><title>eec259b\n2026-08-06\nfeat: add editor cursor mode and transform editing\n+194 -22\n7 files</title></circle>
+<circle cx="1319.14" cy="590.00" r="17.47" fill="#d2a8ff" opacity="0.85"><title>5c4e88f\n2026-08-07\nfeat: add runtime entity creation and duplication\n+226 -62\n9 files</title></circle>
+<circle cx="1319.80" cy="590.00" r="17.47" fill="#d2a8ff" opacity="0.85"><title>16f21f9\n2026-08-07\nfeat: add selected light editing to editor\n+276 -13\n5 files</title></circle>
+<circle cx="1320.00" cy="590.00" r="17.73" fill="#d2a8ff" opacity="0.85"><title>6a1d44e\n2026-08-07\nfeat: complete editor alpha interactions\n+185 -140\n8 files</title></circle>
+<text x="1320.00" y="564.27" text-anchor="middle" fill="#c9d1d9" font-family="monospace" font-size="10">100</text>
+<text x="150" y="1552" fill="#8b949e" font-family="monospace" font-size="12">Labeled bubbles mark every 5th commit. Bubble size = churn. Color = inferred subsystem.</text>
+</svg>
