@@ -61,7 +61,7 @@ Tasks:
 - [X] Remove stale renderer-owned light copies now that light data is passed through `RendererFrame`.
 - [X] Make renderer upload functions accept `const` light/render data where they do not mutate inputs.
 - [X] Normalize editor UI formatting and layout code after commit-100 iteration.
-- [ ] Extract repeated selected-entity/component gathering from `engine.c` into helper functions.
+- [X] Extract repeated selected-entity/component gathering from `engine.c` into helper functions.
 - [ ] Extract editor action application paths from the main engine loop where practical.
 - [ ] Add small debug/assert helpers for invalid entity/component access.
 - [ ] Review fixed-size editor arrays and document current limits.
@@ -69,6 +69,9 @@ Tasks:
 - [ ] Move stats/timeline tooling to a clean location, such as `tools/` or `scripts/`.
 - [ ] Audit large assets and LFS tracking before the next asset-heavy commit.
 - [ ] Remove or quarantine old renderer/data types that are now legacy or unused.
+- [ ] Build a util for logging benchmarks on processes.
+- [ ] Take benchmarks on loops, heavy processes, and recursive functions.
+- [ ] Improve processes that have notable slowdowns or will become a constraint at a later time.
 
 ## Deliverable Set 2: Scene Persistence V0
 
