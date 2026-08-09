@@ -69,9 +69,10 @@ Tasks:
 - [X] Audit large assets and LFS tracking before the next asset-heavy commit.
 - [X] Remove or quarantine old renderer/data types that are now legacy or unused.
 - [X] Build a util for logging benchmarks on processes.
-- [ ] Add profiler logging for averages and abnormal frame/process spikes.
-- [ ] Take benchmarks on loops, heavy processes, and recursive functions.
+- [X] Add profiler logging for averages and abnormal frame/process spikes.
+- [X] Take benchmarks on loops, heavy processes, and recursive functions.
 - [ ] Improve processes that have notable slowdowns or will become a constraint at a later time.
+- [ ] Add visible triangles, vertices, and other renderer stats to stats window.
 
 Current fixed limits audit:
 

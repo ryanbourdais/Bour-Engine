@@ -6,7 +6,7 @@ static double seconds_to_ms(double seconds)
     return seconds * 1000.0;
 }
 
-void process_timer_init(ProcessTimer *timer, const char *name)
+void process_timer_init(ProcessTimer *timer, const char *name, double warning_threshold_ms, bool log_spikes)
 {
     timer->name = name;
     timer->start_time = 0.0;
@@ -16,6 +16,8 @@ void process_timer_init(ProcessTimer *timer, const char *name)
     timer->max_ms = 0.0;
     timer->sample_count = 0;
     timer->running = false;
+    timer->warning_threshold_ms = warning_threshold_ms;
+    timer->log_spikes = log_spikes;
 }
 
 void process_timer_begin(ProcessTimer *timer, double current_time)
@@ -94,18 +96,14 @@ bool process_timer_log_config_open(
     ProcessTimerLogConfig *config,
     const char *average_log_path,
     const char *warning_log_path,
-    double warning_threshold_ms,
     unsigned long report_interval_samples,
-    bool log_average_reports,
-    bool log_spikes
+    bool log_average_reports
 )
 {
     config->average_log_file = NULL;
     config->warning_log_file = NULL;
-    config->warning_threshold_ms = warning_threshold_ms;
     config->report_interval_samples = report_interval_samples;
     config->log_average_reports = log_average_reports;
-    config->log_spikes = log_spikes;
 
     if (log_average_reports)
     {
@@ -118,21 +116,18 @@ bool process_timer_log_config_open(
         fprintf(config->average_log_file, "process,samples,last_ms,average_ms,min_ms,max_ms\n");
     }
 
-    if (log_spikes)
+    config->warning_log_file = fopen(warning_log_path, "w");
+    if (config->warning_log_file == NULL)
     {
-        config->warning_log_file = fopen(warning_log_path, "w");
-        if (config->warning_log_file == NULL)
+        if (config->average_log_file != NULL)
         {
-            if (config->average_log_file != NULL)
-            {
-                fclose(config->average_log_file);
-                config->average_log_file = NULL;
-            }
-
-            return false;
+            fclose(config->average_log_file);
+            config->average_log_file = NULL;
         }
-        fprintf(config->warning_log_file, "process,samples,last_ms,threshold_ms\n");
+
+        return false;
     }
+    fprintf(config->warning_log_file, "process,samples,last_ms,threshold_ms\n");
     return true;
 }
 
@@ -159,9 +154,9 @@ void process_timer_log_report(const ProcessTimer *timer, const ProcessTimerLogCo
     }
 
     if (
-        config->log_spikes 
+        timer->log_spikes 
         && config->warning_log_file != NULL 
-        && timer->last_ms > config->warning_threshold_ms
+        && timer->last_ms > timer->warning_threshold_ms
     )
     {
         fprintf(
@@ -170,7 +165,7 @@ void process_timer_log_report(const ProcessTimer *timer, const ProcessTimerLogCo
             timer->name,
             timer->sample_count,
             timer->last_ms,
-            config->warning_threshold_ms
+            timer->warning_threshold_ms
         );
 
         fflush(config->warning_log_file);

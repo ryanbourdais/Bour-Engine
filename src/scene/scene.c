@@ -68,12 +68,12 @@ static void init_default_scene_ecs(Scene *scene)
     EntityId model_entity = entity_registry_create(&scene->entities);
 
     NameComponent name = {0};
-    snprintf(name.value, ENTITY_NAME_MAX_LENGTH, "Wall Panel");
+    snprintf(name.value, ENTITY_NAME_MAX_LENGTH, "Leopard");
 
     TransformComponent transform;
     transform_component_init(&transform);
     MeshRendererComponent mesh_renderer = {
-        .model_path = "assets/models/loft_japanese_11_free_interior/scene.gltf"
+        .model_path = "assets/models/leopard_2a4_otco/scene.gltf"
     };
 
     component_storage_add(&scene->names, model_entity, &name);
@@ -227,7 +227,7 @@ static void init_default_scene_lighting(struct Scene *scene)
 
 static void init_default_scene_assets(Scene *scene)
 {
-    scene->model_path = "assets/models/loft_japanese_11_free_interior/scene.gltf";
+    scene->model_path = "assets/models/leopard_2a4_otco/scene.gltf";
     scene->skybox_faces[0] = "assets/cubemaps/skybox/right.jpg";
     scene->skybox_faces[1] = "assets/cubemaps/skybox/left.jpg";
     scene->skybox_faces[2] = "assets/cubemaps/skybox/top.jpg";
