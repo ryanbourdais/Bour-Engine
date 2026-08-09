@@ -63,7 +63,7 @@ Tasks:
 - [X] Normalize editor UI formatting and layout code after commit-100 iteration.
 - [X] Extract repeated selected-entity/component gathering from `engine.c` into helper functions.
 - [X] Extract editor action application paths from the main engine loop where practical.
-- [ ] Add small debug/assert helpers for invalid entity/component access.
+- [X] Add small debug/assert helpers for invalid entity/component access.
 - [ ] Review fixed-size editor arrays and document current limits.
 - [ ] Revisit `imgui.ini` tracking policy.
 - [ ] Move stats/timeline tooling to a clean location, such as `tools/` or `scripts/`.

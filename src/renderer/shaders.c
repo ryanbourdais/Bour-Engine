@@ -9,13 +9,13 @@ static int check_shader_compile_status(GLuint shader, const char* shader_name)
     GLint success = 0;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 
-    if(!success)
+    if (!success)
     {
         GLint log_length = 0;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_length);
 
         char *info_log = malloc((size_t)log_length);
-        if(info_log != NULL)
+        if (info_log != NULL)
         {
             glGetShaderInfoLog(shader, log_length, NULL, info_log);
             fprintf(stderr, "Error compiling shader %s: %s\n", shader_name, info_log);
@@ -36,7 +36,7 @@ int load_shaders(GLuint *vs, GLuint *fs, const char *vertex_path, const char *fr
     
     struct ShaderBuffer vertex_shader_buffer = read_shader_file(vertex_path);
     struct ShaderBuffer fragment_shader_buffer = read_shader_file(fragment_path);
-    if(vertex_shader_buffer.data == NULL || fragment_shader_buffer.data == NULL) {
+    if (vertex_shader_buffer.data == NULL || fragment_shader_buffer.data == NULL) {
         free_shader_buffer(&vertex_shader_buffer);
         free_shader_buffer(&fragment_shader_buffer);
         fprintf(stderr, "Failed to read shader files\n");
@@ -53,7 +53,7 @@ int load_shaders(GLuint *vs, GLuint *fs, const char *vertex_path, const char *fr
     glShaderSource(*vs, 1, vertex_shader_source, &vertex_length);
     glCompileShader(*vs);
     int vs_status = check_shader_compile_status(*vs, "Vertex Shader");
-    if(vs_status != 0) {
+    if (vs_status != 0) {
         free_shader_buffer(&vertex_shader_buffer);
         free_shader_buffer(&fragment_shader_buffer);
         glDeleteShader(*vs);
@@ -64,7 +64,7 @@ int load_shaders(GLuint *vs, GLuint *fs, const char *vertex_path, const char *fr
     glShaderSource(*fs, 1, fragment_shader_source, &fragment_length);
     glCompileShader(*fs);
     int fs_status = check_shader_compile_status(*fs, "Fragment Shader");
-    if(fs_status != 0) {
+    if (fs_status != 0) {
         free_shader_buffer(&vertex_shader_buffer);
         free_shader_buffer(&fragment_shader_buffer);
         glDeleteShader(*vs);
@@ -86,11 +86,11 @@ int create_shader_program(GLuint *vs, GLuint *fs, GLuint *shader_program)
     glDeleteShader(*fs);
     GLint success = 0;
     glGetProgramiv(*shader_program, GL_LINK_STATUS, &success);
-    if(!success)    {
+    if (!success)    {
         GLint log_length = 0;
         glGetProgramiv(*shader_program, GL_INFO_LOG_LENGTH, &log_length);
         char *info_log = malloc((size_t)log_length);
-        if(info_log != NULL)        {
+        if (info_log != NULL)        {
             glGetProgramInfoLog(*shader_program, log_length, NULL, info_log);
             fprintf(stderr, "Error linking shader program: %s\n", info_log);
             free(info_log);

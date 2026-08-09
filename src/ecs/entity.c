@@ -11,7 +11,7 @@ void entity_registry_init(EntityRegistry *registry)
 
 EntityId entity_registry_create(EntityRegistry *registry)
 {
-     if(registry->count == registry->capacity) {
+     if (registry->count == registry->capacity) {
             size_t new_capacity = registry->capacity == 0 ? 4 : registry->capacity * 2;
             EntityId *new_entities = realloc(registry->entities, new_capacity * sizeof(EntityId));
             if (new_entities == NULL)
@@ -47,7 +47,7 @@ bool entity_registry_is_alive(const EntityRegistry *registry, EntityId entity)
 {
     for(size_t i = 0; i < registry->count; i++)
     {
-        if(registry->entities[i] == entity)
+        if (registry->entities[i] == entity)
         {
             return true;
         }

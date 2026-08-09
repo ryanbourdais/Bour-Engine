@@ -314,15 +314,15 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
     {
         cgltf_attribute *attribute = &primitive->attributes[i];
 
-        if(attribute->type == cgltf_attribute_type_position)
+        if (attribute->type == cgltf_attribute_type_position)
         {
             position_accessor = attribute->data;
         }
-        else if(attribute->type == cgltf_attribute_type_normal)
+        else if (attribute->type == cgltf_attribute_type_normal)
         {
             normal_accessor = attribute->data;
         }
-        else if(
+        else if (
             attribute->type == cgltf_attribute_type_texcoord &&
             attribute->index == 0
         )
@@ -345,7 +345,7 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
         diagnostics->missing_indices++;
     }
 
-    if(position_accessor == NULL)
+    if (position_accessor == NULL)
     {
         diagnostics->missing_positions++;
         fprintf(stderr, "glTF primitive missing POSITION attribute\n");
@@ -381,7 +381,7 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
             vertex.normal = (vec3s){{0.0f, 0.0f, 1.0f}};
         }
 
-        if(texcoord_accessor)
+        if (texcoord_accessor)
         {
             float uv[2] = {0.0f, 0.0f};
             cgltf_accessor_read_float(texcoord_accessor, i, uv, 2);
@@ -397,7 +397,7 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
     size_t index_count = 0;
     unsigned int *indices = NULL;
 
-    if(primitive->indices)
+    if (primitive->indices)
     {
         index_count = primitive->indices->count;
         indices = malloc(index_count * sizeof(unsigned int));
@@ -574,7 +574,7 @@ static int process_node(Model *model, cgltf_node *node, const char *model_direct
         diagnostics->mesh_nodes_seen++;
     }
 
-    if(node->mesh)
+    if (node->mesh)
     {
         cgltf_mesh *gltf_mesh = node->mesh;
 
@@ -582,7 +582,7 @@ static int process_node(Model *model, cgltf_node *node, const char *model_direct
         {
             cgltf_primitive *primitive = &gltf_mesh->primitives[primitive_index];
 
-            if(create_mesh_from_primitive(model, primitive, transform, model_directory, diagnostics) != 0) { return 1;}
+            if (create_mesh_from_primitive(model, primitive, transform, model_directory, diagnostics) != 0) { return 1;}
         }
     }
 
@@ -696,7 +696,7 @@ void model_init(Model *model)
 {
     model->meshes = malloc(4 * sizeof(ModelMesh));
 
-    if(model->meshes == NULL)
+    if (model->meshes == NULL)
     {
         fprintf(stderr, "Failed to allocate model meshes\n");
         model->count = 0;
@@ -709,7 +709,7 @@ void model_init(Model *model)
 
     model->texture_cache = malloc(8 * sizeof(TextureCacheEntry));
 
-    if(model->texture_cache == NULL)
+    if (model->texture_cache == NULL)
     {
         fprintf(stderr, "Failed to allocate model texture cache\n");
         free(model->meshes);
