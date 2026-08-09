@@ -67,8 +67,9 @@ Tasks:
 - [X] Review fixed-size editor arrays and document current limits.
 - [X] Revisit `imgui.ini` tracking policy.
 - [X] Audit large assets and LFS tracking before the next asset-heavy commit.
-- [ ] Remove or quarantine old renderer/data types that are now legacy or unused.
-- [ ] Build a util for logging benchmarks on processes.
+- [X] Remove or quarantine old renderer/data types that are now legacy or unused.
+- [X] Build a util for logging benchmarks on processes.
+- [ ] Add profiler logging for averages and abnormal frame/process spikes.
 - [ ] Take benchmarks on loops, heavy processes, and recursive functions.
 - [ ] Improve processes that have notable slowdowns or will become a constraint at a later time.
 
