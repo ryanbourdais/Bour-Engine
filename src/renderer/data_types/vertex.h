@@ -1,7 +1,6 @@
 #pragma once
-#include <glad/glad.h>
-#include <stddef.h>
-#include "vectors.h"
+
+#include <cglm/struct.h>
 
 
 typedef struct Vertex {
@@ -10,13 +9,3 @@ typedef struct Vertex {
     vec2s uv;
     vec3s normal;
 } Vertex;
-
-typedef struct VertexArray {
-    Vertex *items;
-    size_t count;
-    size_t capacity;
-} VertexArray;
-
-void vertex_array_initialize(struct VertexArray *arr);
-void vertex_array_append(struct VertexArray *arr, Vertex value);
-void free_vertex_array(struct VertexArray *arr);

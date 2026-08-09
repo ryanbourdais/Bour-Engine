@@ -64,14 +64,32 @@ Tasks:
 - [X] Extract repeated selected-entity/component gathering from `engine.c` into helper functions.
 - [X] Extract editor action application paths from the main engine loop where practical.
 - [X] Add small debug/assert helpers for invalid entity/component access.
-- [ ] Review fixed-size editor arrays and document current limits.
-- [ ] Revisit `imgui.ini` tracking policy.
-- [ ] Move stats/timeline tooling to a clean location, such as `tools/` or `scripts/`.
-- [ ] Audit large assets and LFS tracking before the next asset-heavy commit.
+- [X] Review fixed-size editor arrays and document current limits.
+- [X] Revisit `imgui.ini` tracking policy.
+- [X] Audit large assets and LFS tracking before the next asset-heavy commit.
 - [ ] Remove or quarantine old renderer/data types that are now legacy or unused.
 - [ ] Build a util for logging benchmarks on processes.
 - [ ] Take benchmarks on loops, heavy processes, and recursive functions.
 - [ ] Improve processes that have notable slowdowns or will become a constraint at a later time.
+
+Current fixed limits audit:
+
+- Editor hierarchy display is capped at 256 entities per frame by `MAX_EDITOR_HIERARCHY_ITEMS` in `src/engine/engine.c`. Extra entities still exist in the ECS, but the hierarchy list is truncated. This is acceptable for the editor alpha and should be revisited when scene authoring grows beyond toy scenes.
+- Render extraction is capped at 512 renderables per frame by `MAX_RENDERABLES` in `src/renderer/renderer_data.h`. `scene_extract_renderables(...)` stops adding renderables when that cap is reached. This is acceptable for now, but scene persistence should not treat 512 as a file-format limit.
+- Point lights are capped at 4 by `MAX_SHADER_POINT_LIGHTS` in `src/renderer/data_types/lightObject.h` and `src/renderer/shaders/light.frag`. This is a shader/runtime renderer limit, not an ECS storage limit. Additional point light components may exist, but only the collection capacity can reach the renderer.
+- Spot lights are capped at 4 by `MAX_SHADER_SPOT_LIGHTS` in `src/renderer/data_types/lightObject.h` and `src/renderer/shaders/light.frag`. Same current limitation as point lights.
+- Default scene setup currently creates 4 active point lights and 2 active spot lights via `ACTIVE_POINT_LIGHTS` and `ACTIVE_SPOT_LIGHTS` in `src/scene/scene.c`. These are setup constants, not global engine limits.
+- Entity names are capped at 64 bytes by `ENTITY_NAME_MAX_LENGTH` in `src/ecs/components.h`. Editor rename results are also capped at 64 bytes by `EDITOR_ENTITY_NAME_MAX_LENGTH` in `src/editor/editor_ui.h`. These currently match and should stay aligned until names move to dynamic storage.
+- Skybox face paths are fixed at exactly 6 entries in scene, renderer config, and skybox loading APIs. This is an intentional cubemap shape, not a scalability problem.
+- Small `float[3]` arrays in editor frame/result data are value-transfer buffers for vec3-like fields. They are not variable-capacity collections and do not need replacement for this milestone.
+- ECS entity registry and component storage are dynamically grown from an initial capacity of 4. They are not fixed-size editor limits.
+- Renderer/model helper buffers such as 512-byte texture/model paths and 64-byte shader uniform names are local implementation buffers. They are outside the editor-alpha fixed-array concern, but should be revisited during asset/persistence work if paths become user-authored data.
+
+Follow-up candidates:
+
+- Add UI feedback when hierarchy or render extraction truncates data.
+- Decide whether renderer light caps become shader defines, runtime config, or deferred clustered/forward-plus work.
+- Keep scene file schema independent from current render/editor caps so saved scenes do not bake in alpha limitations.
 
 ## Deliverable Set 2: Scene Persistence V0
 
