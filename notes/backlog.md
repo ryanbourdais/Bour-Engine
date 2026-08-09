@@ -62,7 +62,7 @@ Tasks:
 - [X] Make renderer upload functions accept `const` light/render data where they do not mutate inputs.
 - [X] Normalize editor UI formatting and layout code after commit-100 iteration.
 - [X] Extract repeated selected-entity/component gathering from `engine.c` into helper functions.
-- [ ] Extract editor action application paths from the main engine loop where practical.
+- [X] Extract editor action application paths from the main engine loop where practical.
 - [ ] Add small debug/assert helpers for invalid entity/component access.
 - [ ] Review fixed-size editor arrays and document current limits.
 - [ ] Revisit `imgui.ini` tracking policy.

@@ -232,6 +232,164 @@ static EditorSelectedLightType engine_get_selected_light(
     return selected_light_type;
 }
 
+static void engine_delete_selected_entity(struct EngineState *engine, EntityId selected_entity)
+{
+    component_storage_remove(&engine->scene.names, selected_entity);
+    component_storage_remove(&engine->scene.transforms, selected_entity);
+    component_storage_remove(&engine->scene.mesh_renderers, selected_entity);
+    component_storage_remove(&engine->scene.directional_lights, selected_entity);
+    component_storage_remove(&engine->scene.spot_lights, selected_entity);
+    component_storage_remove(&engine->scene.point_lights, selected_entity);
+    component_storage_remove(&engine->scene.cameras, selected_entity);
+                
+    entity_registry_destroy(&engine->scene.entities, selected_entity);
+
+    engine->selected_entity = INVALID_ENTITY_ID;
+}
+
+static void engine_duplicate_selected_entity(struct EngineState *engine, EntityId selected_entity)
+{
+    TransformComponent *source_transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, selected_entity);
+                        
+    MeshRendererComponent *source_mesh = (MeshRendererComponent *)component_storage_get(&engine->scene.mesh_renderers, selected_entity);
+
+    if (source_transform != NULL && source_mesh != NULL)
+    {
+        EntityId duplicate = engine_create_empty_entity(engine, "Duplicated Entity");
+
+        TransformComponent *duplicate_transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, duplicate);
+
+        if (duplicate_transform != NULL)
+        {
+            *duplicate_transform = *source_transform;
+            duplicate_transform->position.x += 1.0f;
+        }
+
+        MeshRendererComponent mesh_renderer = {
+            .model_path = source_mesh->model_path,
+        };
+
+        component_storage_add(&engine->scene.mesh_renderers, duplicate, &mesh_renderer);
+
+        engine->selected_entity = duplicate;
+    }
+}
+
+static void engine_rename_selected_entity(struct EngineState *engine, EntityId selected_entity, char* edited_name)
+{
+    NameComponent *name = (NameComponent *)component_storage_get(&engine->scene.names, selected_entity);
+    if (name == NULL)
+    {
+        NameComponent new_name = {0};
+        snprintf(new_name.value, ENTITY_NAME_MAX_LENGTH, "%s", edited_name);
+        component_storage_add(&engine->scene.names, selected_entity, &new_name);
+    }
+    else
+    {
+        snprintf(name->value, ENTITY_NAME_MAX_LENGTH, "%s", edited_name);
+    }
+}
+
+static void engine_change_selected_transform(
+    struct EngineState *engine,
+    EntityId selected_entity,
+    float* new_position,
+    float* new_rotation,
+    float* new_scale
+)
+{
+    TransformComponent *transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, selected_entity);
+    if (transform != NULL)
+    {
+        vec3s new_position_vec;
+        copy_float3_to_vec3_xyz(&new_position_vec, new_position);
+        transform_component_set_position(
+            transform,
+            new_position_vec
+        );
+        vec3s new_rotation_vec;
+        copy_float3_to_vec3_xyz(&new_rotation_vec, new_rotation);
+        transform_component_set_rotation(
+            transform,
+            new_rotation_vec
+        );
+        vec3s new_scale_vec;
+        copy_float3_to_vec3_xyz(&new_scale_vec, new_scale);
+        transform_component_set_scale(
+            transform,
+            new_scale_vec
+        );
+    }
+}
+
+static void engine_modify_selected_light(
+    struct EngineState *engine,
+    EntityId selected_entity,
+    float* edited_ambient,
+    float* edited_diffuse,
+    float* edited_specular,
+    float* edited_direction,
+    float* edited_position
+)
+{
+    DirectionalLightComponent *directional = component_storage_get(&engine->scene.directional_lights, selected_entity);
+    PointLightComponent *point = component_storage_get(&engine->scene.point_lights, selected_entity);
+    SpotLightComponent *spot = component_storage_get(&engine->scene.spot_lights, selected_entity);
+
+    vec3s ambient = {{
+        edited_ambient[0],
+        edited_ambient[1],
+        edited_ambient[2]
+    }};
+    vec3s diffuse = {{
+        edited_diffuse[0],
+        edited_diffuse[1],
+        edited_diffuse[2]
+    }};
+    vec3s specular = {{
+        edited_specular[0],
+        edited_specular[1],
+        edited_specular[2]
+    }};
+    vec3s direction = {0};
+    vec3s position = {0};
+
+    direction = (vec3s){{
+        edited_direction[0],
+        edited_direction[1],
+        edited_direction[2],
+    }};
+    position = (vec3s){{
+        edited_position[0],
+        edited_position[1],
+        edited_position[2],
+    }};
+    
+    if (directional != NULL)
+    {
+        directional->light.color.ambient = ambient;
+        directional->light.color.diffuse = diffuse;
+        directional->light.color.specular = specular;
+        directional->light.direction = direction;
+    }
+    else if (point != NULL)
+    {
+        point->light.color.ambient = ambient;
+        point->light.color.diffuse = diffuse;
+        point->light.color.specular = specular;
+        point->light.position = position;
+    }
+    else if (spot != NULL)
+    {
+        spot->light.color.ambient = ambient;
+        spot->light.color.diffuse = diffuse;
+        spot->light.color.specular = specular;
+        spot->light.direction = direction;
+        spot->light.position = position;
+    }
+}
+
+
 static void run_engine_loop(struct EngineState *engine)
 {
     while (!window_should_close(engine->window))
@@ -395,152 +553,34 @@ static void run_engine_loop(struct EngineState *engine)
             {
                 if (editor_result.delete_selected_entity)
                 {
-                    component_storage_remove(&engine->scene.names, result_entity);
-                    component_storage_remove(&engine->scene.transforms, result_entity);
-                    component_storage_remove(&engine->scene.mesh_renderers, result_entity);
-                    component_storage_remove(&engine->scene.directional_lights, result_entity);
-                    component_storage_remove(&engine->scene.spot_lights, result_entity);
-                    component_storage_remove(&engine->scene.point_lights, result_entity);
-                    component_storage_remove(&engine->scene.cameras, result_entity);
-                
-                    entity_registry_destroy(&engine->scene.entities, result_entity);
-
-                    engine->selected_entity = INVALID_ENTITY_ID;
+                    engine_delete_selected_entity(engine, result_entity);
                 }
                 else {
                     if (editor_result.duplicate_selected_entity)
                     {
-                        TransformComponent *source_transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, result_entity);
-                        
-                        MeshRendererComponent *source_mesh = (MeshRendererComponent *)component_storage_get(&engine->scene.mesh_renderers, result_entity);
-
-                        if (source_transform != NULL && source_mesh != NULL)
-                        {
-                            EntityId duplicate = engine_create_empty_entity(engine, "Duplicated Entity");
-
-                            TransformComponent *duplicate_transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, duplicate);
-
-                            if (duplicate_transform != NULL)
-                            {
-                                *duplicate_transform = *source_transform;
-                                duplicate_transform->position.x += 1.0f;
-                            }
-
-                            MeshRendererComponent mesh_renderer = {
-                                .model_path = source_mesh->model_path,
-                            };
-
-                            component_storage_add(&engine->scene.mesh_renderers, duplicate, &mesh_renderer);
-
-                            engine->selected_entity = duplicate;
-                        }
+                        engine_duplicate_selected_entity(engine, result_entity);
                     }
 
                     if (editor_result.rename_selected_entity)
                     {
-                        NameComponent *name = (NameComponent *)component_storage_get(&engine->scene.names, result_entity);
-
-                        if (name == NULL)
-                        {
-                            NameComponent new_name = {0};
-                            snprintf(new_name.value, ENTITY_NAME_MAX_LENGTH, "%s", editor_result.edited_name);
-                            component_storage_add(&engine->scene.names, result_entity, &new_name);
-                        }
-                        else
-                        {
-                            snprintf(name->value, ENTITY_NAME_MAX_LENGTH, "%s", editor_result.edited_name);
-                        }
+                        engine_rename_selected_entity(engine, result_entity, editor_result.edited_name);
                     }
 
                     if (editor_result.transform_changed)
                     {
-                        TransformComponent *transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, result_entity);
-                        if (transform != NULL)
-                        {
-                            transform_component_set_position(
-                                transform,
-                                (vec3s){{editor_result.edited_position[0],
-                                        editor_result.edited_position[1],
-                                        editor_result.edited_position[2]}}
-                            );
-
-                            transform_component_set_rotation(
-                                transform,
-                                (vec3s){{editor_result.edited_rotation[0],
-                                        editor_result.edited_rotation[1],
-                                        editor_result.edited_rotation[2]}}
-                            );
-
-                            transform_component_set_scale(
-                                transform,
-                                (vec3s){{editor_result.edited_scale[0],
-                                        editor_result.edited_scale[1],
-                                        editor_result.edited_scale[2]}}
-                            );
-                        }
+                        engine_change_selected_transform(engine, result_entity, editor_result.edited_position, editor_result.edited_rotation, editor_result.edited_scale);
                     }
-                
                     if (editor_result.light_changed)
                     {
-                        DirectionalLightComponent *directional = component_storage_get(&engine->scene.directional_lights, result_entity);
-                        PointLightComponent *point = component_storage_get(&engine->scene.point_lights, result_entity);
-                        SpotLightComponent *spot = component_storage_get(&engine->scene.spot_lights, result_entity);
-                    
-                        vec3s ambient = {{
-                            editor_result.edited_light_ambient[0],
-                            editor_result.edited_light_ambient[1],
-                            editor_result.edited_light_ambient[2]
-                        }};
-                        vec3s diffuse = {{
-                            editor_result.edited_light_diffuse[0],
-                            editor_result.edited_light_diffuse[1],
-                            editor_result.edited_light_diffuse[2]
-                        }};
-                        vec3s specular = {{
-                            editor_result.edited_light_specular[0],
-                            editor_result.edited_light_specular[1],
-                            editor_result.edited_light_specular[2]
-                        }};
-
-                        vec3s direction = {0};
-                        vec3s position = {0};
-                        if (directional)
-                        {
-                            direction = (vec3s){{
-                                editor_result.edited_light_direction[0],
-                                editor_result.edited_light_direction[1],
-                                editor_result.edited_light_direction[2],
-                            }};
-                        }
-                        else {
-                            position = (vec3s){{
-                                editor_result.edited_light_position[0],
-                                editor_result.edited_light_position[1],
-                                editor_result.edited_light_position[2],
-                            }};
-                        }
-
-                        if (directional != NULL)
-                        {
-                            directional->light.color.ambient = ambient;
-                            directional->light.color.diffuse = diffuse;
-                            directional->light.color.specular = specular;
-                            directional->light.direction = direction;
-                        }
-                        else if (point != NULL)
-                        {
-                            point->light.color.ambient = ambient;
-                            point->light.color.diffuse = diffuse;
-                            point->light.color.specular = specular;
-                            point->light.position = position;
-                        }
-                        else if (spot != NULL)
-                        {
-                            spot->light.color.ambient = ambient;
-                            spot->light.color.diffuse = diffuse;
-                            spot->light.color.specular = specular;
-                            spot->light.position = position;
-                        }
+                        engine_modify_selected_light(
+                            engine,
+                            result_entity,
+                            editor_result.edited_light_ambient,
+                            editor_result.edited_light_diffuse,
+                            editor_result.edited_light_specular,
+                            editor_result.edited_light_direction,
+                            editor_result.edited_light_position
+                        );
                     }
                 }
             }

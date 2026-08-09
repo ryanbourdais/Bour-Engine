@@ -20,3 +20,10 @@ void copy_vec3_rgb_to_float3(float dest[3], const vec3s src)
     dest[1] = src.g;
     dest[2] = src.b;
 }
+
+void copy_float3_to_vec3_xyz(vec3s *dest, float src[3])
+{
+    dest->x = src[0];
+    dest->y = src[1];
+    dest->z = src[2];
+}
