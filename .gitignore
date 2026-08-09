@@ -35,3 +35,6 @@ install_manifest.txt
 Thumbs.db
 
 assets/models/*.zip
+
+#logs
+*.csv

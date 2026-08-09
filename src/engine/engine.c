@@ -10,20 +10,20 @@
 #include "../renderer/camera.h"
 #include "../controller/input.h"
 #include "../editor/editor_ui.h"
-#include "timing.h"
 #include "../scene/scene.h"
-
+#include "timing.h"
 #include "../utils/math_utils.h"
+#include "../utils/profiler.h"
 
 #define MAX_EDITOR_HIERARCHY_ITEMS 256
 
 typedef struct EngineFrameProfile {
-    double engine_update_ms;
-    double scene_extract_ms;
-    double editor_begin_ms;
-    double renderer_ms;
-    double editor_render_ms;
-    double present_ms;
+    ProcessTimer engine_update_timer;
+    ProcessTimer scene_extract_timer;
+    ProcessTimer editor_begin_timer;
+    ProcessTimer renderer_timer;
+    ProcessTimer editor_render_timer;
+    ProcessTimer present_timer;
 } EngineFrameProfile;
 
 struct EngineState
@@ -35,6 +35,7 @@ struct EngineState
     Scene scene;
 
     EngineFrameProfile profile;
+    ProcessTimerLogConfig profile_log_config;
 
     EntityId selected_entity;
     bool editor_enabled;
@@ -91,7 +92,7 @@ static void fps_counter(double *delta_time, double *title_countdown_time, GLFWwi
     }
 }
 
-static double elapsed_ms(double start, double end)
+static double elapsed_timer(double start, double end)
 {
     return (end - start) * 1000.0;
 }
@@ -443,16 +444,17 @@ static void run_engine_loop(struct EngineState *engine)
 
         window_poll_events();
 
-        double start = glfwGetTime();
+        process_timer_begin(&engine->profile.engine_update_timer, glfwGetTime());
         engine_update(engine);
-        engine->profile.engine_update_ms = elapsed_ms(start, glfwGetTime());
+        process_timer_end(&engine->profile.engine_update_timer, glfwGetTime());
+        process_timer_log_report(&engine->profile.engine_update_timer, &engine->profile_log_config);
 
-        start = glfwGetTime();
         SceneRenderConfig scene_render_config = {0};
 
-        
+        process_timer_begin(&engine->profile.scene_extract_timer, glfwGetTime()); 
         scene_get_render_config(&engine->scene, &scene_render_config);
-        engine->profile.scene_extract_ms = elapsed_ms(start, glfwGetTime());
+        process_timer_end(&engine->profile.scene_extract_timer, glfwGetTime());
+        process_timer_log_report(&engine->profile.scene_extract_timer, &engine->profile_log_config);
 
         size_t hierarchy_count = engine->scene.entities.count;
         if (hierarchy_count > MAX_EDITOR_HIERARCHY_ITEMS)
@@ -541,12 +543,12 @@ static void run_engine_loop(struct EngineState *engine)
             .selected_entity_is_renderable = selected_entity_is_renderable,
             .renderable_count = scene_render_config.renderable_count,
             .editor_cursor_enabled = engine->editor_cursor_enabled,
-            .profile_engine_update_ms = engine->profile.engine_update_ms,
-            .profile_scene_extract_ms = engine->profile.scene_extract_ms,
-            .profile_editor_begin_ms = engine->profile.editor_begin_ms,
-            .profile_renderer_ms = engine->profile.renderer_ms,
-            .profile_editor_render_ms = engine->profile.editor_render_ms,
-            .profile_present_ms = engine->profile.present_ms,
+            .profile_engine_update_ms = engine->profile.engine_update_timer.last_ms,
+            .profile_scene_extract_ms = engine->profile.scene_extract_timer.last_ms,
+            .profile_editor_begin_ms = engine->profile.editor_begin_timer.last_ms,
+            .profile_renderer_ms = engine->profile.renderer_timer.last_ms,
+            .profile_editor_render_ms = engine->profile.editor_render_timer.last_ms,
+            .profile_present_ms = engine->profile.present_timer.last_ms,
             .hierarchy_items = hierarchy_items,
             .hierarchy_item_count = hierarchy_count,
         };
@@ -565,8 +567,12 @@ static void run_engine_loop(struct EngineState *engine)
 
         if (engine->editor_enabled)
         {
-            start = glfwGetTime();
+            process_timer_begin(&engine->profile.editor_begin_timer, glfwGetTime());
+
             EditorFrameResult editor_result = editor_ui_begin_frame(&editor_frame);
+
+            process_timer_end(&engine->profile.editor_begin_timer, glfwGetTime());
+            process_timer_log_report(&engine->profile.editor_begin_timer, &engine->profile_log_config);
 
             EntityId result_entity = editor_frame.selected_entity_id;
 
@@ -618,8 +624,6 @@ static void run_engine_loop(struct EngineState *engine)
                 }
             }
 
-            engine->profile.editor_begin_ms = elapsed_ms(start, glfwGetTime());
-
             if (editor_result.toggle_editor_cursor)
             {
                 engine->editor_cursor_enabled = !engine->editor_cursor_enabled;
@@ -632,18 +636,28 @@ static void run_engine_loop(struct EngineState *engine)
                 engine->selected_entity = editor_result.selected_entity_id;
             }
         }
-        start = glfwGetTime();
+        process_timer_begin(&engine->profile.renderer_timer, glfwGetTime());
+
         renderer_render_frame(engine->renderer, &frame);
-        engine->profile.renderer_ms = elapsed_ms(start, glfwGetTime());
+
+        process_timer_end(&engine->profile.renderer_timer, glfwGetTime());
+        process_timer_log_report(&engine->profile.renderer_timer, &engine->profile_log_config);
+
         if (engine->editor_enabled)
         {
-            start = glfwGetTime();
+            process_timer_begin(&engine->profile.editor_render_timer, glfwGetTime());
+
             editor_ui_render();
-            engine->profile.editor_render_ms = elapsed_ms(start, glfwGetTime());
+
+            process_timer_end(&engine->profile.editor_render_timer, glfwGetTime());
+            process_timer_log_report(&engine->profile.editor_render_timer, &engine->profile_log_config);
         }
-        start = glfwGetTime();
+        process_timer_begin(&engine->profile.present_timer, glfwGetTime());
+
         window_present(engine->window);
-        engine->profile.present_ms = elapsed_ms(start, glfwGetTime());
+        
+        process_timer_end(&engine->profile.present_timer, glfwGetTime());
+        process_timer_log_report(&engine->profile.present_timer, &engine->profile_log_config);
     }
 }
 
@@ -674,6 +688,12 @@ int engine_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
         .fps_enabled = fps_enabled,
         .fps_title_countdown_time = 0.1,
         .tab_was_pressed = false,
+        .profile_log_config = {
+            .warning_threshold_ms = 16.67,
+            .report_interval_samples = 300,
+            .log_average_reports = true,
+            .log_spikes = true,
+        },
     };
 
     glfwSetInputMode(
@@ -691,6 +711,7 @@ int engine_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
 
     if (engine.renderer == NULL)
     {
+        process_timer_log_config_close(&engine.profile_log_config);
         window_destroy(window);
         safe_exit();
         return 1;
@@ -744,8 +765,29 @@ int engine_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
         }
     }
 
-    run_engine_loop(&engine);
+    process_timer_init(&engine.profile.engine_update_timer, "Engine Update");
+    process_timer_init(&engine.profile.scene_extract_timer, "Scene Extract");
+    process_timer_init(&engine.profile.editor_begin_timer, "Editor Begin");
+    process_timer_init(&engine.profile.renderer_timer, "Renderer");
+    process_timer_init(&engine.profile.editor_render_timer, "Editor Render");
+    process_timer_init(&engine.profile.present_timer, "Present");
 
+    if (!process_timer_log_config_open(
+        &engine.profile_log_config,
+        "profile_averages.csv",
+        "profile_warnings.csv",
+        16.67,
+        300,
+        true,
+        true
+    ))
+    {
+        fprintf(stderr, "Failed to open profiler log fields\n");
+    }
+
+    run_engine_loop(&engine);
+    process_timer_log_config_close(&engine.profile_log_config);
+    
     renderer_shutdown(engine.renderer);
     renderer_destroy(engine.renderer);
     scene_shutdown(&engine.scene);
