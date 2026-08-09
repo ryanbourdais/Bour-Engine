@@ -689,10 +689,8 @@ int engine_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
         .fps_title_countdown_time = 0.1,
         .tab_was_pressed = false,
         .profile_log_config = {
-            .warning_threshold_ms = 16.67,
             .report_interval_samples = 300,
             .log_average_reports = true,
-            .log_spikes = true,
         },
     };
 
@@ -765,20 +763,18 @@ int engine_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
         }
     }
 
-    process_timer_init(&engine.profile.engine_update_timer, "Engine Update");
-    process_timer_init(&engine.profile.scene_extract_timer, "Scene Extract");
-    process_timer_init(&engine.profile.editor_begin_timer, "Editor Begin");
-    process_timer_init(&engine.profile.renderer_timer, "Renderer");
-    process_timer_init(&engine.profile.editor_render_timer, "Editor Render");
-    process_timer_init(&engine.profile.present_timer, "Present");
+    process_timer_init(&engine.profile.engine_update_timer, "Engine Update", 16.67, true);
+    process_timer_init(&engine.profile.scene_extract_timer, "Scene Extract", 16.67, true);
+    process_timer_init(&engine.profile.editor_begin_timer, "Editor Begin", 16.67, true);
+    process_timer_init(&engine.profile.renderer_timer, "Renderer", 16.67, true);
+    process_timer_init(&engine.profile.editor_render_timer, "Editor Render", 16.67, true);
+    process_timer_init(&engine.profile.present_timer, "Present", 100.0, false);
 
     if (!process_timer_log_config_open(
         &engine.profile_log_config,
         "profile_averages.csv",
         "profile_warnings.csv",
-        16.67,
         300,
-        true,
         true
     ))
     {
