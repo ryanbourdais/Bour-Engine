@@ -71,6 +71,11 @@ static void set_hints()
     glfwWindowHint(GLFW_SAMPLES, 8);
 }
 
+static bool engine_entity_is_valid(struct EngineState *engine, EntityId entity)
+{
+    return entity_registry_is_alive(&engine->scene.entities, entity);
+}
+
 static void fps_counter(double *delta_time, double *title_countdown_time, GLFWwindow *window)
 {
     *title_countdown_time -= *delta_time;
@@ -169,14 +174,18 @@ static EntityId engine_create_renderable_entity(struct EngineState *engine, cons
 
 static bool engine_get_selected_transform(
     struct EngineState *engine,
-    EntityId entity,
+    EntityId selected_entity,
     float out_position[3],
     float out_rotation[3],
     float out_scale[3]
 )
 {
+    if (!engine_entity_is_valid(engine, selected_entity))
+    {
+        return false;
+    }
     const TransformComponent *selected_transform = 
-        (const TransformComponent *)component_storage_get(&engine->scene.transforms, entity);
+        (const TransformComponent *)component_storage_get(&engine->scene.transforms, selected_entity);
 
     if (selected_transform != NULL)
     {
@@ -190,7 +199,7 @@ static bool engine_get_selected_transform(
 
 static EditorSelectedLightType engine_get_selected_light(
     struct EngineState *engine,
-    EntityId entity,
+    EntityId selected_entity,
     float out_ambient[3], 
     float out_diffuse[3],
     float out_specular[3],
@@ -198,9 +207,13 @@ static EditorSelectedLightType engine_get_selected_light(
     float out_position[3]
 )
 {
-    DirectionalLightComponent *directional = component_storage_get(&engine->scene.directional_lights, entity);
-    PointLightComponent *point = component_storage_get(&engine->scene.point_lights, entity);
-    SpotLightComponent *spot = component_storage_get(&engine->scene.spot_lights, entity);
+    if (!engine_entity_is_valid(engine, selected_entity))
+    {
+        return EDITOR_SELECTED_LIGHT_NONE;
+    }
+    DirectionalLightComponent *directional = component_storage_get(&engine->scene.directional_lights, selected_entity);
+    PointLightComponent *point = component_storage_get(&engine->scene.point_lights, selected_entity);
+    SpotLightComponent *spot = component_storage_get(&engine->scene.spot_lights, selected_entity);
 
     EditorSelectedLightType selected_light_type = EDITOR_SELECTED_LIGHT_NONE;
 
@@ -212,7 +225,7 @@ static EditorSelectedLightType engine_get_selected_light(
         copy_vec3_rgb_to_float3(out_specular, directional->light.color.specular);
         copy_vec3_xyz_to_float3(out_direction, directional->light.direction);
     }
-    else if(point != NULL)
+    else if (point != NULL)
     {
         selected_light_type = EDITOR_SELECTED_LIGHT_POINT;
         copy_vec3_rgb_to_float3(out_ambient, point->light.color.ambient);
@@ -220,7 +233,7 @@ static EditorSelectedLightType engine_get_selected_light(
         copy_vec3_rgb_to_float3(out_specular, point->light.color.specular);
         copy_vec3_xyz_to_float3(out_position, point->light.position);
     }
-    else if(spot != NULL)
+    else if (spot != NULL)
     {
         selected_light_type = EDITOR_SELECTED_LIGHT_SPOT;
         copy_vec3_rgb_to_float3(out_ambient, spot->light.color.ambient);
@@ -234,6 +247,10 @@ static EditorSelectedLightType engine_get_selected_light(
 
 static void engine_delete_selected_entity(struct EngineState *engine, EntityId selected_entity)
 {
+    if (!engine_entity_is_valid(engine, selected_entity))
+    {
+        return;
+    }
     component_storage_remove(&engine->scene.names, selected_entity);
     component_storage_remove(&engine->scene.transforms, selected_entity);
     component_storage_remove(&engine->scene.mesh_renderers, selected_entity);
@@ -249,6 +266,10 @@ static void engine_delete_selected_entity(struct EngineState *engine, EntityId s
 
 static void engine_duplicate_selected_entity(struct EngineState *engine, EntityId selected_entity)
 {
+    if (!engine_entity_is_valid(engine, selected_entity))
+    {
+        return;
+    }
     TransformComponent *source_transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, selected_entity);
                         
     MeshRendererComponent *source_mesh = (MeshRendererComponent *)component_storage_get(&engine->scene.mesh_renderers, selected_entity);
@@ -277,6 +298,10 @@ static void engine_duplicate_selected_entity(struct EngineState *engine, EntityI
 
 static void engine_rename_selected_entity(struct EngineState *engine, EntityId selected_entity, char* edited_name)
 {
+    if (!engine_entity_is_valid(engine, selected_entity))
+    {
+        return;
+    }
     NameComponent *name = (NameComponent *)component_storage_get(&engine->scene.names, selected_entity);
     if (name == NULL)
     {
@@ -298,6 +323,10 @@ static void engine_change_selected_transform(
     float* new_scale
 )
 {
+    if (!engine_entity_is_valid(engine, selected_entity))
+    {
+        return;
+    }
     TransformComponent *transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, selected_entity);
     if (transform != NULL)
     {
@@ -332,6 +361,10 @@ static void engine_modify_selected_light(
     float* edited_position
 )
 {
+    if (!engine_entity_is_valid(engine, selected_entity))
+    {
+        return;
+    }
     DirectionalLightComponent *directional = component_storage_get(&engine->scene.directional_lights, selected_entity);
     PointLightComponent *point = component_storage_get(&engine->scene.point_lights, selected_entity);
     SpotLightComponent *spot = component_storage_get(&engine->scene.spot_lights, selected_entity);
@@ -549,7 +582,7 @@ static void run_engine_loop(struct EngineState *engine)
                 engine->selected_entity = engine_create_renderable_entity(engine, "Renderable Entity");
             }
 
-            if(result_entity_alive)
+            if (result_entity_alive)
             {
                 if (editor_result.delete_selected_entity)
                 {

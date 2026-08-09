@@ -5,7 +5,7 @@
 void vec3_array_initialize(struct Vec3Array *arr)
 {
     arr->items = malloc(4 * sizeof(vec3s)); // Initial capacity of 4
-    if(arr->items == NULL) {
+    if (arr->items == NULL) {
         fprintf(stderr, "Memory allocation failed\n");
         exit(1);
     }
@@ -14,18 +14,18 @@ void vec3_array_initialize(struct Vec3Array *arr)
 }
 void vec3_array_append(struct Vec3Array *arr, vec3s value)
 {
-    if(arr->count == arr->capacity) {
+    if (arr->count == arr->capacity) {
             arr->capacity *= 2;
             arr->items = realloc(arr->items, arr->capacity * sizeof(vec3s));
-            if(arr->items == NULL) {
+            if (arr->items == NULL) {
                 fprintf(stderr, "Memory allocation failed\n");
                 exit(1);
             }
         }
-        if(arr->capacity == 0) {
+        if (arr->capacity == 0) {
             arr->capacity = 4; // Initial capacity
             arr->items = malloc(arr->capacity * sizeof(vec3s));
-            if(arr->items == NULL) {
+            if (arr->items == NULL) {
                 fprintf(stderr, "Memory allocation failed\n");
                 exit(1);
             }
@@ -45,7 +45,7 @@ void free_vec3_array(struct Vec3Array *arr)
 void vec2_array_initialize(struct Vec2Array *arr)
 {
     arr->items = malloc(4 * sizeof(vec2s)); // Initial capacity of 4
-    if(arr->items == NULL) {
+    if (arr->items == NULL) {
         fprintf(stderr, "Memory allocation failed\n");
         exit(1);
     }
@@ -54,18 +54,18 @@ void vec2_array_initialize(struct Vec2Array *arr)
 }
 void vec2_array_append(struct Vec2Array *arr, vec2s value)
 {
-    if(arr->count == arr->capacity) {
+    if (arr->count == arr->capacity) {
             arr->capacity *= 2;
             arr->items = realloc(arr->items, arr->capacity * sizeof(vec2s));
-            if(arr->items == NULL) {
+            if (arr->items == NULL) {
                 fprintf(stderr, "Memory allocation failed\n");
                 exit(1);
             }
         }
-        if(arr->capacity == 0) {
+        if (arr->capacity == 0) {
             arr->capacity = 4; // Initial capacity
             arr->items = malloc(arr->capacity * sizeof(vec2s));
-            if(arr->items == NULL) {
+            if (arr->items == NULL) {
                 fprintf(stderr, "Memory allocation failed\n");
                 exit(1);
             }

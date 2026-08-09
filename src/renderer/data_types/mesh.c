@@ -4,17 +4,17 @@
 
 int create_mesh_from_vertices(Mesh *mesh, const Vertex *vertices, size_t vertex_count, const unsigned int *indices, GLsizei index_count)
 {
-    if(mesh == NULL)
+    if (mesh == NULL)
     {
         fprintf(stderr, "Error: mesh is null\n");
         return 1;
     }
-    if(vertices == NULL)
+    if (vertices == NULL)
     {
         fprintf(stderr, "Error: vertices are null\n");
         return 1;
     }
-    if(vertex_count == 0)
+    if (vertex_count == 0)
     {   
         fprintf(stderr, "Error: vertex count is less than 1\n");
         return 1;

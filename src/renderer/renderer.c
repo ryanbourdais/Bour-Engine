@@ -121,7 +121,7 @@ static int bind_camera_uniform_block(GLuint shader_program)
 {
     GLuint camera_block_index = glGetUniformBlockIndex(shader_program, "CameraBlock");
 
-    if(camera_block_index == GL_INVALID_INDEX)
+    if (camera_block_index == GL_INVALID_INDEX)
     {
         fprintf(stderr, "Failed to find CameraBlock uniform block\n");
         return 1;
