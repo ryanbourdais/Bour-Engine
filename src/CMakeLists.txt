@@ -21,15 +21,11 @@ add_executable(bour_engine
     renderer/data_types/mesh.c
     renderer/renderer.c
     controller/input.c
-    renderer/data_types/vertex.c
-    renderer/data_types/vectors.c
     renderer/data_types/texture.c
-    renderer/data_types/renderObject.c
     renderer/data_types/lightObject.c
     renderer/data_types/material.c
     renderer/data_types/model.c
     renderer/data_types/skybox.c
-    renderer/data_types/instancedModel.c
     renderer/data_types/renderTarget.c
     renderer/camera.c
     engine/timing.c
@@ -37,7 +33,6 @@ add_executable(bour_engine
     ecs/entity.c
     ecs/components.c
     ecs/component_storage.c
-    renderer/renderer_data.h
     editor/editor_ui.cpp
     external/imgui/imgui.cpp
     external/imgui/imgui_draw.cpp

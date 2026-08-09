@@ -2,8 +2,6 @@
 #include <glad/glad.h>
 #include <cglm/struct.h>
 #include <stddef.h>
-#include <stdbool.h>
-#include "renderObject.h"
 
 typedef struct LightColor
 {
@@ -23,7 +21,6 @@ typedef struct PointLight
     float quadratic;
 
     bool has_visual;
-    RenderObject visual;
 } PointLight;
 
 typedef struct PointLightUniforms
@@ -104,7 +101,6 @@ void upload_point_light_collection(const PointLightCollection *point_lights, con
 void upload_point_light(const PointLight *light, const PointLightUniforms *uniforms);
 void point_light_init(PointLight *light, vec3s position, LightColor color, float constant, float linear, float quadratic);
 void point_light_uniforms_init(PointLightUniforms *uniforms, GLuint shader_program, size_t index);
-void point_light_set_visual(PointLight* light, RenderObject visual);
 void point_light_collection_init(PointLightCollection *lights);
 void spot_light_uniforms_init(SpotLightUniforms *uniforms, GLuint shader_program, size_t index);
 bool point_light_collection_add(PointLightCollection *lights, PointLight light);

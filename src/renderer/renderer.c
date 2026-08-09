@@ -6,12 +6,10 @@
 
 #include "data_types/mesh.h"
 #include "data_types/texture.h"
-#include "data_types/renderObject.h"
 #include "data_types/lightObject.h"
 #include "data_types/material.h"
 #include "data_types/model.h"
 #include "data_types/skybox.h"
-#include "data_types/instancedModel.h"
 #include "data_types/renderTarget.h"
 
 #include "shaders.h"
@@ -22,8 +20,6 @@ struct RendererState
     Model test_model;
     Skybox skybox;
 
-    Model instance_model;
-    InstancedModel instance_instances;
     RenderTarget scene_target;
     MsaaRenderTarget scene_msaa_target;
 
@@ -42,8 +38,6 @@ struct RendererState
     GLint point_light_count_location;
     GLint spot_light_count_location;
     GLint model_location;
-
-    GLint use_instancing_location;
 };
 
 static void draw_screen_quad(struct RendererState *renderer)
@@ -84,8 +78,6 @@ void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
 
     upload_spot_light_collection(frame->spot_lights, renderer->spot_light_uniforms, renderer->spot_light_count_location);
 
-
-    glUniform1i(renderer->use_instancing_location, 0);
 
     for (size_t i = 0; i < frame->renderable_count; i++)
     {
@@ -288,8 +280,6 @@ static int renderer_state_init(struct RendererState *renderer, const RendererCon
     glEnable(GL_FRAMEBUFFER_SRGB);
 
     renderer->model_location = glGetUniformLocation(renderer->shader_program, "model");
-
-    renderer->use_instancing_location = glGetUniformLocation(renderer->shader_program, "useInstancing");
 
     if (renderer->model_location < 0)
     {

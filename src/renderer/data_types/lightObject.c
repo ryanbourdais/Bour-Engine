@@ -93,12 +93,6 @@ void point_light_init(PointLight *light, vec3s position, LightColor color, float
     light->has_visual = false;
 }
 
-void point_light_set_visual(PointLight *light, RenderObject visual)
-{
-    light->visual = visual;
-    light->has_visual = true;
-}
-
 void point_light_collection_init(PointLightCollection *lights)
 {
     lights->count = 0;
