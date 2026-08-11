@@ -207,6 +207,19 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         ImGui::Text("Delta: %.3f ms", frame->delta_time * 1000.0);
         ImGui::Text("Entities: %zu", frame->entity_count);
         ImGui::Text("Renderables: %zu", frame->renderable_count);
+
+        ImGui::Separator();
+        ImGui::Text("Loaded Meshes: %zu", frame->renderer_mesh_count);
+        ImGui::Text("Loaded Vertices: %zu", frame->renderer_vertex_count);
+        ImGui::Text("Loaded Triangles: %zu", frame->renderer_triangle_count);
+        ImGui::Text("Loaded Textures: %zu", frame->renderer_texture_count);
+
+        ImGui::Separator();
+        ImGui::Text("Submitted Draws: %zu", frame->renderer_submitted_draw_count);
+        ImGui::Text("Submitted Meshes: %zu", frame->renderer_submitted_mesh_count);    
+        ImGui::Text("Submitted Vertices: %zu", frame->renderer_submitted_vertex_count);    
+        ImGui::Text("Submitted Triangles: %zu", frame->renderer_submitted_triangle_count);    
+        ImGui::Text("Missing Models: %zu", frame->renderer_missing_model_count);    
     }
 
     ImGui::Separator();
