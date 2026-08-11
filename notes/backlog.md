@@ -118,7 +118,33 @@ Tasks:
 - [ ] Add editor action for save/load once the runtime path works.
 - [ ] Add basic scene switching or scene reload during development.
 
-## Deliverable Set 3: Editor Camera And Input V1
+## Deliverable Set 3: Engine-Owned Primitive And Programmable Geometry
+
+Suggested branch: `feat-engine-owned-geometry`
+
+Goal: reduce dependence on third-party test assets by giving the editor/scene system first-class engine-owned geometry that can be created, edited, saved, loaded, and rendered without external model files.
+
+Exit criteria:
+
+- Editor can create basic primitive entities without external model files.
+- Runtime scene data can represent mesh source type: external asset, built-in primitive, or programmable mesh.
+- Built-in primitives render through the same renderer submission path as asset-backed renderables.
+- Programmable mesh entities have explicit ownership rules for generated vertex/index data or generated mesh resources.
+- Scene persistence can round-trip primitive and programmable mesh entity definitions.
+- The default/demo scene can rely primarily on primitives or project-owned geometry instead of third-party test assets.
+
+Tasks:
+
+- [ ] Define mesh source/component model for asset-backed, primitive, and programmable mesh renderables.
+- [ ] Add built-in primitives: cube, plane, quad, sphere or UV sphere if reasonable, and cylinder if reasonable.
+- [ ] Add renderer path for built-in primitive mesh resources without requiring glTF files.
+- [ ] Add editor create actions for primitive entities.
+- [ ] Add programmable mesh entity/component with explicit ownership rules for generated vertex/index data.
+- [ ] Add save/load schema support for primitive and programmable mesh entities.
+- [ ] Replace current third-party test-scene dependency with primitives or project-owned geometry before public distribution.
+- [ ] Document which third-party test assets remain local/dev-only and which engine-owned assets are safe to distribute.
+
+## Deliverable Set 4: Editor Camera And Input V1
 
 Suggested branch: `feat-editor-camera-input-v1`
 
@@ -140,7 +166,7 @@ Tasks:
 - [ ] Add UI-visible camera/input mode indicators if current display is insufficient.
 - [ ] Document manual camera/input test cases.
 
-## Deliverable Set 4: Asset And Mesh Assignment V0
+## Deliverable Set 5: Asset And Mesh Assignment V0
 
 Suggested branch: `feat-editor-asset-assignment-v0`
 
@@ -161,7 +187,7 @@ Tasks:
 - [ ] Decide how assignment interacts with current single-loaded-model renderer limitation.
 - [ ] Add validation for missing asset/model paths.
 
-## Deliverable Set 5: Scene Editing Workflow V1
+## Deliverable Set 6: Scene Editing Workflow V1
 
 Suggested branch: `feat-editor-scene-workflow-v1`
 
@@ -184,7 +210,7 @@ Tasks:
 - [ ] Add undo/redo design note, even if implementation waits.
 - [ ] Add editor milestone demo checklist/documentation.
 
-## Deliverable Set 6: Viewport Selection And Transform Tools
+## Deliverable Set 7: Viewport Selection And Transform Tools
 
 Suggested branch: `feat-editor-viewport-tools-v1`
 
@@ -204,7 +230,7 @@ Tasks:
 - [ ] Decide whether gizmos are custom, ImGuizmo-based, or deferred.
 - [ ] Add manual tests for picking and transform tool behavior.
 
-## Deliverable Set 7: Editor Play/Simulation Separation
+## Deliverable Set 8: Editor Play/Simulation Separation
 
 Suggested branch: `feat-editor-play-simulation-v1`
 
@@ -224,7 +250,7 @@ Tasks:
 - [ ] Add UI-visible editor/play state.
 - [ ] Ensure renderer still receives scene data in both editor and play modes.
 
-## Deliverable Set 8: Phong Shadow Maps
+## Deliverable Set 9: Phong Shadow Maps
 
 Suggested branch: `feat-phong-shadow-maps`
 
@@ -248,6 +274,54 @@ Tasks:
 - [ ] Validate shadows with the current loaded model scene.
 - [ ] Document what is complete and explicitly mark PBR as deferred.
 - [ ] Add visible/cull-surviving renderer geometry stats after the renderer has a real visibility path.
+
+## Deliverable Set 10: Level Of Detail And Render Budget Controls
+
+Suggested branch: `feat-lod-render-budget`
+
+Goal: add the first explicit LOD/resource-scaling controls before terrain introduces large generated meshes.
+
+Exit criteria:
+
+- Renderer/scene data can represent basic LOD policy for renderable entities.
+- At least one mesh or primitive path can select between lower/higher detail geometry.
+- Editor exposes minimal LOD/debug controls so behavior is visible while testing.
+- Profiling/stats can show whether submitted geometry changes as LOD settings change.
+- Terrain deliverable has a clear budget model to build against instead of inventing one mid-feature.
+
+Tasks:
+
+- [ ] Define first-pass LOD policy data: distance thresholds, forced LOD/debug override, and fallback behavior.
+- [ ] Add renderer-side selection between LOD mesh levels for supported renderables.
+- [ ] Add primitive/programmatic geometry support for generating lower-detail variants where reasonable.
+- [ ] Add editor display/control for selected entity LOD state.
+- [ ] Add submitted geometry stats that make LOD impact visible during testing.
+- [ ] Document deferred LOD work: screen-space error, hysteresis, streaming, chunk LOD, impostors, and GPU-driven culling.
+
+## Deliverable Set 11: Terrain Entity And Procedural Terrain
+
+Suggested branch: `feat-terrain-entity`
+
+Goal: introduce terrain as a first-class scene/rendering concept after the engine has enough LOD/render-budget groundwork to avoid exploding geometry cost.
+
+Exit criteria:
+
+- Terrain entities have a clear component/data model with dimensions, resolution, and height data strategy.
+- Renderer can draw at least one terrain entity through a dedicated or reusable mesh path.
+- Editor can create and inspect a terrain entity at a minimal level.
+- Scene persistence can round-trip terrain definitions.
+- The implementation uses or fits into the LOD/render-budget model from Deliverable Set 10.
+- The implementation leaves room for heightmaps, procedural generation, chunking, collision, and streaming without requiring all of them in the first pass.
+
+Tasks:
+
+- [ ] Define terrain entity/component data model and ownership rules.
+- [ ] Decide first terrain source: flat grid, generated height function, or heightmap-backed grid.
+- [ ] Add minimal terrain mesh generation path.
+- [ ] Add renderer submission path for terrain entities.
+- [ ] Add editor create/inspect path for terrain entities.
+- [ ] Add save/load schema support for terrain entities.
+- [ ] Document deferred terrain work: heightmap import, sculpting, chunking, material painting, collision, and streaming.
 
 ## Later, Not This Milestone
 
