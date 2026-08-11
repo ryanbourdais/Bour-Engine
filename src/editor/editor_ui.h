@@ -26,6 +26,10 @@ typedef struct EditorFrameData {
     double fps;
     size_t entity_count;
     size_t renderable_count;
+    size_t renderer_mesh_count;    
+    size_t renderer_vertex_count;
+    size_t renderer_triangle_count;
+    size_t renderer_texture_count;
     unsigned int selected_entity_id;
     bool has_selected_entity;
     bool selected_entity_has_transform;
@@ -49,6 +53,12 @@ typedef struct EditorFrameData {
     double profile_renderer_ms;
     double profile_editor_render_ms;
     double profile_present_ms;
+
+    size_t renderer_submitted_draw_count;
+    size_t renderer_submitted_mesh_count;
+    size_t renderer_submitted_vertex_count;
+    size_t renderer_submitted_triangle_count;
+    size_t renderer_missing_model_count;
 
     const EditorHierarchyItem *hierarchy_items;
     size_t hierarchy_item_count;

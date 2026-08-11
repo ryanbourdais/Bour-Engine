@@ -523,6 +523,20 @@ static void run_engine_loop(struct EngineState *engine)
             selected_light_position
         );
 
+
+
+        RendererFrame frame = {
+            .camera = &engine->camera,
+            .viewport = {0},
+            .renderables = scene_render_config.renderables,
+            .renderable_count = scene_render_config.renderable_count,
+            .directional_light = scene_render_config.directional_light,
+            .spot_lights = scene_render_config.spot_lights,
+            .point_lights = scene_render_config.point_lights,
+        };
+
+        RendererStats renderer_stats = renderer_get_frame_stats(engine->renderer, &frame);
+
         EditorFrameData editor_frame = {
             .delta_time = delta_time,
             .fps = delta_time > 0.0 ? 1.0 / delta_time : 0.0,
@@ -542,6 +556,15 @@ static void run_engine_loop(struct EngineState *engine)
             .selected_light_type = selected_light_type,
             .selected_entity_is_renderable = selected_entity_is_renderable,
             .renderable_count = scene_render_config.renderable_count,
+            .renderer_mesh_count = renderer_stats.mesh_count,
+            .renderer_vertex_count = renderer_stats.vertex_count,
+            .renderer_triangle_count = renderer_stats.triangle_count,
+            .renderer_texture_count = renderer_stats.texture_count,
+            .renderer_submitted_draw_count = renderer_stats.submitted_draw_count,
+            .renderer_submitted_mesh_count = renderer_stats.submitted_mesh_count,
+            .renderer_submitted_vertex_count = renderer_stats.submitted_vertex_count,
+            .renderer_submitted_triangle_count = renderer_stats.submitted_triangle_count,
+            .renderer_missing_model_count = renderer_stats.missing_model_count,
             .editor_cursor_enabled = engine->editor_cursor_enabled,
             .profile_engine_update_ms = engine->profile.engine_update_timer.last_ms,
             .profile_scene_extract_ms = engine->profile.scene_extract_timer.last_ms,
@@ -551,16 +574,6 @@ static void run_engine_loop(struct EngineState *engine)
             .profile_present_ms = engine->profile.present_timer.last_ms,
             .hierarchy_items = hierarchy_items,
             .hierarchy_item_count = hierarchy_count,
-        };
-
-        RendererFrame frame = {
-            .camera = &engine->camera,
-            .viewport = {0},
-            .renderables = scene_render_config.renderables,
-            .renderable_count = scene_render_config.renderable_count,
-            .directional_light = scene_render_config.directional_light,
-            .spot_lights = scene_render_config.spot_lights,
-            .point_lights = scene_render_config.point_lights,
         };
 
         window_get_framebuffer_size(engine->window, &frame.viewport.width, &frame.viewport.height);

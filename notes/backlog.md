@@ -71,8 +71,10 @@ Tasks:
 - [X] Build a util for logging benchmarks on processes.
 - [X] Add profiler logging for averages and abnormal frame/process spikes.
 - [X] Take benchmarks on loops, heavy processes, and recursive functions.
-- [ ] Improve processes that have notable slowdowns or will become a constraint at a later time.
-- [ ] Add visible triangles, vertices, and other renderer stats to stats window.
+- [X] Improve processes that have notable slowdowns or will become a constraint at a later time.
+- [X] Add loaded and submitted renderer geometry stats to stats window.
+- [ ] Expand profiler to track hardware utilization and log hardware spikes and potentially memory leaks.
+- [ ] Apply Apache 2.0 License to the project.
 
 Current fixed limits audit:
 
@@ -89,6 +91,7 @@ Current fixed limits audit:
 
 Follow-up candidates:
 
+- Do not label geometry stats as visible until a real visibility/culling/GPU-statistics path exists. Current near-term stats should be named loaded or submitted geometry only.
 - Add UI feedback when hierarchy or render extraction truncates data.
 - Decide whether renderer light caps become shader defines, runtime config, or deferred clustered/forward-plus work.
 - Keep scene file schema independent from current render/editor caps so saved scenes do not bake in alpha limitations.
@@ -245,6 +248,7 @@ Tasks:
 - [ ] Add debug view or toggle for the shadow map.
 - [ ] Validate shadows with the current loaded model scene.
 - [ ] Document what is complete and explicitly mark PBR as deferred.
+- [ ] Add visible/cull-surviving renderer geometry stats after the renderer has a real visibility path.
 
 ## Later, Not This Milestone
 

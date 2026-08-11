@@ -1,6 +1,7 @@
 #include "renderer.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <cglm/struct.h>
 #include <cglm/mat4.h>
 
@@ -38,6 +39,8 @@ struct RendererState
     GLint point_light_count_location;
     GLint spot_light_count_location;
     GLint model_location;
+
+    const char *loaded_model_path;
 };
 
 static void draw_screen_quad(struct RendererState *renderer)
@@ -56,6 +59,76 @@ static void draw_screen_quad(struct RendererState *renderer)
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+}
+
+RendererStats renderer_get_stats(const Renderer *renderer)
+{
+    RendererStats stats = {0};
+
+    if (renderer == NULL)
+    {
+        return stats;
+    }
+
+    stats.mesh_count = renderer->test_model.count;
+    stats.texture_count = renderer->test_model.texture_cache_count;
+
+    for (size_t i = 0; i < renderer->test_model.count; i++)
+    {
+        const ModelMesh *mesh = &renderer->test_model.meshes[i];
+
+        stats.vertex_count += mesh->mesh.vertex_count;
+        stats.triangle_count += mesh->mesh.index_count / 3;
+    }
+
+    return stats;
+}
+
+static bool renderer_get_model_stats(const Renderer *renderer, const char *model_path, RendererStats *out_stats)
+{
+    if (renderer == NULL || out_stats == NULL)
+    {
+        return false;
+    }
+
+    if (renderer->loaded_model_path == NULL || model_path == NULL || strcmp(renderer->loaded_model_path, model_path) != 0)
+    {
+        return false;
+    }
+
+    *out_stats = renderer_get_stats(renderer);
+    return true;
+}
+
+
+
+RendererStats renderer_get_frame_stats(const Renderer *renderer, const RendererFrame *frame)
+{
+    RendererStats stats = renderer_get_stats(renderer);
+
+    if (renderer == NULL || frame == NULL)
+    {
+        return stats;
+    }
+
+    for (size_t i = 0; i < frame->renderable_count; i++)
+    {
+        const RenderableDrawData *renderable = &frame->renderables[i];
+
+        RendererStats model_stats = {0};
+        if (!renderer_get_model_stats(renderer, renderable->model_path, &model_stats))
+        {
+            stats.missing_model_count++;
+            continue;
+        }
+
+        stats.submitted_draw_count++;
+        stats.submitted_mesh_count += model_stats.mesh_count;
+        stats.submitted_vertex_count += model_stats.vertex_count;
+        stats.submitted_triangle_count += model_stats.triangle_count;
+    }
+
+    return stats;
 }
 
 void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
@@ -263,6 +336,8 @@ static int renderer_state_init(struct RendererState *renderer, const RendererCon
     {
         return 1;
     }
+
+    renderer->loaded_model_path = config->model_path;
 
     init_camera_projection(renderer, config);
 
