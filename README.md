@@ -37,3 +37,8 @@ src/
   ├── shaders/      # GLSL Shader storage
 ├── utils/          # Shared utilities
 ```
+
+## License
+This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE).
+
+Third-party dependencies retain their original licenses.
