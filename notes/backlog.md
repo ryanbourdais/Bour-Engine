@@ -73,8 +73,7 @@ Tasks:
 - [X] Take benchmarks on loops, heavy processes, and recursive functions.
 - [X] Improve processes that have notable slowdowns or will become a constraint at a later time.
 - [X] Add loaded and submitted renderer geometry stats to stats window.
-- [ ] Expand profiler to track hardware utilization and log hardware spikes and potentially memory leaks.
-- [ ] Apply Apache 2.0 License to the project.
+- [X] Apply Apache 2.0 License to the project.
 
 Current fixed limits audit:
 
@@ -252,6 +251,7 @@ Tasks:
 
 ## Later, Not This Milestone
 
+- Hardware/system diagnostics profiler expansion: track CPU/GPU/memory utilization where platform support is clear, log hardware spikes, and investigate memory-leak tracking with an intentional debug-allocation strategy.
 - PBR materials and image-based lighting.
 - Physics.
 - Audio.
