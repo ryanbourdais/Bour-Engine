@@ -111,7 +111,7 @@ Exit criteria:
 
 Tasks:
 
-- [ ] Define v0 scene file schema for entities, names, transforms, mesh renderers, light values, and active camera.
+- [X] Define v0 scene file schema for entities, names, transforms, mesh renderers, light values, and active camera.
 - [ ] Add scene save path from current runtime ECS scene to disk.
 - [ ] Add scene load path from disk into C-owned runtime scene data.
 - [ ] Add save/load round-trip validation for save -> load -> render.
@@ -210,7 +210,33 @@ Tasks:
 - [ ] Add undo/redo design note, even if implementation waits.
 - [ ] Add editor milestone demo checklist/documentation.
 
-## Deliverable Set 7: Viewport Selection And Transform Tools
+## Deliverable Set 7: Editor User Documentation V0
+
+Suggested branch: `docs-editor-user-guide-v0`
+
+Goal: create practical editor documentation that can be used alongside development, manual testing, and future feature planning.
+
+Exit criteria:
+
+- Editor controls and modes are documented from a user/developer perspective.
+- Current editor panels are explained with screenshots or clear text descriptions where useful.
+- Common workflows have step-by-step documentation: create, select, duplicate, delete, edit transform, edit lights, save/load scene once persistence exists.
+- Known limitations are documented so alpha behavior does not look like accidental breakage.
+- Manual test checklists link back to the editor guide where appropriate.
+- Documentation stays close enough to implementation that it can be updated during each editor-facing branch.
+
+Tasks:
+
+- [ ] Create `notes/editor-user-guide.md` or `docs/editor-user-guide.md`.
+- [ ] Document editor vs camera mouse modes and current key/button controls.
+- [ ] Document hierarchy, stats, camera settings, inspector, and scene actions panels.
+- [ ] Document current entity workflows: create empty, create renderable, select, rename, duplicate, delete.
+- [ ] Document transform and light editing workflows.
+- [ ] Add scene persistence workflow docs after save/load exists.
+- [ ] Add known limitations section for alpha editor behavior.
+- [ ] Add a rule that editor-facing branches update this guide when behavior changes.
+
+## Deliverable Set 8: Viewport Selection And Transform Tools
 
 Suggested branch: `feat-editor-viewport-tools-v1`
 
@@ -230,7 +256,7 @@ Tasks:
 - [ ] Decide whether gizmos are custom, ImGuizmo-based, or deferred.
 - [ ] Add manual tests for picking and transform tool behavior.
 
-## Deliverable Set 8: Editor Play/Simulation Separation
+## Deliverable Set 9: Editor Play/Simulation Separation
 
 Suggested branch: `feat-editor-play-simulation-v1`
 
@@ -250,7 +276,7 @@ Tasks:
 - [ ] Add UI-visible editor/play state.
 - [ ] Ensure renderer still receives scene data in both editor and play modes.
 
-## Deliverable Set 9: Phong Shadow Maps
+## Deliverable Set 10: Phong Shadow Maps
 
 Suggested branch: `feat-phong-shadow-maps`
 
@@ -275,7 +301,7 @@ Tasks:
 - [ ] Document what is complete and explicitly mark PBR as deferred.
 - [ ] Add visible/cull-surviving renderer geometry stats after the renderer has a real visibility path.
 
-## Deliverable Set 10: Level Of Detail And Render Budget Controls
+## Deliverable Set 11: Level Of Detail And Render Budget Controls
 
 Suggested branch: `feat-lod-render-budget`
 
@@ -298,7 +324,7 @@ Tasks:
 - [ ] Add submitted geometry stats that make LOD impact visible during testing.
 - [ ] Document deferred LOD work: screen-space error, hysteresis, streaming, chunk LOD, impostors, and GPU-driven culling.
 
-## Deliverable Set 11: Terrain Entity And Procedural Terrain
+## Deliverable Set 12: Terrain Entity And Procedural Terrain
 
 Suggested branch: `feat-terrain-entity`
 
@@ -310,7 +336,7 @@ Exit criteria:
 - Renderer can draw at least one terrain entity through a dedicated or reusable mesh path.
 - Editor can create and inspect a terrain entity at a minimal level.
 - Scene persistence can round-trip terrain definitions.
-- The implementation uses or fits into the LOD/render-budget model from Deliverable Set 10.
+- The implementation uses or fits into the LOD/render-budget model from Deliverable Set 11.
 - The implementation leaves room for heightmaps, procedural generation, chunking, collision, and streaming without requiring all of them in the first pass.
 
 Tasks:
