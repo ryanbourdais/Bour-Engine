@@ -106,6 +106,21 @@ void *component_storage_get(ComponentStorage *storage, EntityId entity)
     return NULL;
 }
 
+const void *component_storage_get_const(const ComponentStorage *storage, EntityId entity)
+{
+    const char *components = storage->components;
+
+    for (size_t i = 0; i < storage->count; i++)
+    {
+        if (storage->entities[i] == entity)
+        {
+            return components + i * storage->component_size;
+        }
+    }
+
+    return NULL;
+}
+
 bool component_storage_remove(ComponentStorage *storage, EntityId entity)
 {
     char *components = storage->components;

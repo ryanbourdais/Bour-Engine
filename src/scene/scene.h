@@ -12,6 +12,9 @@ typedef struct Scene {
     const char *model_path;
     const char *skybox_faces[6];
 
+    EntityId active_camera;
+    EntityId active_skybox;
+
     EntityRegistry entities;
 
     DirectionalLight legacy_directional_light;
@@ -28,6 +31,7 @@ typedef struct Scene {
     ComponentStorage point_lights;
     ComponentStorage spot_lights;
     ComponentStorage cameras;
+    ComponentStorage skyboxes;
 } Scene;
 
 typedef struct SceneRenderConfig {

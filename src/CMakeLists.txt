@@ -41,6 +41,7 @@ add_executable(bour_engine
     external/imgui/imgui_widgets.cpp
     external/imgui/backends/imgui_impl_glfw.cpp
     external/imgui/backends/imgui_impl_opengl3.cpp
+    scene/scene_serialization.c
 )
 
 add_subdirectory(external/cglm EXCLUDE_FROM_ALL)

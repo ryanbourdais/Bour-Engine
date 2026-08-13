@@ -36,6 +36,10 @@ typedef struct CameraComponent {
     float far_clip;
 } CameraComponent;
 
+typedef struct SkyboxComponent {
+    const char *faces[6];
+} SkyboxComponent;
+
 void transform_component_init(TransformComponent *transform);
 void transform_component_set_position(TransformComponent *transform, vec3s position);
 void transform_component_set_rotation(TransformComponent *transform, vec3s rotation);

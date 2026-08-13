@@ -144,6 +144,31 @@ Tasks:
 - [ ] Replace current third-party test-scene dependency with primitives or project-owned geometry before public distribution.
 - [ ] Document which third-party test assets remain local/dev-only and which engine-owned assets are safe to distribute.
 
+## Deliverable Set 3A: Initial SDF Generated Meshes
+
+Suggested branch: `feat-sdf-generated-mesh-v0`
+
+Goal: use the programmable geometry foundation from Deliverable Set 3 to prove that signed distance fields can generate engine-owned mesh data without introducing a separate SDF renderer yet.
+
+Exit criteria:
+
+- Runtime scene data can represent at least one SDF-generated mesh source.
+- The first SDF path generates ordinary vertex/index mesh data that uses the programmable mesh ownership rules from Deliverable Set 3.
+- At least one simple SDF shape, such as a sphere or box, can be generated, rendered, saved, and loaded.
+- Editor UI can create or inspect the initial SDF-generated mesh at a minimal parameter level.
+- Regeneration rules are explicit when SDF parameters change, including when CPU mesh data or renderer resources are rebuilt.
+- Raymarched SDF rendering, GPU SDF volumes, collision, sculpting, and terrain-scale SDF workflows are explicitly deferred.
+
+Tasks:
+
+- [ ] Define initial SDF component/source data model and supported shape parameters.
+- [ ] Choose first CPU sampling/meshing strategy for simple closed SDF shapes.
+- [ ] Add SDF-to-programmable-mesh generation path for one or two simple shapes.
+- [ ] Submit generated SDF mesh data through the existing programmable mesh renderer path.
+- [ ] Add editor create/inspect path for initial SDF-generated meshes.
+- [ ] Add save/load schema support for initial SDF mesh definitions.
+- [ ] Document deferred SDF work: raymarching, GPU volume storage, boolean operations, smooth blends, collision, sculpting, terrain, and advanced material integration.
+
 ## Deliverable Set 4: Editor Camera And Input V1
 
 Suggested branch: `feat-editor-camera-input-v1`
@@ -323,6 +348,30 @@ Tasks:
 - [ ] Add editor display/control for selected entity LOD state.
 - [ ] Add submitted geometry stats that make LOD impact visible during testing.
 - [ ] Document deferred LOD work: screen-space error, hysteresis, streaming, chunk LOD, impostors, and GPU-driven culling.
+
+## Deliverable Set 11A: Advanced SDF Rendering And Workflows
+
+Suggested branch: `feat-sdf-advanced-v1`
+
+Goal: revisit signed distance fields after the engine has explicit LOD and render-budget controls, so heavier SDF workflows can be evaluated without quietly exploding geometry or shader cost.
+
+Exit criteria:
+
+- The engine has a documented decision on whether advanced SDF support should remain mesh-generated, add raymarched rendering, or support both paths.
+- SDF-generated meshes can participate in the LOD/render-budget model from Deliverable Set 11.
+- At least one advanced SDF feature is proven in a contained prototype: boolean composition, smooth blending, cached LOD generation, raymarched rendering, or GPU-backed SDF data.
+- Editor UI exposes enough controls to inspect advanced SDF behavior without hiding regeneration/rendering cost.
+- Profiling or stats make SDF CPU generation cost, submitted geometry, or shader cost visible enough for iteration.
+- Terrain-scale SDF use remains optional and can feed into Deliverable Set 12 without blocking it.
+
+Tasks:
+
+- [ ] Decide advanced SDF direction: generated meshes only, raymarched rendering, GPU SDF textures/volumes, or a hybrid.
+- [ ] Integrate SDF mesh generation with LOD policy and submitted-geometry stats where applicable.
+- [ ] Prototype one advanced SDF composition feature, such as union/subtract/intersect or smooth blending.
+- [ ] Decide caching/invalidation rules for expensive SDF generation and renderer resource updates.
+- [ ] Add editor debug controls for SDF cost, LOD, regeneration, and selected advanced parameters.
+- [ ] Document constraints for SDF materials, lighting, shadows, collision, terrain, and runtime editing before expanding scope.
 
 ## Deliverable Set 12: Terrain Entity And Procedural Terrain
 
