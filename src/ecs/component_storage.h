@@ -17,6 +17,7 @@ typedef struct ComponentStorage {
 void component_storage_init(ComponentStorage *storage, size_t component_size);
 bool component_storage_add(ComponentStorage *storage, EntityId entity, const void *component);
 void *component_storage_get(ComponentStorage *storage, EntityId entity);
+const void *component_storage_get_const(const ComponentStorage *storage, EntityId entity);
 bool component_storage_remove(ComponentStorage *storage, EntityId entity);
 void *component_storage_first(ComponentStorage *storage);
 const void *component_storage_first_const(const ComponentStorage *storage);

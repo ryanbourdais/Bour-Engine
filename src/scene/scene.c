@@ -121,7 +121,6 @@ static void init_default_scene_ecs(Scene *scene)
         component_storage_add(&scene->names, entity, &name);
         component_storage_add(&scene->spot_lights, entity, &light);
     }
-
 }
 
 static void init_scene_ecs_storage(Scene *scene)
@@ -135,6 +134,7 @@ static void init_scene_ecs_storage(Scene *scene)
     component_storage_init(&scene->point_lights, sizeof(PointLightComponent));
     component_storage_init(&scene->spot_lights, sizeof(SpotLightComponent));
     component_storage_init(&scene->cameras, sizeof(CameraComponent));
+    component_storage_init(&scene->skyboxes, sizeof(SkyboxComponent));
 }
 
 static void scene_extract_point_lights(Scene *scene)
@@ -236,6 +236,49 @@ static void init_default_scene_assets(Scene *scene)
     scene->skybox_faces[5] = "assets/cubemaps/skybox/back.jpg";
 }
 
+static void init_scene_camera(Scene *scene)
+{
+    EntityId camera_entity = entity_registry_create(&scene->entities);
+
+    NameComponent camera_name = {0};
+    snprintf(camera_name.value, ENTITY_NAME_MAX_LENGTH, "Editor Camera");
+
+    CameraComponent camera = {
+        .fov = 45.0f,
+        .near_clip = 0.1f,
+        .far_clip = 100.0f
+    };
+
+    component_storage_add(&scene->names, camera_entity, &camera_name);
+    component_storage_add(&scene->cameras, camera_entity, &camera);
+
+    scene->active_camera = camera_entity;
+}
+
+static void init_scene_skybox(Scene *scene)
+{
+    EntityId skybox_entity = entity_registry_create(&scene->entities);
+
+    NameComponent skybox_name = {0};
+    snprintf(skybox_name.value, ENTITY_NAME_MAX_LENGTH, "Editor skybox");
+
+    SkyboxComponent skybox = {
+        .faces = {
+            scene->skybox_faces[0],
+            scene->skybox_faces[1],
+            scene->skybox_faces[2],
+            scene->skybox_faces[3],
+            scene->skybox_faces[4],
+            scene->skybox_faces[5],
+        }
+    };
+
+    component_storage_add(&scene->names, skybox_entity, &skybox_name);
+    component_storage_add(&scene->skyboxes, skybox_entity, &skybox);
+
+    scene->active_skybox = skybox_entity;
+}
+
 // Initializes built-in baseline scene
 void scene_init_default(Scene *scene)
 {
@@ -244,6 +287,32 @@ void scene_init_default(Scene *scene)
     init_default_scene_assets(scene);
     init_default_scene_lighting(scene);
     init_default_scene_ecs(scene);
+    init_scene_camera(scene);
+    init_scene_skybox(scene);
+}
+
+static void scene_extract_active_skybox(const Scene *scene, SceneRenderConfig *out_config)
+{
+    const SkyboxComponent *skybox = component_storage_get_const(&scene->skyboxes, scene->active_skybox);
+
+    if (skybox == NULL)
+    {
+        out_config->skybox_faces[0] = scene->skybox_faces[0];
+        out_config->skybox_faces[1] = scene->skybox_faces[1];
+        out_config->skybox_faces[2] = scene->skybox_faces[2];
+        out_config->skybox_faces[3] = scene->skybox_faces[3];
+        out_config->skybox_faces[4] = scene->skybox_faces[4];
+        out_config->skybox_faces[5] = scene->skybox_faces[5];
+        return;
+    }
+
+    out_config->skybox_faces[0] = skybox->faces[0];
+    out_config->skybox_faces[1] = skybox->faces[1];
+    out_config->skybox_faces[2] = skybox->faces[2];
+    out_config->skybox_faces[3] = skybox->faces[3];
+    out_config->skybox_faces[4] = skybox->faces[4];
+    out_config->skybox_faces[5] = skybox->faces[5];
+
 }
 
 void scene_get_render_config(Scene *scene, SceneRenderConfig *out_config)
@@ -254,12 +323,7 @@ void scene_get_render_config(Scene *scene, SceneRenderConfig *out_config)
 
     out_config->model_path = mesh_renderer != NULL ? mesh_renderer->model_path : scene->model_path;
 
-    out_config->skybox_faces[0] = scene->skybox_faces[0];
-    out_config->skybox_faces[1] = scene->skybox_faces[1];
-    out_config->skybox_faces[2] = scene->skybox_faces[2];
-    out_config->skybox_faces[3] = scene->skybox_faces[3];
-    out_config->skybox_faces[4] = scene->skybox_faces[4];
-    out_config->skybox_faces[5] = scene->skybox_faces[5];
+    scene_extract_active_skybox(scene, out_config);
 
     const DirectionalLightComponent *sun = (const DirectionalLightComponent *)component_storage_first_const(&scene->directional_lights);
 
@@ -287,6 +351,7 @@ void scene_shutdown(Scene *scene)
     component_storage_shutdown(&scene->mesh_renderers);
     component_storage_shutdown(&scene->names);
     component_storage_shutdown(&scene->transforms);
+    component_storage_shutdown(&scene->skyboxes);
 
     entity_registry_shutdown(&scene->entities);
 }
