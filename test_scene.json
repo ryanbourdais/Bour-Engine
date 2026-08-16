@@ -1,0 +1,147 @@
+{
+  "version": 0,
+  "active_camera": {
+    "entity": 9
+  },
+  "active_skybox": {
+    "entity": 10
+  },
+  "entities": [
+    {
+      "id": 1,
+      "name": "Leopard",
+      "transform": {
+        "position": [0.000, 0.000, 0.000],
+        "rotation": [0.000, 0.000, 0.000],
+        "scale": [1.000, 1.000, 1.000]
+      },
+      "mesh_renderer": {
+        "source_type": "asset",
+        "model_path": "assets/models/leopard_2a4_otco/scene.gltf",
+        "material": null,
+        "lod": null
+      }
+    },
+    {
+      "id": 2,
+      "name": "Sun",
+      "directional_light": {
+        "direction": [-0.200, -1.000, -0.300],
+        "ambient": [0.020, 0.020, 0.020],
+        "diffuse": [0.050, 0.050, 0.050],
+        "specular": [0.020, 0.020, 0.020]
+      }
+    },
+    {
+      "id": 3,
+      "name": "Point Light 0",
+      "point_light": {
+        "position": [0.000, 2.500, 0.000],
+        "ambient": [0.000, 0.000, 0.000],
+        "diffuse": [3.000, 0.200, 0.200],
+        "specular": [3.000, 0.200, 0.200],
+        "constant": 1.000,
+        "linear": 0.090,
+        "quadratic": 0.032,
+        "has_visual": false
+      }
+    },
+    {
+      "id": 4,
+      "name": "Point Light 1",
+      "point_light": {
+        "position": [3.000, 2.000, 0.000],
+        "ambient": [0.000, 0.000, 0.000],
+        "diffuse": [0.200, 3.000, 0.200],
+        "specular": [0.200, 3.000, 0.200],
+        "constant": 1.000,
+        "linear": 0.090,
+        "quadratic": 0.032,
+        "has_visual": false
+      }
+    },
+    {
+      "id": 5,
+      "name": "Point Light 2",
+      "point_light": {
+        "position": [-3.000, 2.000, 0.000],
+        "ambient": [0.000, 0.000, 0.000],
+        "diffuse": [0.200, 0.200, 3.000],
+        "specular": [0.200, 0.200, 3.000],
+        "constant": 1.000,
+        "linear": 0.090,
+        "quadratic": 0.032,
+        "has_visual": false
+      }
+    },
+    {
+      "id": 6,
+      "name": "Point Light 3",
+      "point_light": {
+        "position": [0.000, 2.000, -3.000],
+        "ambient": [0.000, 0.000, 0.000],
+        "diffuse": [3.000, 1.800, 0.400],
+        "specular": [3.000, 1.800, 0.400],
+        "constant": 1.000,
+        "linear": 0.090,
+        "quadratic": 0.032,
+        "has_visual": false
+      }
+    },
+    {
+      "id": 7,
+      "name": "Spot Light 0",
+      "spot_light": {
+        "position": [0.000, 3.000, 2.000],
+        "direction": [0.000, -1.000, -0.300],
+        "ambient": [0.000, 0.000, 0.000],
+        "diffuse": [4.000, 0.000, 2.500],
+        "specular": [4.000, 0.000, 2.500],
+        "constant": 1.000,
+        "linear": 0.090,
+        "quadratic": 0.032,
+        "inner_cutoff_degrees": 25.000,
+        "outer_cutoff_degrees": 45.000
+      }
+    },
+    {
+      "id": 8,
+      "name": "Spot Light 1",
+      "spot_light": {
+        "position": [0.000, 3.000, -2.000],
+        "direction": [0.000, -1.000, 0.300],
+        "ambient": [0.000, 0.000, 0.000],
+        "diffuse": [0.000, 3.000, 4.000],
+        "specular": [0.000, 3.000, 4.000],
+        "constant": 1.000,
+        "linear": 0.090,
+        "quadratic": 0.032,
+        "inner_cutoff_degrees": 25.000,
+        "outer_cutoff_degrees": 45.000
+      }
+    },
+    {
+      "id": 9,
+      "name": "Editor Camera",
+      "camera": {
+        "fov": 45.000,
+        "near_clip": 0.100,
+        "far_clip": 100.000
+      }
+    },
+    {
+      "id": 10,
+      "name": "Editor skybox",
+      "skybox": {
+        "faces": [
+          "assets/cubemaps/skybox/right.jpg",
+          "assets/cubemaps/skybox/left.jpg",
+          "assets/cubemaps/skybox/top.jpg",
+          "assets/cubemaps/skybox/bottom.jpg",
+          "assets/cubemaps/skybox/front.jpg",
+          "assets/cubemaps/skybox/back.jpg"
+        ]
+      }
+    }
+  ]
+}

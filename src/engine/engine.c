@@ -14,6 +14,7 @@
 #include "timing.h"
 #include "../utils/math_utils.h"
 #include "../utils/profiler.h"
+#include "../scene/scene_serialization.h"
 
 #define MAX_EDITOR_HIERARCHY_ITEMS 256
 
@@ -736,6 +737,16 @@ int engine_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
     window_get_framebuffer_size(engine.window, &viewport.width, &viewport.height);
 
     scene_init_default(&engine.scene);
+
+
+    // Debug trigger for saving on first load
+    // =======================================
+    // SceneSaveResult save_result = scene_save_to_file(&engine.scene, "test_scene.json");
+    // if (save_result != SCENE_SAVE_OK)
+    // {
+    //     fprintf(stderr, "Failed to save test scene: %d\n", save_result);
+    // }
+    // =======================================
 
     SceneRenderConfig scene_render_config = {0};
 
