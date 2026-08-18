@@ -42,6 +42,33 @@ Done signals:
 - Scene update can be gated or paused for editor workflows.
 - Renderer state is resource/lifecycle ownership, not authoring truth.
 
+## Initiative 1A: Component Metadata And Reflection
+
+Status: planned.
+
+Purpose: introduce a simple C-first metadata/reflection layer so built-in and future custom components can describe their fields, defaults, validation, editor exposure, and serialization rules without requiring fully bespoke serializers for every component type.
+
+Why it matters:
+
+- Scene Persistence V0 is already exposing repeated serializer work across transforms, renderers, cameras, skyboxes, lights, and future component blocks.
+- Custom components and game-level scripting will need a general way to describe editable and serializable data.
+- The editor inspector, scene serialization, validation, prefab-like workflows, and script/custom component bridges should eventually share component metadata instead of each inventing their own field model.
+
+Current deliverable anchors:
+
+- Deliverable Set 2: Scene Persistence V0.
+- Future deliverable: Component Reflection And Generic Serialization V0.
+- Later milestone: Odin scripting/custom component bridge.
+
+Done signals:
+
+- Components can register a stable type name, version, size, lifecycle hooks, and field descriptors.
+- Field descriptors cover simple first-pass types such as bool, integer, unsigned integer, float, vec2/vec3/vec4, string/path, entity reference, and fixed arrays where needed.
+- Descriptor-backed components can use generic JSON save/load for ordinary fields.
+- Components with unusual ownership or runtime-resource behavior can still provide explicit override hooks.
+- The editor inspector can reuse the same metadata for basic field display/editing instead of duplicating component-specific UI for every simple field.
+- The reflection layer remains explicit, debuggable, and C-friendly rather than becoming hidden runtime magic.
+
 ## Initiative 2: Editor As A Real Authoring Tool
 
 Status: active.
@@ -57,6 +84,7 @@ Why it matters:
 Current deliverable anchors:
 
 - Deliverable Set 4: Editor Camera And Input V1.
+- Deliverable Set 4A: Editor Layout Foundation V0.
 - Deliverable Set 5: Asset And Mesh Assignment V0.
 - Deliverable Set 6: Scene Editing Workflow V1.
 - Deliverable Set 7: Editor User Documentation V0.
@@ -69,6 +97,33 @@ Done signals:
 - Mesh renderer entities can choose supported assets or engine-owned geometry.
 - Viewport selection and transform tooling can handle basic object placement.
 - Editor-facing branches update user docs and manual test notes.
+
+## Initiative 2A: Editor Workspace And Viewport UX
+
+Status: active.
+
+Purpose: evolve the editor from overlay panels on top of a rendered window into a cleaner workspace where the game/scene view lives inside a dedicated viewport, with tool windows arranged around it like standard professional game editors.
+
+Why it matters:
+
+- Many upcoming editor features depend on a trustworthy viewport boundary: camera capture, picking, transform tools, asset assignment previews, scene workflow feedback, and documentation screenshots.
+- Overlay-only UI is useful for early debug visibility but becomes noisy once the editor is expected to author scenes.
+- A contained viewport gives rendering, input, editor focus, and future tools a shared spatial contract.
+
+Current deliverable anchors:
+
+- Deliverable Set 4: Editor Camera And Input V1.
+- Deliverable Set 4A: Editor Layout Foundation V0.
+- Deliverable Set 8: Viewport Selection And Transform Tools.
+- Deliverable Set 7: Editor User Documentation V0.
+
+Done signals:
+
+- The rendered game/scene view is treated as an editor viewport with explicit bounds.
+- Hierarchy, inspector, stats, scene actions, camera settings, and future tool panels live around the viewport instead of competing with it.
+- Viewport focus/capture rules are clear enough for camera control, picking, and gizmos.
+- The first layout can stay simple, but the design leaves room for docking, saved layouts, tabs, multi-window editing, and polished editor theming later.
+- UI layout changes are reflected in editor documentation and manual test checklists.
 
 ## Initiative 3: Engine-Owned Geometry And Procedural Content
 
@@ -115,12 +170,14 @@ Current deliverable anchors:
 - Deliverable Set 10: Phong Shadow Maps.
 - Deliverable Set 11: Level Of Detail And Render Budget Controls.
 - Later milestone: PBR materials and image-based lighting.
+- Future deliverable after PBR: Flat Profiling And Optimization Pass.
 
 Done signals:
 
 - Directional shadow mapping works with clear framebuffer/depth-pass ownership.
 - Renderer debug views or toggles expose the data needed to validate passes.
 - Geometry stats describe loaded, submitted, and eventually visible/cull-surviving data accurately.
+- Post-PBR profiling can compare engine, scene, editor, renderer, GPU-capable render timing, and present costs in one flat view before optimization work is chosen.
 - PBR remains deferred until scene/editor/render foundations are complete.
 
 ## Initiative 5: Asset Pipeline And Distribution Hygiene
@@ -200,6 +257,8 @@ Done signals:
 ## Sequencing Guardrails
 
 - Finish truthful scene save/load before expanding editor workflows that depend on persisted state.
+- Establish the editor layout foundation before adding viewport-heavy work such as picking, transform gizmos, asset previews, or richer scene workflow panels.
+- Capture serialization boilerplate and field-metadata pain during Scene Persistence V0, but do not let reflection block the first truthful save/load path.
 - Prefer engine-owned primitives before adding asset-heavy features.
 - Keep initial SDF as generated mesh data before exploring raymarching, GPU volumes, or sculpting.
 - Add LOD/render-budget controls before terrain-scale procedural geometry.
@@ -211,6 +270,6 @@ Done signals:
 ## Immediate Planning Next Steps
 
 - Keep Deliverable Set 2 as the next execution focus until save/load is truthful.
-- When Deliverable Set 2 is complete, choose between editor interaction hardening, asset assignment, or engine-owned primitives based on what blocks the next usable scene-authoring demo.
+- When Deliverable Set 2 is complete, prioritize the editor layout foundation if viewport/input/UI structure is blocking the next usable scene-authoring demo.
 - Review this initiative backlog whenever a new deliverable set is added, completed, or re-ordered in `notes/backlog.md`.
 - If an item starts accumulating many branch-sized tasks here, move those tasks into `notes/backlog.md` and leave only the initiative intent and done signals in this file.

@@ -18,6 +18,7 @@ Editor Foundation is complete when:
 - A minimal UI/editor shell can run beside the viewport.
 - A scene can be created, edited at a basic level, saved, loaded, and rendered again.
 - Editor camera/input behavior is usable without fighting ImGui interaction.
+- The editor has a cleaner layout where the rendered game/scene view lives inside an editor viewport area instead of all UI floating over the main rendered window.
 - Asset/model assignment exists at a basic level for mesh-renderer entities.
 - The LearnOpenGL Phong-era renderer work is complete through shadow maps.
 - PBR is explicitly deferred to a later milestone.
@@ -112,11 +113,12 @@ Exit criteria:
 Tasks:
 
 - [X] Define v0 scene file schema for entities, names, transforms, mesh renderers, light values, and active camera.
-- [ ] Add scene save path from current runtime ECS scene to disk.
+- [X] Add scene save path from current runtime ECS scene to disk.
 - [ ] Add scene load path from disk into C-owned runtime scene data.
 - [ ] Add save/load round-trip validation for save -> load -> render.
 - [ ] Add editor action for save/load once the runtime path works.
 - [ ] Add basic scene switching or scene reload during development.
+- [ ] Note repeated serializer boilerplate and candidate component-metadata/reflection needs discovered during V0 implementation.
 
 ## Deliverable Set 3: Engine-Owned Primitive And Programmable Geometry
 
@@ -190,6 +192,31 @@ Tasks:
 - [ ] Decide whether editor camera and game camera should be separate states.
 - [ ] Add UI-visible camera/input mode indicators if current display is insufficient.
 - [ ] Document manual camera/input test cases.
+
+## Deliverable Set 4A: Editor Layout Foundation V0
+
+Suggested branch: `feat-editor-layout-foundation-v0`
+
+Goal: add a short-term first pass at a cleaner editor layout so upcoming editor work has a stable UI foundation instead of continuing to stack overlay panels directly on top of the rendered window.
+
+Exit criteria:
+
+- The editor has a stable first-pass layout with a dedicated game/scene viewport area and predictable surrounding panels.
+- Existing panels such as hierarchy, inspector, stats, scene actions, and camera settings are arranged around the viewport instead of freely covering the whole render surface by default.
+- The viewport has explicit bounds that can be used by rendering, camera, input, picking, and future transform tools.
+- Editor camera controls are scoped to the viewport region and do not rely on whole-window interaction.
+- The first pass can use fixed or simple manually arranged panels; full docking, saved layouts, tabbed panels, multi-monitor workflows, and polished theming are deferred.
+- Existing overlay/debug behavior remains available only where it is intentionally useful.
+
+Tasks:
+
+- [ ] Decide first layout model: fixed left/right/bottom panels, simple manually arranged ImGui windows, or an ImGui docking prototype.
+- [ ] Define editor viewport bounds and feed them into input focus/capture decisions.
+- [ ] Decide whether rendered scene output stays as the main framebuffer temporarily or moves to a framebuffer texture drawn inside an ImGui viewport panel.
+- [ ] Arrange hierarchy, inspector, stats, scene actions, and camera settings around the viewport.
+- [ ] Update camera/input behavior so viewport interaction drives camera movement only when the viewport is focused or captured.
+- [ ] Make the layout good enough for viewport picking, transform tools, asset assignment, scene workflow, and editor documentation to build against.
+- [ ] Document deferred editor layout work: full docking, saved user layouts, tabbed panels, multi-viewport/multi-window support, and polished editor theming.
 
 ## Deliverable Set 5: Asset And Mesh Assignment V0
 
@@ -402,6 +429,7 @@ Tasks:
 
 - Hardware/system diagnostics profiler expansion: track CPU/GPU/memory utilization where platform support is clear, log hardware spikes, and investigate memory-leak tracking with an intentional debug-allocation strategy.
 - PBR materials and image-based lighting.
+- Post-PBR flat profiler, logging, and optimization pass.
 - Physics.
 - Audio.
 - Scripting.
@@ -410,3 +438,31 @@ Tasks:
 - Advanced asset database/import pipeline.
 - Odin scripting/custom component bridge.
 - Zig/C++ tooling experiments, only if a concrete tool need appears.
+
+## Future Deliverable After PBR: Flat Profiling And Optimization Pass
+
+Suggested branch: `perf-flat-profiler-post-pbr`
+
+Goal: after PBR is implemented and the renderer has absorbed its new passes, materials, resources, and state transitions, add a true flat profiler/logging pass and use it to clean up the worst accumulated CPU/GPU/editor/scene performance dirtiness.
+
+Exit criteria:
+
+- A flat profiler can report named engine/editor/scene/renderer processes in one comparable view instead of only isolated timers.
+- Profiling logs capture per-frame process cost, averages, spikes, and enough context to identify recurring bottlenecks.
+- Renderer-side timing has a clear path for GPU timing where platform/OpenGL support is available, while CPU-only fallback remains useful.
+- Known current hot spots are measured before optimization, including scene extraction, linear ECS/component lookups, renderer frame stats, transparent mesh sorting/allocation, render submission, editor frame building, and present/swap timing.
+- At least the highest-impact measured bottlenecks are optimized or explicitly deferred with notes explaining why.
+- Optimizations preserve subsystem ownership boundaries instead of turning the profiler pass into an unbounded rewrite.
+- The pass documents which later work should use multithreading/parallel jobs and which should first be fixed through better data layout, caching, batching, or resource ownership.
+
+Tasks:
+
+- [ ] Design a flat profiler view/model that can collect named process timings across engine, scene, editor, renderer, and present.
+- [ ] Add structured profiler logging for frame index, process name, last cost, average cost, min/max, spike threshold, and relevant scene/render counts.
+- [ ] Add or document a GPU timer query path for renderer passes where OpenGL support is available.
+- [ ] Measure post-PBR frame cost in representative scenes before changing optimization-sensitive code.
+- [ ] Measure and classify current known candidates: ECS lookup cost, scene extraction, renderer stats recomputation, transparent mesh allocation/sorting, render submission, editor frame assembly, and serialization/editor-triggered stalls.
+- [ ] Optimize data-layout/caching issues before reaching for threads: entity-to-component indexing, reusable scratch buffers, cached renderer/model stats, batched render extraction, and model/resource lookup.
+- [ ] Identify work that is genuinely parallel-friendly: asset loading, scene load/save, CPU generated geometry, SDF meshing, terrain/LOD generation, and future import processing.
+- [ ] Add before/after profiler notes for each optimization that lands.
+- [ ] Document deferred performance work that should wait for larger systems such as asset streaming, render graph/pass scheduling, job system, or GPU-driven culling.
