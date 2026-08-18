@@ -42,6 +42,7 @@ add_executable(bour_engine
     external/imgui/backends/imgui_impl_glfw.cpp
     external/imgui/backends/imgui_impl_opengl3.cpp
     scene/scene_serialization.c
+    external/jsmn/jsmn.c
 )
 
 add_subdirectory(external/cglm EXCLUDE_FROM_ALL)
@@ -50,6 +51,7 @@ add_subdirectory(external/cglm EXCLUDE_FROM_ALL)
 target_include_directories(bour_engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
     ${CMAKE_CURRENT_SOURCE_DIR}/external/cgltf
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/jsmn
     ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/backends
 )
