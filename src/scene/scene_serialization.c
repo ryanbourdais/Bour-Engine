@@ -954,6 +954,64 @@ static bool parsed_scene_entity_has_camera(const ParsedSceneV0 *scene, int entit
     return false;
 }
 
+static bool parsed_scene_entity_has_skybox(const ParsedSceneV0 *scene, int entity_id)
+{
+    if (scene == NULL)
+    {
+        return false;
+    }
+
+    for (int i = 0; i < scene->entity_count; i++)
+    {
+        if (scene->entities[i].id == entity_id)
+        {
+            return scene->entities[i].has_skybox;
+        }
+    }
+
+    return false;
+}
+
+static SceneLoadResult parse_skybox_component_v0(const char *json, const jsmntok_t *tokens, int skybox_index, char out_faces[6][SCENE_PARSED_PATH_MAX_LENGTH])
+{
+    if (json == NULL || tokens == NULL || out_faces == NULL)
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (tokens[skybox_index].type != JSMN_OBJECT)
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    int faces_index = -1;
+    if (!json_object_find_field(json, tokens, skybox_index, "faces", &faces_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    const jsmntok_t *faces = &tokens[faces_index];
+
+    if (faces->type != JSMN_ARRAY || faces->size != 6)
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    int face_token_index = faces_index + 1;
+
+    for (int i = 0; i < 6; i++)
+    {
+        if (!json_token_copy_string(json, &tokens[face_token_index], out_faces[i], SCENE_PARSED_PATH_MAX_LENGTH))
+        {
+            return SCENE_LOAD_INVALID_SCENE;
+        }
+
+        face_token_index = json_skip_token(tokens, face_token_index);
+    }
+
+    return SCENE_LOAD_OK;
+}
+
 static SceneLoadResult parse_entity_v0_shallow(const char *json, const jsmntok_t *tokens, int entity_index, ParsedEntityV0 *out_entity)
 {
     if (json == NULL || tokens == NULL || out_entity == NULL)
@@ -975,6 +1033,12 @@ static SceneLoadResult parse_entity_v0_shallow(const char *json, const jsmntok_t
     out_entity->camera.fov = 45.0f;
     out_entity->camera.near_clip = 0.1f;
     out_entity->camera.far_clip = 100.0f;
+    out_entity->has_skybox = false;
+
+    for (int i = 0; i < 6; i++)
+    {
+        out_entity->skybox_faces[i][0] = '\0';
+    }
 
     int index = entity_index + 1;
 
@@ -1017,6 +1081,17 @@ static SceneLoadResult parse_entity_v0_shallow(const char *json, const jsmntok_t
                 return result;
             }
             out_entity->has_camera = true;
+        }
+        else if (json_token_equals(json, key, "skybox"))
+        {
+            SceneLoadResult result = parse_skybox_component_v0(json, tokens, index + 1, out_entity->skybox_faces);
+
+            if (result != SCENE_LOAD_OK)
+            {
+                return result;
+            }
+
+            out_entity->has_skybox = true;
         }
         index = json_skip_token(tokens, index + 1);
     }
@@ -1354,6 +1429,14 @@ static SceneLoadResult parse_scene_json(const char *json, size_t json_size, Scen
     }
 
     if (!parsed_scene_entity_has_camera(out_scene, out_scene->active_camera_entity))
+    {
+        parsed_scene_v0_shutdown(out_scene);
+        scene_parse_summary_shutdown(out_summary);
+        free(tokens);
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+    
+    if (!parsed_scene_entity_has_skybox(out_scene, out_scene->active_skybox_entity))
     {
         parsed_scene_v0_shutdown(out_scene);
         scene_parse_summary_shutdown(out_summary);
