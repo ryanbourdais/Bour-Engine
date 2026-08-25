@@ -16,6 +16,7 @@ typedef struct EntityRegistry {
 
 void entity_registry_init(EntityRegistry *registry);
 EntityId entity_registry_create(EntityRegistry *registry);
+bool entity_registry_create_with_id(EntityRegistry *registry, EntityId entity);
 bool entity_registry_destroy(EntityRegistry *registry, EntityId entity);
 bool entity_registry_is_alive(const EntityRegistry *registry, EntityId entity);
 void entity_registry_shutdown(EntityRegistry *registry);

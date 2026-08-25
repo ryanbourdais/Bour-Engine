@@ -5,7 +5,6 @@
 #include "../renderer/data_types/lightObject.h"
 #include "../ecs/entity.h"
 #include "../ecs/component_storage.h"
-#include "../ecs/components.h"
 #include "../renderer/renderer_data.h"
 
 typedef struct Scene {
@@ -47,6 +46,7 @@ typedef struct SceneRenderConfig {
 } SceneRenderConfig;
 
 void scene_init_default(Scene *scene);
+void scene_init_empty(Scene *scene);
 void scene_get_render_config(Scene *scene, SceneRenderConfig *out_config);
 void scene_update(Scene *scene, double delta_time);
 void scene_shutdown(Scene *scene);

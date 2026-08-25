@@ -1,4 +1,5 @@
 #include "entity.h"
+#include <stddef.h>
 #include <stdlib.h>
 
 void entity_registry_init(EntityRegistry *registry)
@@ -29,6 +30,37 @@ EntityId entity_registry_create(EntityRegistry *registry)
     return next_id;
 }
 
+bool entity_registry_create_with_id(EntityRegistry *registry, EntityId entity)
+{
+    if (entity == INVALID_ENTITY_ID || registry == NULL)
+    {
+        return false;
+    }
+    if (entity_registry_is_alive(registry, entity))
+    {
+        return false;
+    }
+
+    if (registry->count == registry->capacity) {
+        size_t new_capacity = registry->capacity == 0 ? 4 : registry->capacity * 2;
+        EntityId *new_entities = realloc(registry->entities, new_capacity * sizeof(EntityId));
+        if (new_entities == NULL)
+        {
+            return false;
+        }
+        registry->entities = new_entities;
+        registry->capacity = new_capacity;
+    }
+    registry->entities[registry->count] = entity;
+    registry->count++;
+
+    if (entity >= registry->next_id)
+    {
+        registry->next_id = entity + 1;
+    }
+    
+    return true;
+}
 bool entity_registry_destroy(EntityRegistry *registry, EntityId entity)
 {
     for(size_t i = 0; i < registry->count; i++)

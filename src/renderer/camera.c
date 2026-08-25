@@ -141,7 +141,8 @@ void upload_camera_ubo(GLuint camera_ubo, const Camera *camera, mat4 projection)
 {
     CameraUniformData data = {0};
 
-    glm_mat4_copy(camera->view.raw, data.view);
+    mat4s view = glms_mat4_copy(camera->view);
+    glm_mat4_copy(view.raw, data.view);
     glm_mat4_copy(projection, data.projection);
 
     data.view_pos[0] = camera->cameraPos.x;
