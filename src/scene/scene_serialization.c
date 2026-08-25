@@ -1012,6 +1012,39 @@ static SceneLoadResult parse_skybox_component_v0(const char *json, const jsmntok
     return SCENE_LOAD_OK;
 }
 
+static SceneLoadResult parse_mesh_renderer_component_v0(const char *json, const jsmntok_t *tokens, int mesh_renderer_index, char out_model_path[SCENE_PARSED_PATH_MAX_LENGTH])
+{
+   if (json == NULL || tokens == NULL || out_model_path == NULL)
+   {
+       return SCENE_LOAD_INVALID_SCENE;
+   }
+   if (tokens[mesh_renderer_index].type != JSMN_OBJECT)
+   {
+       return SCENE_LOAD_INVALID_SCENE;
+   }
+
+   int model_path_index = -1;
+   if (!json_object_find_field(json , tokens, mesh_renderer_index, "model_path", &model_path_index))
+   {
+       return SCENE_LOAD_INVALID_SCENE;
+   }
+
+   if (!json_token_copy_string(json, &tokens[model_path_index], out_model_path, SCENE_PARSED_PATH_MAX_LENGTH))
+   {
+       return SCENE_LOAD_INVALID_SCENE;
+   }
+
+   int source_type_index = -1;
+   if (json_object_find_field(json, tokens, mesh_renderer_index, "source_type", &source_type_index))
+   {
+       if (!json_token_equals(json, &tokens[source_type_index], "asset"))
+       {
+           return SCENE_LOAD_INVALID_SCENE;
+       }
+   }
+   return SCENE_LOAD_OK;
+}
+
 static SceneLoadResult parse_entity_v0_shallow(const char *json, const jsmntok_t *tokens, int entity_index, ParsedEntityV0 *out_entity)
 {
     if (json == NULL || tokens == NULL || out_entity == NULL)
@@ -1034,6 +1067,8 @@ static SceneLoadResult parse_entity_v0_shallow(const char *json, const jsmntok_t
     out_entity->camera.near_clip = 0.1f;
     out_entity->camera.far_clip = 100.0f;
     out_entity->has_skybox = false;
+    out_entity->has_mesh_renderer = false;
+    out_entity->mesh_model_path[0] = '\0';
 
     for (int i = 0; i < 6; i++)
     {
@@ -1093,6 +1128,17 @@ static SceneLoadResult parse_entity_v0_shallow(const char *json, const jsmntok_t
 
             out_entity->has_skybox = true;
         }
+        else if (json_token_equals(json, key, "mesh_renderer"))
+        {
+            SceneLoadResult result = parse_mesh_renderer_component_v0(json, tokens, index + 1, out_entity->mesh_model_path);
+
+            if (result != SCENE_LOAD_OK)
+            {
+                return result;
+            }
+            out_entity->has_mesh_renderer = true;
+        }
+        
         index = json_skip_token(tokens, index + 1);
     }
 
@@ -1448,6 +1494,16 @@ static SceneLoadResult parse_scene_json(const char *json, size_t json_size, Scen
     return validation_result;
 }
 
+static SceneLoadResult apply_parsed_scene_to_runtime(Scene *scene, const ParsedSceneV0 *parsed)
+{
+    if (scene == NULL || parsed == NULL)
+    {
+        return SCENE_LOAD_INVALID_ARGUMENT;
+    }
+
+    return SCENE_LOAD_OK;
+}
+
 SceneLoadResult scene_load_from_file(Scene *scene, const char *path)
 {
     if (scene == NULL || path == NULL)
@@ -1469,6 +1525,8 @@ SceneLoadResult scene_load_from_file(Scene *scene, const char *path)
 
     if (parse_result == SCENE_LOAD_OK)
     {
+        parse_result = apply_parsed_scene_to_runtime(scene, &parsed_scene);
+        
         parsed_scene_v0_shutdown(&parsed_scene);
         scene_parse_summary_shutdown(&summary);
     }

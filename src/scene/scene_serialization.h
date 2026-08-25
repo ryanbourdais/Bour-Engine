@@ -31,6 +31,8 @@ typedef struct ParsedEntityV0 {
     CameraComponent camera;
     bool has_skybox;
     char skybox_faces[6][SCENE_PARSED_PATH_MAX_LENGTH];
+    bool has_mesh_renderer;
+    char mesh_model_path[SCENE_PARSED_PATH_MAX_LENGTH];
 } ParsedEntityV0;
 
 typedef struct ParsedSceneV0 {

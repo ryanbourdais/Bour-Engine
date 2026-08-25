@@ -279,10 +279,32 @@ static void init_scene_skybox(Scene *scene)
     scene->active_skybox = skybox_entity;
 }
 
+void scene_init_empty(Scene *scene)
+{
+    init_scene_ecs_storage(scene);
+
+    scene->model_path = NULL;
+
+    for (int i = 0; i < 6; i++)
+    {
+        scene->skybox_faces[i] = NULL;
+    }
+
+    scene->active_camera = INVALID_ENTITY_ID;
+    scene->active_skybox = INVALID_ENTITY_ID;
+
+    directional_light_init(&scene->legacy_directional_light, (vec3s){{0.0f, -1.0f, 0.0f}}, default_sunlight);
+
+    point_light_collection_init(&scene->legacy_point_lights);
+    spot_light_collection_init(&scene->legacy_spot_lights);
+    point_light_collection_init(&scene->render_point_lights);
+    spot_light_collection_init(&scene->render_spot_lights);
+}
+
 // Initializes built-in baseline scene
 void scene_init_default(Scene *scene)
 {
-    init_scene_ecs_storage(scene);
+    scene_init_empty(scene);
 
     init_default_scene_assets(scene);
     init_default_scene_lighting(scene);
@@ -290,6 +312,7 @@ void scene_init_default(Scene *scene)
     init_scene_camera(scene);
     init_scene_skybox(scene);
 }
+
 
 static void scene_extract_active_skybox(const Scene *scene, SceneRenderConfig *out_config)
 {
