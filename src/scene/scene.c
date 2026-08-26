@@ -284,10 +284,17 @@ void scene_init_empty(Scene *scene)
     init_scene_ecs_storage(scene);
 
     scene->model_path = NULL;
+    scene->loaded_model_path_count = 0;
+
+    for (size_t i = 0; i < MAX_RENDERABLES; i++)
+    {
+        scene->loaded_model_paths[i][0] = '\0';
+    }
 
     for (int i = 0; i < 6; i++)
     {
         scene->skybox_faces[i] = NULL;
+        scene->loaded_skybox_faces[i][0] = '\0';
     }
 
     scene->active_camera = INVALID_ENTITY_ID;

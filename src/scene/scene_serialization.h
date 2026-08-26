@@ -20,7 +20,7 @@ typedef enum SceneLoadResult {
 } SceneLoadResult;
 
 #define SCENE_PARSED_NAME_MAX_LENGTH ENTITY_NAME_MAX_LENGTH
-#define SCENE_PARSED_PATH_MAX_LENGTH 256
+#define SCENE_PARSED_PATH_MAX_LENGTH SCENE_PATH_MAX_LENGTH
 typedef struct ParsedEntityV0 {
     int id;
     bool has_name;
