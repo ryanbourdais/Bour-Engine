@@ -1,4 +1,5 @@
 #include "scene_serialization.h"
+#include "scene.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1500,6 +1501,98 @@ static SceneLoadResult apply_parsed_scene_to_runtime(Scene *scene, const ParsedS
     {
         return SCENE_LOAD_INVALID_ARGUMENT;
     }
+
+    Scene loaded_scene;
+    scene_init_empty(&loaded_scene);
+
+    for (int i = 0; i < parsed->entity_count; i++)
+    {
+        const ParsedEntityV0 *parsed_entity = &parsed->entities[i];
+
+        if (!entity_registry_create_with_id(&loaded_scene.entities, parsed_entity->id))
+        {
+            scene_shutdown(&loaded_scene);
+            return SCENE_LOAD_INVALID_SCENE;
+        }
+
+        if (parsed_entity->has_name)
+        {
+            NameComponent name = {0};
+            snprintf(name.value, ENTITY_NAME_MAX_LENGTH, "%s", parsed_entity->name);
+
+            if (!component_storage_add(&loaded_scene.names, parsed_entity->id, &name))
+            {
+                scene_shutdown(&loaded_scene);
+                return SCENE_LOAD_INVALID_SCENE;
+            }
+        }
+
+        if (parsed_entity->has_transform)
+        {
+            if (!component_storage_add(&loaded_scene.transforms, parsed_entity->id, &parsed_entity->transform))
+            {
+                scene_shutdown(&loaded_scene);
+                return SCENE_LOAD_INVALID_SCENE;
+            }
+        }
+
+        if (parsed_entity->has_camera)
+        {
+            if (!component_storage_add(&loaded_scene.cameras, parsed_entity->id, &parsed_entity->camera))
+            {
+                scene_shutdown(&loaded_scene);
+                return SCENE_LOAD_INVALID_SCENE;
+            }
+        }
+
+        if (parsed_entity->has_skybox && parsed_entity->id == parsed->active_skybox_entity)
+        {
+            SkyboxComponent skybox = {0};
+        
+            for (int face = 0; face < 6; face++)
+            {
+                snprintf(loaded_scene.loaded_skybox_faces[face], SCENE_PATH_MAX_LENGTH, "%s", parsed_entity->skybox_faces[face]);
+                skybox.faces[face] = loaded_scene.loaded_skybox_faces[face];
+            }
+            
+            if (!component_storage_add(&loaded_scene.skyboxes, parsed_entity->id, &skybox))
+            {
+                scene_shutdown(&loaded_scene);
+                return SCENE_LOAD_INVALID_SCENE;
+            }
+        }
+
+        if (parsed_entity->has_mesh_renderer)
+        {
+            if (loaded_scene.loaded_model_path_count >= MAX_RENDERABLES)
+            {
+                scene_shutdown(&loaded_scene);
+                return SCENE_LOAD_INVALID_SCENE;
+            }
+
+            size_t path_index = loaded_scene.loaded_model_path_count;
+
+            snprintf(loaded_scene.loaded_model_paths[path_index], SCENE_PATH_MAX_LENGTH, "%s", parsed_entity->mesh_model_path);
+
+            loaded_scene.loaded_model_path_count++;
+
+            MeshRendererComponent mesh_renderer = {
+                .model_path = loaded_scene.loaded_model_paths[path_index]
+           };
+
+            if (!component_storage_add(&loaded_scene.mesh_renderers, parsed_entity->id, &mesh_renderer))
+            {
+                scene_shutdown(&loaded_scene);
+                return SCENE_LOAD_INVALID_SCENE;
+            }
+        }
+    }
+
+    loaded_scene.active_camera = (EntityId)parsed->active_camera_entity;
+    loaded_scene.active_skybox = (EntityId)parsed->active_skybox_entity;
+
+    scene_shutdown(scene);
+    *scene = loaded_scene;
 
     return SCENE_LOAD_OK;
 }
