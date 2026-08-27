@@ -32,6 +32,12 @@ typedef struct ParsedEntityV0 {
     bool has_skybox;
     char skybox_faces[6][SCENE_PARSED_PATH_MAX_LENGTH];
     bool has_mesh_renderer;
+    bool has_directional_light;
+    DirectionalLightComponent directional_light;
+    bool has_point_light;
+    PointLightComponent point_light;
+    bool has_spot_light;
+    SpotLightComponent spot_light;
     char mesh_model_path[SCENE_PARSED_PATH_MAX_LENGTH];
 } ParsedEntityV0;
 

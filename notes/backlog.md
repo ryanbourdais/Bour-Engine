@@ -146,30 +146,31 @@ Tasks:
 - [ ] Replace current third-party test-scene dependency with primitives or project-owned geometry before public distribution.
 - [ ] Document which third-party test assets remain local/dev-only and which engine-owned assets are safe to distribute.
 
-## Deliverable Set 3A: Initial SDF Generated Meshes
+## Deliverable Set 3A: Programmable Mesh Primitive V0
 
-Suggested branch: `feat-sdf-generated-mesh-v0`
+Suggested branch: `feat-programmable-mesh-primitive-v0`
 
-Goal: use the programmable geometry foundation from Deliverable Set 3 to prove that signed distance fields can generate engine-owned mesh data without introducing a separate SDF renderer yet.
+Goal: create the first user-code-modifiable programmable mesh primitive: a flat plane by default, with vertices and colors that can be generated or modified in code while still flowing through normal scene, renderer, editor, and persistence paths.
 
 Exit criteria:
 
-- Runtime scene data can represent at least one SDF-generated mesh source.
-- The first SDF path generates ordinary vertex/index mesh data that uses the programmable mesh ownership rules from Deliverable Set 3.
-- At least one simple SDF shape, such as a sphere or box, can be generated, rendered, saved, and loaded.
-- Editor UI can create or inspect the initial SDF-generated mesh at a minimal parameter level.
-- Regeneration rules are explicit when SDF parameters change, including when CPU mesh data or renderer resources are rebuilt.
-- Raymarched SDF rendering, GPU SDF volumes, collision, sculpting, and terrain-scale SDF workflows are explicitly deferred.
+- Runtime scene data can represent a programmable mesh primitive source that defaults to a flat plane.
+- The default plane has explicit vertex, index, normal or normal-generation, UV if useful, and per-vertex or per-mesh color data rules.
+- Code can modify or regenerate the programmable mesh's vertices and color data without bypassing the engine-owned mesh ownership model from Deliverable Set 3.
+- Modified programmable mesh data renders through the same renderer submission path as other engine-owned geometry.
+- Scene persistence can save/load the programmable mesh primitive's stable definition and any supported editable parameters.
+- Regeneration and renderer-resource update rules are explicit when code changes the mesh data.
+- SDF shader experiments, SDF mesh generation, terrain deformation, terrain chunking, collision, sculpting, and advanced material workflows are explicitly deferred.
 
 Tasks:
 
-- [ ] Define initial SDF component/source data model and supported shape parameters.
-- [ ] Choose first CPU sampling/meshing strategy for simple closed SDF shapes.
-- [ ] Add SDF-to-programmable-mesh generation path for one or two simple shapes.
-- [ ] Submit generated SDF mesh data through the existing programmable mesh renderer path.
-- [ ] Add editor create/inspect path for initial SDF-generated meshes.
-- [ ] Add save/load schema support for initial SDF mesh definitions.
-- [ ] Document deferred SDF work: raymarching, GPU volume storage, boolean operations, smooth blends, collision, sculpting, terrain, and advanced material integration.
+- [ ] Define programmable mesh primitive data: vertex/index buffers, color data, optional UVs, normal strategy, dirty flags, and ownership rules.
+- [ ] Add default flat-plane generation with stable dimensions, subdivisions if reasonable, and predictable winding.
+- [ ] Add a code-facing API for modifying vertices and color data safely.
+- [ ] Submit programmable mesh primitive data through the existing engine-owned geometry renderer path.
+- [ ] Add editor create/inspect path for the programmable mesh primitive at a minimal level.
+- [ ] Add save/load schema support for the programmable mesh primitive's stable definition and editable parameters.
+- [ ] Document how this primitive can later feed SDF shader experiments, SDF-generated meshes, and terrain prototypes without committing to those systems now.
 
 ## Deliverable Set 4: Editor Camera And Input V1
 
@@ -380,12 +381,12 @@ Tasks:
 
 Suggested branch: `feat-sdf-advanced-v1`
 
-Goal: revisit signed distance fields after the engine has explicit LOD and render-budget controls, so heavier SDF workflows can be evaluated without quietly exploding geometry or shader cost.
+Goal: revisit signed distance fields after programmable mesh primitives and explicit LOD/render-budget controls exist, so heavier SDF workflows can be evaluated without quietly exploding geometry or shader cost.
 
 Exit criteria:
 
 - The engine has a documented decision on whether advanced SDF support should remain mesh-generated, add raymarched rendering, or support both paths.
-- SDF-generated meshes can participate in the LOD/render-budget model from Deliverable Set 11.
+- SDF experiments can build on the programmable mesh primitive path, participate in the LOD/render-budget model from Deliverable Set 11, or deliberately choose a separate raymarched/GPU-backed path with documented tradeoffs.
 - At least one advanced SDF feature is proven in a contained prototype: boolean composition, smooth blending, cached LOD generation, raymarched rendering, or GPU-backed SDF data.
 - Editor UI exposes enough controls to inspect advanced SDF behavior without hiding regeneration/rendering cost.
 - Profiling or stats make SDF CPU generation cost, submitted geometry, or shader cost visible enough for iteration.
@@ -435,9 +436,36 @@ Tasks:
 - Scripting.
 - Networking.
 - Distribution/build packaging.
+- Blank default scene, scene file viewing, and project asset management workflow.
 - Advanced asset database/import pipeline.
 - Odin scripting/custom component bridge.
 - Zig/C++ tooling experiments, only if a concrete tool need appears.
+
+## Future Deliverable: Blank Scene And Project File Browser V0
+
+Suggested branch: `feat-editor-project-files-v0`
+
+Goal: move from always booting a populated demo/default scene toward a real editor/project workflow: start from a truly blank scene, browse project files, open scene files, and manage known scene/assets from inside the editor without turning this into a full asset database yet.
+
+Exit criteria:
+
+- The editor can create or open a truly blank scene that does not auto-populate demo geometry, lights, or asset-backed test content.
+- Demo/example scenes are explicit files or commands rather than hidden default runtime setup.
+- The editor has a basic project/file view that can list known scene files and supported asset locations.
+- Users can open an existing scene file from the editor file view once scene loading is stable.
+- Users can see supported assets well enough to assign or reference them from scene/editor workflows.
+- Missing, unsupported, or dev-only assets are surfaced clearly instead of silently failing or becoming public-distribution assumptions.
+- The implementation remains a file/project browser and simple asset-management workflow, not a full import pipeline, dependency graph, content database, or packaging system.
+
+Tasks:
+
+- [ ] Define what a truly blank scene means for required active camera, skybox, lighting, and renderer fallback behavior.
+- [ ] Decide how demo/example scenes are stored and launched separately from blank editor startup.
+- [ ] Add a simple editor project/file view for scene files and supported asset directories.
+- [ ] Add editor open-scene behavior from the file view after Scene Persistence V0 load/apply is stable.
+- [ ] Connect the file view to known asset assignment without requiring a full asset database.
+- [ ] Add validation and visible status for missing, unsupported, or dev-only asset references.
+- [ ] Document deferred work: asset import, thumbnails/previews, dependency graphs, hot reload, packaging, project templates, and content database indexing.
 
 ## Future Deliverable After PBR: Flat Profiling And Optimization Pass
 

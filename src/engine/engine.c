@@ -2,6 +2,7 @@
 // openGL 4.1 Core
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -600,6 +601,25 @@ static void run_engine_loop(struct EngineState *engine)
             if (editor_result.create_renderable_entity)
             {
                 engine->selected_entity = engine_create_renderable_entity(engine, "Renderable Entity");
+            }
+            if (editor_result.save_scene)
+            {
+                SceneSaveResult save_result = scene_save_to_file(&engine->scene, "test_scene.json");
+                if (save_result != SCENE_SAVE_OK)
+                {
+                    fprintf(stderr, "Failed to save scene: %d\n", save_result);
+                }
+            }
+            if (editor_result.load_scene)
+            {
+                SceneLoadResult load_result = scene_load_from_file(&engine->scene, "test_scene.json");
+                if (load_result != SCENE_LOAD_OK)
+                {
+                    fprintf(stderr, "Failed to load scene: %d\n", load_result);
+                }
+                else {
+                    engine->selected_entity = INVALID_ENTITY_ID;
+                }
             }
 
             if (result_entity_alive)
