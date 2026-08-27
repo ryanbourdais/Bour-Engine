@@ -38,3 +38,5 @@ assets/models/*.zip
 
 #logs
 *.csv
+
+.cache/
