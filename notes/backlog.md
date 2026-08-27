@@ -114,11 +114,11 @@ Tasks:
 
 - [X] Define v0 scene file schema for entities, names, transforms, mesh renderers, light values, and active camera.
 - [X] Add scene save path from current runtime ECS scene to disk.
-- [ ] Add scene load path from disk into C-owned runtime scene data.
-- [ ] Add save/load round-trip validation for save -> load -> render.
-- [ ] Add editor action for save/load once the runtime path works.
-- [ ] Add basic scene switching or scene reload during development.
-- [ ] Note repeated serializer boilerplate and candidate component-metadata/reflection needs discovered during V0 implementation.
+- [X] Add scene load path from disk into C-owned runtime scene data.
+- [X] Add save/load round-trip validation for save -> load -> render.
+- [X] Add editor action for save/load once the runtime path works.
+- [X] Add basic current-scene path tracking for development save/load.
+- [X] Note repeated serializer boilerplate and candidate component-metadata/reflection needs discovered during V0 implementation.
 
 ## Deliverable Set 3: Engine-Owned Primitive And Programmable Geometry
 

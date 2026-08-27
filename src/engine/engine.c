@@ -9,15 +9,18 @@
 #include "../renderer/window.h"
 #include "../renderer/renderer.h"
 #include "../renderer/camera.h"
-#include "../controller/input.h"
 #include "../editor/editor_ui.h"
 #include "../scene/scene.h"
 #include "timing.h"
 #include "../utils/math_utils.h"
 #include "../utils/profiler.h"
 #include "../scene/scene_serialization.h"
+#include "../controller/input.h"
 
 #define MAX_EDITOR_HIERARCHY_ITEMS 256
+
+#define ENGINE_SCENE_PATH_MAX_LENGTH 256
+#define ENGINE_DEFAULT_SCENE_PATH "test_scene.json"
 
 typedef struct EngineFrameProfile {
     ProcessTimer engine_update_timer;
@@ -35,6 +38,9 @@ struct EngineState
     Camera camera;
     Renderer *renderer;
     Scene scene;
+
+    char current_scene_path[ENGINE_SCENE_PATH_MAX_LENGTH];
+    bool has_current_scene_path;
 
     EngineFrameProfile profile;
     ProcessTimerLogConfig profile_log_config;
@@ -438,7 +444,8 @@ static void run_engine_loop(struct EngineState *engine)
         {
             fps_counter(&engine->clock.delta_time, &engine->fps_title_countdown_time, engine->window);
         }
-        else {
+        else
+        {
             char title[256];
             sprintf(title, "Bour Engine");
             glfwSetWindowTitle(engine->window, title);
@@ -477,7 +484,8 @@ static void run_engine_loop(struct EngineState *engine)
             {
                 hierarchy_items[i].name = "Unnamed Entity";
             }
-            else {
+            else
+            {
                 hierarchy_items[i].name = name->value;
             }
         }
@@ -604,21 +612,37 @@ static void run_engine_loop(struct EngineState *engine)
             }
             if (editor_result.save_scene)
             {
-                SceneSaveResult save_result = scene_save_to_file(&engine->scene, "test_scene.json");
-                if (save_result != SCENE_SAVE_OK)
+                if (engine->has_current_scene_path)
                 {
-                    fprintf(stderr, "Failed to save scene: %d\n", save_result);
+                    SceneSaveResult save_result = scene_save_to_file(&engine->scene, engine->current_scene_path);
+                    if (save_result != SCENE_SAVE_OK)
+                    {
+                        fprintf(stderr, "Failed to save scene: %d\n", save_result);
+                    }
                 }
+                else
+                {
+                    fprintf(stderr, "No current scene path set\n");
+                }
+
             }
             if (editor_result.load_scene)
             {
-                SceneLoadResult load_result = scene_load_from_file(&engine->scene, "test_scene.json");
-                if (load_result != SCENE_LOAD_OK)
+                if (engine->has_current_scene_path)
                 {
-                    fprintf(stderr, "Failed to load scene: %d\n", load_result);
+                    SceneLoadResult load_result = scene_load_from_file(&engine->scene, engine->current_scene_path);
+                    if (load_result != SCENE_LOAD_OK)
+                    {
+                        fprintf(stderr, "Failed to load scene: %d\n", load_result);
+                    }
+                    else 
+                    {
+                        engine->selected_entity = INVALID_ENTITY_ID;
+                    }
                 }
-                else {
-                    engine->selected_entity = INVALID_ENTITY_ID;
+                else 
+                {
+                    fprintf(stderr, "No current scene path set\n");
                 }
             }
 
@@ -628,7 +652,8 @@ static void run_engine_loop(struct EngineState *engine)
                 {
                     engine_delete_selected_entity(engine, result_entity);
                 }
-                else {
+                else 
+                {
                     if (editor_result.duplicate_selected_entity)
                     {
                         engine_duplicate_selected_entity(engine, result_entity);
@@ -717,6 +742,8 @@ int engine_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
     struct EngineState engine = {
         .window = window,
         .editor_enabled = true,
+        .has_current_scene_path = true,
+        .current_scene_path = ENGINE_DEFAULT_SCENE_PATH,
         .editor_cursor_enabled = true,
         .selected_entity = INVALID_ENTITY_ID,
         .fps_enabled = fps_enabled,
@@ -757,16 +784,6 @@ int engine_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
     window_get_framebuffer_size(engine.window, &viewport.width, &viewport.height);
 
     scene_init_default(&engine.scene);
-
-
-    // Debug trigger for saving on first load
-    // =======================================
-    // SceneSaveResult save_result = scene_save_to_file(&engine.scene, "test_scene.json");
-    // if (save_result != SCENE_SAVE_OK)
-    // {
-    //     fprintf(stderr, "Failed to save test scene: %d\n", save_result);
-    // }
-    // =======================================
 
     SceneRenderConfig scene_render_config = {0};
 

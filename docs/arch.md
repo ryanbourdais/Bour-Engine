@@ -469,6 +469,30 @@ scene_get_render_config()
 - The editor owns UI presentation and returns requested edits; it should not directly own scene truth.
 - Scene persistence should serialize scene data, not renderer internals.
 
+## Scene Persistence V0 Serializer Pressure
+
+Scene Persistence V0 uses explicit JSON write, parse, validate, and apply code for each supported component type. This is intentional for the first durable scene format: the behavior is easy to inspect, debug, and change while the engine's runtime scene model is still stabilizing.
+
+The tradeoff is repetition. Components such as transforms, mesh renderers, cameras, skyboxes, and lights each need their own serializer path:
+
+- write runtime component data to JSON
+- parse JSON fields into an intermediate representation
+- validate required fields for that component
+- apply parsed component data back into ECS storage
+- preserve ownership for strings and other referenced data
+
+That pattern is acceptable for V0, but it will not scale cleanly as more components are added. Future component-heavy work should consider a small metadata or reflection-like layer rather than continuing to duplicate the same serializer shape everywhere.
+
+Candidate future direction:
+
+- a component type registry
+- per-component serializer descriptors
+- write, parse, validate, and apply callbacks per component
+- component-local schema version handling
+- common helpers for vectors, colors, asset paths, optional fields, and required-field validation
+
+This should remain a future cleanup path, not a blocker for V0 scene persistence. The near-term rule is still explicit code first, abstraction after the repeated shape is proven stable.
+
 ## Known Transitional Boundaries
 
 - The engine still owns the active runtime/editor `Camera`, while `CameraComponent` and `active_camera` are present in the scene for persistence/editor bridging.
