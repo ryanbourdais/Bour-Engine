@@ -1,6 +1,7 @@
 #include "scene_serialization.h"
 #include "scene.h"
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -635,6 +636,34 @@ static bool json_token_to_int(const char *json, const jsmntok_t *token, int *out
     return true;
 }
 
+static bool json_token_to_bool(const char *json, const jsmntok_t *token, bool *out_value)
+{
+    if (json == NULL || token == NULL || out_value == NULL)
+    {
+        return false;
+    }
+
+    if (token->type != JSMN_PRIMITIVE)
+    {
+        return false;
+    }
+
+    size_t length = (size_t)(token->end - token->start);
+
+    if (length == 4 && strncmp(json + token->start, "true", 4) == 0)
+    {
+        *out_value = true;
+        return true;
+    }
+    if (length == 5 && strncmp(json + token->start, "false", 5) == 0)
+    {
+        *out_value = false;
+        return true;
+    }
+
+    return false;
+}
+
 static bool json_object_find_field(const char *json, const jsmntok_t *tokens, int object_index, const char *field_name, int *out_value_index)
 {
     if (json == NULL || tokens == NULL || field_name == NULL || out_value_index == NULL)
@@ -945,7 +974,7 @@ static bool parsed_scene_entity_has_camera(const ParsedSceneV0 *scene, int entit
     }
 
     for (int i = 0; i < scene->entity_count; i++)
-    {
+  {
         if (scene->entities[i].id == entity_id)
         {
             return scene->entities[i].has_camera;
@@ -1013,7 +1042,12 @@ static SceneLoadResult parse_skybox_component_v0(const char *json, const jsmntok
     return SCENE_LOAD_OK;
 }
 
-static SceneLoadResult parse_mesh_renderer_component_v0(const char *json, const jsmntok_t *tokens, int mesh_renderer_index, char out_model_path[SCENE_PARSED_PATH_MAX_LENGTH])
+static SceneLoadResult parse_mesh_renderer_component_v0(
+    const char *json,
+    const jsmntok_t *tokens, 
+    int mesh_renderer_index, 
+    char out_model_path[SCENE_PARSED_PATH_MAX_LENGTH]
+)
 {
    if (json == NULL || tokens == NULL || out_model_path == NULL)
    {
@@ -1046,6 +1080,275 @@ static SceneLoadResult parse_mesh_renderer_component_v0(const char *json, const 
    return SCENE_LOAD_OK;
 }
 
+static SceneLoadResult parse_light_color_fields_v0(
+    const char *json, 
+    const jsmntok_t *tokens, 
+    int light_index, 
+    LightColor *out_color
+)
+{
+    if (json == NULL || tokens == NULL || out_color == NULL)
+    {
+       return SCENE_LOAD_INVALID_SCENE;
+    }
+    if (tokens[light_index].type != JSMN_OBJECT)
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+    
+    int ambient_index = -1;
+    int diffuse_index = -1;
+    int specular_index = -1;
+
+    if (!json_object_find_field(json, tokens, light_index, "ambient", &ambient_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_object_find_field(json, tokens, light_index, "diffuse", &diffuse_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_object_find_field(json, tokens, light_index, "specular", &specular_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_array_to_vec3(json, tokens, ambient_index, &out_color->ambient))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_array_to_vec3(json, tokens, diffuse_index, &out_color->diffuse))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_array_to_vec3(json, tokens, specular_index, &out_color->specular))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    return SCENE_LOAD_OK;
+            
+}
+
+static SceneLoadResult parse_directional_light_component_v0(
+    const char *json,
+    const jsmntok_t *tokens,
+    int light_index,
+    DirectionalLightComponent *out_light
+)
+{
+   if (json == NULL || tokens == NULL || out_light == NULL)
+   {
+       return SCENE_LOAD_INVALID_SCENE;
+   }
+
+   if (tokens[light_index].type != JSMN_OBJECT)
+   {
+       return SCENE_LOAD_INVALID_SCENE;
+   }
+
+   int direction_index = -1;
+   
+   if (!json_object_find_field(json, tokens, light_index, "direction", &direction_index))
+   {
+       return SCENE_LOAD_INVALID_SCENE;
+   }
+
+   if (!json_array_to_vec3(json, tokens, direction_index, &out_light->light.direction))
+   {
+       return SCENE_LOAD_INVALID_SCENE;
+   }
+
+   return parse_light_color_fields_v0(json, tokens, light_index, &out_light->light.color);
+}
+
+static SceneLoadResult parse_point_light_component_v0(
+    const char *json,
+    const jsmntok_t *tokens,
+    int light_index,
+    PointLightComponent *out_light
+)
+{
+    if (json == NULL || tokens == NULL || out_light == NULL)
+    {
+       return SCENE_LOAD_INVALID_SCENE;
+    }
+    
+    if (tokens[light_index].type != JSMN_OBJECT)
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    int position_index = -1;
+    int constant_index = -1;
+    int linear_index = -1;
+    int quadratic_index = -1;
+    int has_visual_index = -1;
+
+    if (!json_object_find_field(json, tokens, light_index, "position", &position_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_object_find_field(json, tokens, light_index, "constant", &constant_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_object_find_field(json, tokens, light_index, "linear", &linear_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_object_find_field(json, tokens, light_index, "quadratic", &quadratic_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_object_find_field(json, tokens, light_index, "has_visual", &has_visual_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_array_to_vec3(json, tokens, position_index, &out_light->light.position))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (parse_light_color_fields_v0(json, tokens, light_index, &out_light->light.color) != SCENE_LOAD_OK)
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_token_to_float(json, &tokens[constant_index], &out_light->light.constant))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_token_to_float(json, &tokens[linear_index], &out_light->light.linear))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_token_to_float(json, &tokens[quadratic_index], &out_light->light.quadratic))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_token_to_bool(json, &tokens[has_visual_index], &out_light->light.has_visual))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    return SCENE_LOAD_OK;
+}
+
+static SceneLoadResult parse_spot_light_component_v0(
+    const char *json, 
+    const jsmntok_t *tokens, 
+    int light_index, 
+    SpotLightComponent *out_light
+)
+{
+    if (json == NULL || tokens == NULL || out_light == NULL)
+    {
+       return SCENE_LOAD_INVALID_SCENE;
+    }
+    
+    if (tokens[light_index].type != JSMN_OBJECT)
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    int position_index = -1;
+    int direction_index = -1;
+    int constant_index = -1;
+    int linear_index = -1;
+    int quadratic_index = -1;
+    int inner_cutoff_index = -1;
+    int outer_cutoff_index = -1;
+
+    if (!json_object_find_field(json, tokens, light_index, "position", &position_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_object_find_field(json, tokens, light_index, "direction", &direction_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_object_find_field(json, tokens, light_index, "constant", &constant_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_object_find_field(json, tokens, light_index, "linear", &linear_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_object_find_field(json, tokens, light_index, "quadratic", &quadratic_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_object_find_field(json, tokens, light_index, "inner_cutoff_degrees", &inner_cutoff_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_object_find_field(json, tokens, light_index, "outer_cutoff_degrees", &outer_cutoff_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_array_to_vec3(json, tokens, position_index, &out_light->light.position))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_array_to_vec3(json, tokens, direction_index, &out_light->light.direction))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (parse_light_color_fields_v0(json, tokens, light_index, &out_light->light.color) != SCENE_LOAD_OK)
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_token_to_float(json, &tokens[constant_index], &out_light->light.constant))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_token_to_float(json, &tokens[linear_index], &out_light->light.linear))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_token_to_float(json, &tokens[quadratic_index], &out_light->light.quadratic))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_token_to_float(json, &tokens[inner_cutoff_index], &out_light->light.inner_cutoff_degrees))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+
+    if (!json_token_to_float(json, &tokens[outer_cutoff_index], &out_light->light.outer_cutoff_degrees))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
+    return SCENE_LOAD_OK;
+}
+
 static SceneLoadResult parse_entity_v0_shallow(const char *json, const jsmntok_t *tokens, int entity_index, ParsedEntityV0 *out_entity)
 {
     if (json == NULL || tokens == NULL || out_entity == NULL)
@@ -1070,6 +1373,13 @@ static SceneLoadResult parse_entity_v0_shallow(const char *json, const jsmntok_t
     out_entity->has_skybox = false;
     out_entity->has_mesh_renderer = false;
     out_entity->mesh_model_path[0] = '\0';
+    out_entity->has_directional_light = false;
+    out_entity->has_point_light = false;
+    out_entity->has_spot_light = false;
+
+    memset(&out_entity->directional_light, 0, sizeof(out_entity->directional_light));
+    memset(&out_entity->spot_light, 0, sizeof(out_entity->spot_light));
+    memset(&out_entity->point_light, 0, sizeof(out_entity->point_light));
 
     for (int i = 0; i < 6; i++)
     {
@@ -1139,15 +1449,53 @@ static SceneLoadResult parse_entity_v0_shallow(const char *json, const jsmntok_t
             }
             out_entity->has_mesh_renderer = true;
         }
-        
+        else if (json_token_equals(json, key, "directional_light"))
+        {
+            SceneLoadResult result = parse_directional_light_component_v0(json, tokens, index + 1, &out_entity->directional_light);
+
+            if (result != SCENE_LOAD_OK)
+            {
+                return result;
+            }
+            
+            out_entity->has_directional_light = true;
+        }
+        else if (json_token_equals(json, key, "point_light"))
+        {
+            SceneLoadResult result = parse_point_light_component_v0(
+                json,
+                tokens,
+                index + 1,
+                &out_entity->point_light
+            );
+            if (result != SCENE_LOAD_OK)
+            {
+                return result;
+            }
+
+            out_entity->has_point_light = true;
+        }
+        else if (json_token_equals(json, key, "spot_light"))
+        {
+            SceneLoadResult result = parse_spot_light_component_v0(
+                json, 
+                tokens, 
+                index + 1, 
+                &out_entity->spot_light
+            );
+
+            if (result != SCENE_LOAD_OK)
+            {
+                return result;
+            }
+
+            out_entity->has_spot_light = true;
+        }
+
         index = json_skip_token(tokens, index + 1);
     }
 
     if (out_entity->id <= 0)
-    {
-        return SCENE_LOAD_INVALID_SCENE;
-    }
-    if (!out_entity->has_transform)
     {
         return SCENE_LOAD_INVALID_SCENE;
     }
@@ -1581,6 +1929,40 @@ static SceneLoadResult apply_parsed_scene_to_runtime(Scene *scene, const ParsedS
            };
 
             if (!component_storage_add(&loaded_scene.mesh_renderers, parsed_entity->id, &mesh_renderer))
+            {
+                scene_shutdown(&loaded_scene);
+                return SCENE_LOAD_INVALID_SCENE;
+            }
+        }
+
+        if (parsed_entity->has_directional_light)
+        {
+            if (!component_storage_add(
+                        &loaded_scene.directional_lights, 
+                        parsed_entity->id, 
+                        &parsed_entity->directional_light))
+            {
+                scene_shutdown(&loaded_scene);
+                return SCENE_LOAD_INVALID_SCENE;
+            }
+        }
+        if (parsed_entity->has_spot_light)
+        {
+            if (!component_storage_add(
+                        &loaded_scene.spot_lights, 
+                        parsed_entity->id, 
+                        &parsed_entity->spot_light))
+            {
+                scene_shutdown(&loaded_scene);
+                return SCENE_LOAD_INVALID_SCENE;
+            }
+        }
+        if (parsed_entity->has_point_light)
+        {
+            if (!component_storage_add(
+                        &loaded_scene.point_lights, 
+                        parsed_entity->id, 
+                        &parsed_entity->point_light))
             {
                 scene_shutdown(&loaded_scene);
                 return SCENE_LOAD_INVALID_SCENE;

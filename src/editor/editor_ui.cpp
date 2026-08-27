@@ -54,6 +54,8 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         .selected_entity_id = frame != nullptr ? frame->selected_entity_id : 0,
         .selection_changed = false,
         .toggle_editor_cursor = false,
+        .save_scene = false,
+        .load_scene = false,
         .rename_selected_entity = false,
         .edited_name = {0},
         .create_empty_entity = false,
@@ -273,6 +275,14 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         }
     }
 
+    if (ImGui::Button("Save Scene"))
+    {
+        result.save_scene = true;
+    }
+    if (ImGui::Button("Load Scene"))
+    {
+        result.load_scene = true;
+    }
     ImGui::End();
 
     return result;

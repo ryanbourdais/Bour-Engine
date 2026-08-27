@@ -69,6 +69,8 @@ typedef struct EditorFrameResult {
     unsigned int selected_entity_id;
     bool selection_changed;
     bool toggle_editor_cursor;
+    bool save_scene;
+    bool load_scene;
 
     bool rename_selected_entity;
     char edited_name[EDITOR_ENTITY_NAME_MAX_LENGTH];

@@ -129,18 +129,18 @@ Done signals:
 
 Status: planned.
 
-Purpose: reduce dependence on third-party test assets by giving the engine first-class primitives, programmable mesh data, SDF-generated meshes, and eventually terrain.
+Purpose: reduce dependence on third-party test assets by giving the engine first-class primitives, code-modifiable programmable mesh data, optional SDF experiments, and eventually terrain.
 
 Why it matters:
 
 - Public distribution should not depend on unclear or dev-only asset licensing.
-- Procedural and engine-owned geometry gives the editor something native to create, save, load, and render.
-- SDF and terrain work should grow from the same ownership and render-budget model, not as isolated experiments.
+- Procedural and engine-owned geometry gives the editor something native to create, save, load, render, and modify through code.
+- SDF and terrain work should grow from the same programmable geometry ownership and render-budget model, not as isolated experiments.
 
 Current deliverable anchors:
 
 - Deliverable Set 3: Engine-Owned Primitive And Programmable Geometry.
-- Deliverable Set 3A: Initial SDF Generated Meshes.
+- Deliverable Set 3A: Programmable Mesh Primitive V0.
 - Deliverable Set 11: Level Of Detail And Render Budget Controls.
 - Deliverable Set 11A: Advanced SDF Rendering And Workflows.
 - Deliverable Set 12: Terrain Entity And Procedural Terrain.
@@ -149,7 +149,7 @@ Done signals:
 
 - Scenes can use built-in primitives without external model files.
 - Programmable meshes have explicit CPU and renderer-resource ownership rules.
-- Initial SDF support produces ordinary generated mesh data before any advanced renderer path.
+- The first programmable mesh primitive defaults to a flat plane whose vertices and colors can be modified through code.
 - LOD/render-budget controls exist before terrain-scale geometry arrives.
 - Terrain has a first-class entity/component model that fits persistence, editor inspection, and render submission.
 
@@ -206,6 +206,36 @@ Done signals:
 - Dev-only third-party assets are documented and separable from distributable project assets.
 - Any future asset import tooling has a narrow file/tool boundary before it affects runtime architecture.
 
+## Initiative 5A: Blank Project Scene And File Browser
+
+Status: planned.
+
+Purpose: make the editor feel like a project workspace instead of a demo launcher by defaulting to a truly blank scene, exposing scene files in a project/file view, and giving users a simple way to browse and manage supported assets.
+
+Why it matters:
+
+- A real editor should not hide demo content inside runtime startup forever.
+- Blank scenes make authoring intent clear: users choose what exists rather than deleting default test entities first.
+- Scene files and supported assets need a visible home before asset assignment, templates, examples, packaging, and project workflows can mature.
+- This is the bridge between the current known-asset picker and a later full asset database/import pipeline.
+
+Current deliverable anchors:
+
+- Deliverable Set 2: Scene Persistence V0.
+- Deliverable Set 4A: Editor Layout Foundation V0.
+- Deliverable Set 5: Asset And Mesh Assignment V0.
+- Future deliverable: Blank Scene And Project File Browser V0.
+- Later milestone: Advanced asset database/import pipeline.
+
+Done signals:
+
+- Blank editor startup does not create demo geometry, demo lights, or asset-backed test content unless explicitly requested.
+- Example/demo scenes are represented as scene files, templates, or explicit commands.
+- The editor can list known scene files and supported asset directories.
+- Scene files can be opened from the editor once loading is stable.
+- Asset visibility supports assignment workflows without pretending a full import pipeline exists.
+- Dev-only, missing, unsupported, and distributable assets have clear status in the editor/project workflow.
+
 ## Initiative 6: Language And Customization Boundaries
 
 Status: watchlist.
@@ -260,7 +290,8 @@ Done signals:
 - Establish the editor layout foundation before adding viewport-heavy work such as picking, transform gizmos, asset previews, or richer scene workflow panels.
 - Capture serialization boilerplate and field-metadata pain during Scene Persistence V0, but do not let reflection block the first truthful save/load path.
 - Prefer engine-owned primitives before adding asset-heavy features.
-- Keep initial SDF as generated mesh data before exploring raymarching, GPU volumes, or sculpting.
+- Keep blank-scene startup and project file browsing behind stable scene load/save and editor layout foundations.
+- Use the programmable mesh primitive as the first code-modifiable geometry bridge before committing to SDF shaders, SDF-generated meshes, or terrain-scale deformation.
 - Add LOD/render-budget controls before terrain-scale procedural geometry.
 - Finish Phong shadow maps before beginning PBR.
 - Keep docs current when editor behavior changes.
