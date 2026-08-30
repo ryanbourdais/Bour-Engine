@@ -173,6 +173,7 @@ static EntityId engine_create_renderable_entity(struct EngineState *engine, cons
     EntityId entity = engine_create_empty_entity(engine, name_value);
 
     MeshRendererComponent mesh_renderer = {
+        .source_type = MESH_SOURCE_ASSET,
         .model_path = engine->scene.model_path,
     };
 
@@ -295,9 +296,7 @@ static void engine_duplicate_selected_entity(struct EngineState *engine, EntityI
             duplicate_transform->position.x += 1.0f;
         }
 
-        MeshRendererComponent mesh_renderer = {
-            .model_path = source_mesh->model_path,
-        };
+        MeshRendererComponent mesh_renderer = *source_mesh;
 
         component_storage_add(&engine->scene.mesh_renderers, duplicate, &mesh_renderer);
 

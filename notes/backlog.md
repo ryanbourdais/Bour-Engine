@@ -137,12 +137,13 @@ Exit criteria:
 
 Tasks:
 
-- [ ] Define mesh source/component model for asset-backed, primitive, and programmable mesh renderables.
-- [ ] Add built-in primitives: cube, plane, quad, sphere or UV sphere if reasonable, and cylinder if reasonable.
+- [X] Define mesh source/component model for asset-backed, primitive, and programmable mesh renderables.
+- [X] Add built-in primitive definitions for cube, plane, and quad.
 - [ ] Add renderer path for built-in primitive mesh resources without requiring glTF files.
 - [ ] Add editor create actions for primitive entities.
 - [ ] Add programmable mesh entity/component with explicit ownership rules for generated vertex/index data.
 - [ ] Add save/load schema support for primitive and programmable mesh entities.
+- [ ] Add sphere or UV sphere and cylinder primitive definitions before closing this deliverable.
 - [ ] Replace current third-party test-scene dependency with primitives or project-owned geometry before public distribution.
 - [ ] Document which third-party test assets remain local/dev-only and which engine-owned assets are safe to distribute.
 

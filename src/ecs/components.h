@@ -14,8 +14,28 @@ typedef struct NameComponent {
     char value[ENTITY_NAME_MAX_LENGTH];
 } NameComponent;
 
+typedef enum MeshSourceType {
+    MESH_SOURCE_ASSET = 0,
+    MESH_SOURCE_PRIMITIVE,
+    MESH_SOURCE_PROGRAMMABLE,
+} MeshSourceType;
+
+typedef enum BuiltinPrimitiveType {
+    BUILTIN_PRIMITIVE_CUBE = 0,
+    BUILTIN_PRIMITIVE_PLANE,
+    BUILTIN_PRIMITIVE_QUAD,
+    BUILTIN_PRIMITIVE_UV_SPHERE,
+    BUILTIN_PRIMITIVE_CYLINDER
+} BuiltinPrimitiveType;
+
 typedef struct MeshRendererComponent {
+    MeshSourceType source_type;
+
     const char *model_path;
+
+    BuiltinPrimitiveType primitive_type;
+
+    unsigned int programmable_mesh_id;
 } MeshRendererComponent;
 
 typedef struct DirectionalLightComponent {

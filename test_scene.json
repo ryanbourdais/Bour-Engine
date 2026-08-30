@@ -9,10 +9,10 @@
   "entities": [
     {
       "id": 1,
-      "name": "Jaguar",
+      "name": "Leopard",
       "transform": {
         "position": [0.000, 0.000, 0.000],
-        "rotation": [0.000, -132.000, 0.000],
+        "rotation": [0.000, -82.000, 0.000],
         "scale": [1.000, 1.000, 1.000]
       },
       "mesh_renderer": {
@@ -48,12 +48,12 @@
     },
     {
       "id": 4,
-      "name": "Point Light RED",
+      "name": "Point Light 1",
       "point_light": {
-        "position": [-2.000, 2.000, 0.000],
+        "position": [3.000, 2.000, 0.000],
         "ambient": [0.000, 0.000, 0.000],
-        "diffuse": [1.000, 0.275, 0.200],
-        "specular": [1.000, 0.141, 0.200],
+        "diffuse": [0.200, 3.000, 0.200],
+        "specular": [0.200, 3.000, 0.200],
         "constant": 1.000,
         "linear": 0.090,
         "quadratic": 0.032,
@@ -135,7 +135,7 @@
       "skybox": {
         "faces": [
           "",
-          " Ì§³÷",
+          " lÔ³÷",
           "",
           "",
           "",

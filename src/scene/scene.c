@@ -73,6 +73,7 @@ static void init_default_scene_ecs(Scene *scene)
     TransformComponent transform;
     transform_component_init(&transform);
     MeshRendererComponent mesh_renderer = {
+        .source_type = MESH_SOURCE_ASSET,
         .model_path = "assets/models/leopard_2a4_otco/scene.gltf"
     };
 
@@ -192,9 +193,13 @@ static void scene_extract_renderables(Scene *scene, SceneRenderConfig *out_confi
         {
             continue;
         }
+        if (mesh_renderer->source_type != MESH_SOURCE_ASSET || mesh_renderer->model_path == NULL)
+        {
+            continue;
+        }
 
         RenderableDrawData *renderable = &out_config->renderables[out_config->renderable_count];
-        
+
         renderable->model_path = mesh_renderer->model_path;
         renderable->model_matrix = transform_component_model_matrix(transform);
 
@@ -349,10 +354,18 @@ void scene_get_render_config(Scene *scene, SceneRenderConfig *out_config)
 {
     scene_extract_renderables(scene, out_config);
 
-    const MeshRendererComponent *mesh_renderer = (const MeshRendererComponent *)component_storage_first_const(&scene->mesh_renderers);
+    out_config->model_path = scene->model_path;
 
-    out_config->model_path = mesh_renderer != NULL ? mesh_renderer->model_path : scene->model_path;
+    const MeshRendererComponent *mesh_renderer = 
+        (const MeshRendererComponent *)component_storage_first_const(&scene->mesh_renderers);
 
+    if (mesh_renderer != NULL &&
+        mesh_renderer->source_type == MESH_SOURCE_ASSET &&
+        mesh_renderer->model_path != NULL)
+    {
+        out_config->model_path = mesh_renderer->model_path;
+    }
+    
     scene_extract_active_skybox(scene, out_config);
 
     const DirectionalLightComponent *sun = (const DirectionalLightComponent *)component_storage_first_const(&scene->directional_lights);

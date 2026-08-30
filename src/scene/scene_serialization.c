@@ -87,31 +87,49 @@ static bool write_mesh_renderer_component(FILE *file, const MeshRendererComponen
         return false;
     }
 
-    fprintf(file, "\"mesh_renderer\": {\n");
-        
-    write_indent(file, 4);
-    fprintf(file, "\"source_type\": ");
-    fprintf(file, "\"asset\"");
-    fprintf(file, ",\n");
+    switch (mesh_renderer->source_type)
+    {
+        case MESH_SOURCE_ASSET:
+            if (mesh_renderer->model_path == NULL)
+            {
+                return false;
+            }
+            
+            fprintf(file, "\"mesh_renderer\": {\n");
+                
+            write_indent(file, 4);
+            fprintf(file, "\"source_type\": ");
+            fprintf(file, "\"asset\"");
+            fprintf(file, ",\n");
 
-    write_indent(file, 4);
-    fprintf(file, "\"model_path\": ");
-    fprintf(file, "\"%s\"", mesh_renderer->model_path);
-    fprintf(file, ",\n");
+            write_indent(file, 4);
+            fprintf(file, "\"model_path\": ");
+            fprintf(file, "\"%s\"", mesh_renderer->model_path);
+            fprintf(file, ",\n");
 
-    write_indent(file, 4);
-    fprintf(file, "\"material\": ");
-    fprintf(file, "null");
-    fprintf(file, ",\n");
+            write_indent(file, 4);
+            fprintf(file, "\"material\": ");
+            fprintf(file, "null");
+            fprintf(file, ",\n");
 
-    write_indent(file, 4);
-    fprintf(file, "\"lod\": ");
-    fprintf(file, "null\n");
+            write_indent(file, 4);
+            fprintf(file, "\"lod\": ");
+            fprintf(file, "null\n");
 
-    write_indent(file, 3);
-    fprintf(file, "}");
+            write_indent(file, 3);
+            fprintf(file, "}");
 
-    return true;
+            return true;
+        case MESH_SOURCE_PRIMITIVE:
+            fprintf(stderr, "Not yet implemented\n");
+            return false;
+        case MESH_SOURCE_PROGRAMMABLE:
+            fprintf(stderr, "Not yet implemented\n");
+            return false;
+        default:
+            fprintf(stderr, "Invalid mesh source type\n");
+            return false;
+    }
 }
 
 static bool write_camera_component(FILE *file, const CameraComponent *camera)
@@ -1330,7 +1348,7 @@ static SceneLoadResult parse_spot_light_component_v0(
     if (!json_token_to_float(json, &tokens[linear_index], &out_light->light.linear))
     {
         return SCENE_LOAD_INVALID_SCENE;
-    }
+}
 
     if (!json_token_to_float(json, &tokens[quadratic_index], &out_light->light.quadratic))
     {
@@ -1925,7 +1943,8 @@ static SceneLoadResult apply_parsed_scene_to_runtime(Scene *scene, const ParsedS
             loaded_scene.loaded_model_path_count++;
 
             MeshRendererComponent mesh_renderer = {
-                .model_path = loaded_scene.loaded_model_paths[path_index]
+                .source_type = MESH_SOURCE_ASSET,
+                .model_path = loaded_scene.loaded_model_paths[path_index],
            };
 
             if (!component_storage_add(&loaded_scene.mesh_renderers, parsed_entity->id, &mesh_renderer))
