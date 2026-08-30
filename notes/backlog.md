@@ -146,6 +146,33 @@ Tasks:
 - [ ] Replace current third-party test-scene dependency with primitives or project-owned geometry before public distribution.
 - [ ] Document which third-party test assets remain local/dev-only and which engine-owned assets are safe to distribute.
 
+## Deliverable Set 3B: Window And Render Target Resizing V0
+
+Suggested branch: `fix-window-render-resizing-v0`
+
+Goal: make the rendered scene and editor respond correctly when the application window changes size or display scale, including tiled-window workflows under Hyprland/Wayland, without stretching the scene or leaving render targets at their startup dimensions.
+
+Exit criteria:
+
+- The camera projection uses the current drawable framebuffer aspect ratio instead of only the startup aspect ratio.
+- Scene and MSAA render targets resize with the drawable framebuffer and remain complete after resizing.
+- The resolved scene texture is presented without aspect-ratio distortion after tiling, maximizing, restoring, or interactively resizing the window.
+- Zero-width or zero-height framebuffer states are handled safely while a window is minimized or temporarily unavailable.
+- Window size, framebuffer size, and display scaling have explicit roles so HiDPI and Wayland scaling do not mix logical UI coordinates with render-target pixel dimensions.
+- Repeated resize events do not leak OpenGL resources or recreate unchanged resources every frame.
+- Existing editor UI remains usable across the supported window sizes; a dedicated editor viewport layout remains part of Deliverable Set 4A.
+
+Tasks:
+
+- [ ] Add resize operations for the single-sample scene render target and MSAA render target, including color and depth/stencil attachments.
+- [ ] Detect drawable framebuffer dimension changes and resize renderer-owned targets only when dimensions actually change.
+- [ ] Recalculate the camera projection from the current non-zero framebuffer width and height before uploading camera data.
+- [ ] Keep offscreen rendering, MSAA resolve dimensions, and final default-framebuffer viewport dimensions consistent.
+- [ ] Skip or defer rendering safely while the drawable framebuffer width or height is zero.
+- [ ] Confirm ImGui continues to use logical display coordinates while OpenGL rendering uses framebuffer pixel dimensions and framebuffer scale.
+- [ ] Validate interactive resize, Hyprland tiling, floating-window resize, maximize/restore, minimize/restore, fullscreen, and any available fractional-scaling configuration.
+- [ ] Add focused resize validation or debug assertions for framebuffer completeness, current dimensions, and unchanged-size no-op behavior.
+
 ## Deliverable Set 3A: Programmable Mesh Primitive V0
 
 Suggested branch: `feat-programmable-mesh-primitive-v0`
