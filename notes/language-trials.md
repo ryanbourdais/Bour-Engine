@@ -2,6 +2,8 @@
 
 ## Purpose
 
+Status note, 2026-09-07: Dear ImGui is selected and integrated through a C++ adapter; scene serialization is implemented in C. Odin is the chosen future gameplay/customization direction with Lua as backup per the canonical backlog. Conditional trial suggestions below are historical candidates, not instructions to replace these working systems.
+
 Explore Odin, C++, and Zig through small subsystem implementations before deciding whether any part of Bour Engine should be rewritten. These trials are learning exercises first and rewrite evaluations second.
 
 The current editor milestone should remain focused on engine ownership, scene management, ECS, UI, editor interaction, and completing the Phong-era renderer through shadow maps. Language trials should only enter that milestone when they directly support one of those goals without delaying it.

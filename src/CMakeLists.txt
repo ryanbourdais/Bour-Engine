@@ -28,13 +28,18 @@ add_executable(bour_engine
     renderer/data_types/model.c
     renderer/data_types/skybox.c
     renderer/data_types/renderTarget.c
+    renderer/data_types/primitive_mesh.c
+    renderer/data_types/primitive_mesh_resources.c
+    renderer/data_types/programmable_mesh_resources.c
     renderer/camera.c
     engine/timing.c
     scene/scene.c
+    scene/entity_factory.c
     ecs/entity.c
     ecs/components.c
     ecs/component_storage.c
     editor/editor_ui.cpp
+    geometry/programmable_mesh.c
     external/imgui/imgui.cpp
     external/imgui/imgui_draw.cpp
     external/imgui/imgui_tables.cpp
@@ -60,4 +65,5 @@ target_link_libraries(bour_engine PRIVATE
     glfw
     OpenGL::GL
     cglm_headers
+    m
 )

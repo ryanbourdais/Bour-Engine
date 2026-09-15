@@ -4,6 +4,8 @@ This file is the long-term initiative backlog for Bour Engine. It should stay hi
 
 ## Planning Model
 
+- [First Game MVP schedule](first-game-mvp-schedule.md) maps active feature workstreams to calendar and acceptance gates; historical commit pace is context, not a completion measure.
+
 - `notes/initiative-backlog.md` tracks the engine's initiative-level north star.
 - `notes/backlog.md` remains the canonical deliverable backlog for the active milestone and near-term branch work.
 - Initiative entries should explain why the work matters, what unlocks it, and what done looks like.
@@ -14,7 +16,9 @@ This file is the long-term initiative backlog for Bour Engine. It should stay hi
 
 Bour Engine is moving toward a C-first, editor-capable, scene-authored 3D engine where runtime ownership is explicit, saved scene data is reusable, renderer input comes from scene/ECS state, and higher-level gameplay/customization can eventually live above the core engine instead of inside renderer/debug scaffolding.
 
-The near-term focus is still the Editor Foundation milestone: make scenes real, make the editor useful, finish the Phong-era renderer through shadows, and avoid pulling PBR, scripting, physics, networking, or packaging into the milestone before the foundation can hold them.
+The next concrete target is **First Game MVP**, building on commit 100's hierarchy-first editor. Scene authoring is an intermediate gate; the finish line is a short playable game that can be packaged and run without the editor or source checkout. `notes/backlog.md` owns acceptance criteria; `notes/first-game-mvp-plan.md` records the historical velocity forecast and stage gates.
+
+Target December 2026 for a playable loop and rough package, and January–March 2027 for MVP completion. Minimal game-code integration, required movement/collision, game UI, Edit/Play separation, standalone execution, and one-platform packaging are promoted into scope. PBR, advanced SDF, terrain, general physics/scripting platforms, networking, and project-browser expansion remain deferred. Working behavior, explicit ownership, and a verified standalone package determine completion.
 
 ## Initiative 1: Runtime Ownership And Scene Truth
 
@@ -127,7 +131,9 @@ Done signals:
 
 ## Initiative 3: Engine-Owned Geometry And Procedural Content
 
-Status: planned.
+Status: active.
+
+Progress from the 2026-09-15 validation: DS3 and DS3A are complete. All five built-in primitives and the programmable-plane V0 have scene-owned definitions, renderer submission, renderer statistics, editor creation, inspection, duplication, deletion, and persistence. Final regression validation covered repeated editor create/inspect/duplicate/delete, fresh lifecycle runs without console or OpenGL errors, and Save → Load → Save → Load for transformed programmable planes. Raw vertex/index/color edits remain runtime-only; SDF, terrain, chunking, sculpting, collision, and advanced material workflows remain deferred.
 
 Purpose: reduce dependence on third-party test assets by giving the engine first-class primitives, code-modifiable programmable mesh data, optional SDF experiments, and eventually terrain.
 
@@ -182,7 +188,7 @@ Done signals:
 
 ## Initiative 5: Asset Pipeline And Distribution Hygiene
 
-Status: planned.
+Status: active for the First Game MVP standalone package; advanced import tooling remains planned.
 
 Purpose: make asset usage, asset assignment, licensing, and future import tooling intentional enough that the project can be shared without dragging local-only test content into the engine identity.
 
@@ -238,7 +244,7 @@ Done signals:
 
 ## Initiative 6: Language And Customization Boundaries
 
-Status: watchlist.
+Status: planned for a bounded First Game MVP game-code integration; broader customization remains watchlist.
 
 Purpose: preserve the C-first engine core while leaving room for Odin game-level code, scripting-like customization, custom components, and small Zig/C++ tools where they solve a real boundary problem.
 
@@ -263,7 +269,9 @@ Done signals:
 
 ## Initiative 7: Future Runtime Systems
 
-Status: deferred.
+Status: narrowly activated for the First Game MVP MVP; general systems remain deferred.
+
+MVP exception: introduce only the movement, collision/triggers, gameplay UI/feedback, and standalone runtime needed by the selected game. One-platform packaging is required for First Game MVP. These slices do not authorize a full physics engine, networking, or general scripting platform.
 
 Purpose: track the major game-engine systems that matter long term but should not crowd the Editor Foundation milestone.
 
@@ -300,7 +308,9 @@ Done signals:
 
 ## Immediate Planning Next Steps
 
-- Keep Deliverable Set 2 as the next execution focus until save/load is truthful.
+- Continue Deliverable Set 3 from demonstrated cube, plane, quad, UV-sphere, and cylinder rendering in small, manually implemented and reviewed checkpoints.
+- DS2 persistence completed 2026-09-09: repeated Save → Load → Save → Load validation confirmed destination-owned Supply Crate model and skybox paths, plus primitives, transforms, lights, and active camera state.
+- Next DS3 implementation work is editor primitive creation actions, followed by the programmable-mesh child work package (DS3A).
 - When Deliverable Set 2 is complete, prioritize the editor layout foundation if viewport/input/UI structure is blocking the next usable scene-authoring demo.
 - Review this initiative backlog whenever a new deliverable set is added, completed, or re-ordered in `notes/backlog.md`.
 - If an item starts accumulating many branch-sized tasks here, move those tasks into `notes/backlog.md` and leave only the initiative intent and done signals in this file.

@@ -6,6 +6,7 @@
 #include "../ecs/entity.h"
 #include "../ecs/component_storage.h"
 #include "../renderer/renderer_data.h"
+#include "../geometry/programmable_mesh.h"
 
 #define SCENE_PATH_MAX_LENGTH 256
 typedef struct Scene {
@@ -27,6 +28,7 @@ typedef struct Scene {
     ComponentStorage transforms;
     ComponentStorage names;
     ComponentStorage mesh_renderers;
+    ProgrammableMeshCollection programmable_meshes;
     ComponentStorage directional_lights;
     ComponentStorage point_lights;
     ComponentStorage spot_lights;

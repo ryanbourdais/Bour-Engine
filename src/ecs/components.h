@@ -2,6 +2,7 @@
 
 #include <cglm/struct.h>
 #include "../renderer/data_types/lightObject.h"
+#include "../geometry/primitive_types.h"
 
 typedef struct TransformComponent {
     vec3s position;
@@ -14,8 +15,20 @@ typedef struct NameComponent {
     char value[ENTITY_NAME_MAX_LENGTH];
 } NameComponent;
 
+typedef enum MeshSourceType {
+    MESH_SOURCE_ASSET = 0,
+    MESH_SOURCE_PRIMITIVE,
+    MESH_SOURCE_PROGRAMMABLE,
+} MeshSourceType;
+
 typedef struct MeshRendererComponent {
+    MeshSourceType source_type;
+
     const char *model_path;
+
+    BuiltinPrimitiveType primitive_type;
+
+    unsigned int programmable_mesh_id;
 } MeshRendererComponent;
 
 typedef struct DirectionalLightComponent {

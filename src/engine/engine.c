@@ -15,6 +15,7 @@
 #include "../utils/math_utils.h"
 #include "../utils/profiler.h"
 #include "../scene/scene_serialization.h"
+#include "../scene/entity_factory.h"
 #include "../controller/input.h"
 
 #define MAX_EDITOR_HIERARCHY_ITEMS 256
@@ -170,15 +171,85 @@ static EntityId engine_create_empty_entity(struct EngineState *engine, const cha
 
 static EntityId engine_create_renderable_entity(struct EngineState *engine, const char *name_value)
 {
-    EntityId entity = engine_create_empty_entity(engine, name_value);
+    if (engine == NULL)
+    {
+        return INVALID_ENTITY_ID;
+    }
 
-    MeshRendererComponent mesh_renderer = {
-        .model_path = engine->scene.model_path,
-    };
+    TransformComponent transform;
+    transform_component_init(&transform);
 
-    component_storage_add(&engine->scene.mesh_renderers, entity, &mesh_renderer);
+    return scene_entity_factory_create_asset(
+        &engine->scene, 
+        name_value, 
+        engine->scene.model_path, 
+        &transform
+    );
+}
 
-    return entity;
+static EntityId engine_create_primitive_entity(
+    struct EngineState *engine,
+    BuiltinPrimitiveType primitive_type
+)
+{
+    if (engine == NULL || primitive_type >= BUILTIN_PRIMITIVE_COUNT)
+    {
+        return INVALID_ENTITY_ID;
+    }
+
+    const char *name_value = "Primitive";
+
+    switch (primitive_type) {
+        case BUILTIN_PRIMITIVE_CUBE:
+            name_value = "Cube";
+            break;
+        case BUILTIN_PRIMITIVE_PLANE:
+            name_value = "Plane";
+            break;
+        case BUILTIN_PRIMITIVE_QUAD:
+            name_value = "Quad";
+            break;
+        case BUILTIN_PRIMITIVE_UV_SPHERE:
+            name_value = "UV Sphere";
+            break;
+        case BUILTIN_PRIMITIVE_CYLINDER:
+            name_value = "Cylinder";
+            break;
+
+        default:
+            return INVALID_ENTITY_ID;
+    }
+
+    TransformComponent transform;
+    transform_component_init(&transform);
+
+    return scene_entity_factory_create_primitive(
+        &engine->scene, 
+        name_value, 
+        primitive_type, 
+        &transform
+    );
+}
+
+static EntityId engine_create_programmable_plane_entity(
+    struct EngineState *engine
+)
+{
+    if (engine == NULL)
+    {
+        return INVALID_ENTITY_ID;
+    }
+
+    TransformComponent transform;
+    transform_component_init(&transform);
+
+    return scene_entity_factory_create_programmable_plane(
+        &engine->scene, 
+        "Programmable Plane", 
+        2.0f, 
+        2.0f, 
+        &transform
+    );
 }
 
 static bool engine_get_selected_transform(
@@ -260,9 +331,31 @@ static void engine_delete_selected_entity(struct EngineState *engine, EntityId s
     {
         return;
     }
+
+    ProgrammableMeshId programmable_mesh_id =
+        PROGRAMMABLE_MESH_ID_INVALID;
+
+    const MeshRendererComponent *mesh_renderer =
+        component_storage_get(
+            &engine->scene.mesh_renderers,
+            selected_entity
+        );
+
+    if (mesh_renderer != NULL &&
+        mesh_renderer->source_type == MESH_SOURCE_PROGRAMMABLE)
+    {
+        programmable_mesh_id = mesh_renderer->programmable_mesh_id;
+    }
     component_storage_remove(&engine->scene.names, selected_entity);
     component_storage_remove(&engine->scene.transforms, selected_entity);
     component_storage_remove(&engine->scene.mesh_renderers, selected_entity);
+    if (programmable_mesh_id != PROGRAMMABLE_MESH_ID_INVALID)
+    {
+        programmable_mesh_collection_remove(
+            &engine->scene.programmable_meshes, 
+            programmable_mesh_id
+        );
+    }
     component_storage_remove(&engine->scene.directional_lights, selected_entity);
     component_storage_remove(&engine->scene.spot_lights, selected_entity);
     component_storage_remove(&engine->scene.point_lights, selected_entity);
@@ -285,6 +378,42 @@ static void engine_duplicate_selected_entity(struct EngineState *engine, EntityI
 
     if (source_transform != NULL && source_mesh != NULL)
     {
+        if (source_mesh->source_type == MESH_SOURCE_PROGRAMMABLE)
+        {
+            const ProgrammableMesh *source_programmable_mesh =
+                programmable_mesh_collection_get_const(
+                    &engine->scene.programmable_meshes, 
+                    source_mesh->programmable_mesh_id
+                );
+
+            if (source_programmable_mesh == NULL ||
+                source_programmable_mesh->type !=
+                    PROGRAMMABLE_MESH_TYPE_PLANE
+               )
+            {
+                return;
+            }
+
+            TransformComponent duplicate_transform = *source_transform;
+            duplicate_transform.position.x += 1.0f;
+
+            EntityId duplicate =
+                scene_entity_factory_create_programmable_plane(
+                    &engine->scene, 
+                    "Duplicated Programmable Plane", 
+                    source_programmable_mesh->plane_width, 
+                    source_programmable_mesh->plane_depth, 
+                    &duplicate_transform
+                );
+
+            if (duplicate != INVALID_ENTITY_ID)
+            {
+                engine->selected_entity = duplicate;
+            }
+
+            return;
+        }
+
         EntityId duplicate = engine_create_empty_entity(engine, "Duplicated Entity");
 
         TransformComponent *duplicate_transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, duplicate);
@@ -295,9 +424,7 @@ static void engine_duplicate_selected_entity(struct EngineState *engine, EntityI
             duplicate_transform->position.x += 1.0f;
         }
 
-        MeshRendererComponent mesh_renderer = {
-            .model_path = source_mesh->model_path,
-        };
+        MeshRendererComponent mesh_renderer = *source_mesh;
 
         component_storage_add(&engine->scene.mesh_renderers, duplicate, &mesh_renderer);
 
@@ -502,13 +629,51 @@ static void run_engine_loop(struct EngineState *engine)
         float selected_scale[3] = {0};
 
         bool selected_entity_is_renderable = false;
+        bool selected_entity_is_programmable_mesh = false;
+        unsigned int selected_programmable_mesh_id =
+            PROGRAMMABLE_MESH_ID_INVALID;
+        float selected_programmable_plane_width = 0.0f;
+        float selected_programmable_plane_depth = 0.0f;
+        bool selected_programmable_mesh_dirty = false;
 
         if (has_selected_entity)
         {
             const NameComponent *selected_name = (const NameComponent *)component_storage_get(&engine->scene.names, engine->selected_entity);
             selected_entity_name = selected_name != NULL ? selected_name->value : "Unnamed Entity";
 
-            selected_entity_is_renderable = component_storage_get(&engine->scene.mesh_renderers, engine->selected_entity) != NULL;
+            const MeshRendererComponent *selected_mesh_renderer =
+                component_storage_get(
+                    &engine->scene.mesh_renderers, 
+                    engine->selected_entity
+                );
+
+            selected_entity_is_renderable = selected_mesh_renderer != NULL;
+
+            if (selected_mesh_renderer != NULL &&
+                selected_mesh_renderer->source_type ==
+                    MESH_SOURCE_PROGRAMMABLE)
+            {
+                const ProgrammableMesh *programmable_mesh =
+                    programmable_mesh_collection_get_const(
+                        &engine->scene.programmable_meshes, 
+                        selected_mesh_renderer->programmable_mesh_id
+                    );
+
+                if (programmable_mesh != NULL &&
+                    programmable_mesh->type ==
+                        PROGRAMMABLE_MESH_TYPE_PLANE)
+                {
+                    selected_entity_is_programmable_mesh = true;
+                    selected_programmable_mesh_id =
+                        selected_mesh_renderer->programmable_mesh_id;
+                    selected_programmable_plane_width =
+                        programmable_mesh->plane_width;
+                    selected_programmable_plane_depth =
+                        programmable_mesh->plane_depth;
+                    selected_programmable_mesh_dirty =
+                        programmable_mesh->dirty;
+                }
+            }
 
             selected_entity_has_transform = engine_get_selected_transform(
                 engine, engine->selected_entity,
@@ -565,6 +730,16 @@ static void run_engine_loop(struct EngineState *engine)
             .selected_light_specular = {selected_light_specular[0],selected_light_specular[1], selected_light_specular[2]},
             .selected_light_type = selected_light_type,
             .selected_entity_is_renderable = selected_entity_is_renderable,
+            .selected_entity_is_programmable_mesh =
+                selected_entity_is_programmable_mesh,
+            .selected_programmable_mesh_id =
+                selected_programmable_mesh_id,
+            .selected_programmable_plane_width =
+                selected_programmable_plane_width,
+            .selected_programmable_plane_depth =
+                selected_programmable_plane_depth,
+            .selected_programmable_mesh_dirty =
+                selected_programmable_mesh_dirty,
             .renderable_count = scene_render_config.renderable_count,
             .renderer_mesh_count = renderer_stats.mesh_count,
             .renderer_vertex_count = renderer_stats.vertex_count,
@@ -609,6 +784,24 @@ static void run_engine_loop(struct EngineState *engine)
             if (editor_result.create_renderable_entity)
             {
                 engine->selected_entity = engine_create_renderable_entity(engine, "Renderable Entity");
+            }   
+            if (editor_result.create_primitive_entity)
+            {
+                engine->selected_entity = engine_create_primitive_entity(
+                    engine, 
+                    editor_result.primitive_type_to_create
+                );
+            }
+            if (editor_result.create_programmable_plane)
+            {
+                EntityId entity = engine_create_programmable_plane_entity(
+                    engine
+                );
+
+                if (entity != INVALID_ENTITY_ID)
+                {
+                    engine->selected_entity = entity;
+                }
             }
             if (editor_result.save_scene)
             {

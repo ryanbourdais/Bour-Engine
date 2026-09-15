@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../geometry/primitive_types.h"
+
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -35,6 +37,11 @@ typedef struct EditorFrameData {
     bool selected_entity_has_transform;
     const char *selected_entity_name;
     bool selected_entity_is_renderable;
+    bool selected_entity_is_programmable_mesh;
+    unsigned int selected_programmable_mesh_id;
+    float selected_programmable_plane_width;
+    float selected_programmable_plane_depth;
+    bool selected_programmable_mesh_dirty;
     float selected_position[3];
     float selected_rotation[3];
     float selected_scale[3];
@@ -77,6 +84,9 @@ typedef struct EditorFrameResult {
 
     bool create_empty_entity;
     bool create_renderable_entity;
+    bool create_primitive_entity;
+    bool create_programmable_plane;
+    BuiltinPrimitiveType primitive_type_to_create;
     bool duplicate_selected_entity;
     bool delete_selected_entity;
 

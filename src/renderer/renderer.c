@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,13 +13,19 @@
 #include "data_types/model.h"
 #include "data_types/skybox.h"
 #include "data_types/renderTarget.h"
+#include "data_types/primitive_mesh_resources.h"
+#include "data_types/programmable_mesh_resources.h"
 
+#include "renderer_data.h"
 #include "shaders.h"
 
 struct RendererState
 {
     mat4 projection;
     Model test_model;
+    PrimitiveMeshResources primitive_meshes;
+    ProgrammableMeshResources programmable_meshes;
+    Material primitive_material;
     Skybox skybox;
 
     RenderTarget scene_target;
@@ -73,12 +80,48 @@ RendererStats renderer_get_stats(const Renderer *renderer)
     stats.mesh_count = renderer->test_model.count;
     stats.texture_count = renderer->test_model.texture_cache_count;
 
+    if (renderer->primitive_material.diffuse_texture != 0)
+    {
+        stats.texture_count++;
+    }
+
     for (size_t i = 0; i < renderer->test_model.count; i++)
     {
         const ModelMesh *mesh = &renderer->test_model.meshes[i];
 
         stats.vertex_count += mesh->mesh.vertex_count;
         stats.triangle_count += mesh->mesh.index_count / 3;
+    }
+
+    for (size_t i = 0; i < BUILTIN_PRIMITIVE_COUNT; i++)
+    {
+        if (!renderer->primitive_meshes.loaded[i])
+        {
+            continue;
+        }
+
+        const Mesh *mesh = &renderer->primitive_meshes.meshes[i];
+
+        stats.mesh_count++;
+        stats.vertex_count += mesh->vertex_count;
+        stats.triangle_count += mesh->index_count / 3;
+    }
+
+    for (size_t i = 0; i < renderer->programmable_meshes.resource_count; i++)
+    {
+        const ProgrammableMeshResource *resource =
+            &renderer->programmable_meshes.resources[i];
+
+        if (!resource->in_use)
+        {
+            continue;
+        }
+
+        const Mesh *mesh = &resource->mesh;
+
+        stats.mesh_count++;
+        stats.vertex_count += mesh->vertex_count;
+        stats.triangle_count += mesh->index_count / 3;
     }
 
     return stats;
@@ -96,7 +139,19 @@ static bool renderer_get_model_stats(const Renderer *renderer, const char *model
         return false;
     }
 
-    *out_stats = renderer_get_stats(renderer);
+    *out_stats = (RendererStats){0};
+
+    out_stats->mesh_count = renderer->test_model.count;
+    out_stats->texture_count = renderer->test_model.texture_cache_count;
+
+    for (size_t i = 0; i < renderer->test_model.count; i++)
+    {
+        const ModelMesh *mesh = &renderer->test_model.meshes[i];
+
+        out_stats->vertex_count += mesh->mesh.vertex_count;
+        out_stats->triangle_count += mesh->mesh.index_count / 3;
+    }
+
     return true;
 }
 
@@ -115,20 +170,111 @@ RendererStats renderer_get_frame_stats(const Renderer *renderer, const RendererF
     {
         const RenderableDrawData *renderable = &frame->renderables[i];
 
-        RendererStats model_stats = {0};
-        if (!renderer_get_model_stats(renderer, renderable->model_path, &model_stats))
+        if (renderable->geometry_type == RENDERABLE_GEOMETRY_MODEL)
         {
-            stats.missing_model_count++;
-            continue;
-        }
+            RendererStats model_stats = {0};
+            if (!renderer_get_model_stats(renderer, renderable->model_path, &model_stats))
+            {
+                stats.missing_model_count++;
+                continue;
+            }
 
-        stats.submitted_draw_count++;
-        stats.submitted_mesh_count += model_stats.mesh_count;
-        stats.submitted_vertex_count += model_stats.vertex_count;
-        stats.submitted_triangle_count += model_stats.triangle_count;
+            stats.submitted_draw_count++;
+            stats.submitted_mesh_count += model_stats.mesh_count;
+            stats.submitted_vertex_count += model_stats.vertex_count;
+            stats.submitted_triangle_count += model_stats.triangle_count;
+        }
+        else if (renderable->geometry_type == RENDERABLE_GEOMETRY_PRIMITIVE)
+        {
+            const Mesh *mesh = primitive_mesh_resources_get(
+                &renderer->primitive_meshes, 
+                renderable->primitive_type
+            );
+            
+            if (mesh == NULL)
+            {
+                continue;
+            }
+
+            stats.submitted_draw_count++;
+            stats.submitted_mesh_count++;
+            stats.submitted_vertex_count += mesh->vertex_count;
+            stats.submitted_triangle_count += mesh->index_count / 3;
+        }
+        else if (renderable->geometry_type == RENDERABLE_GEOMETRY_PROGRAMMABLE)
+        {
+            const ProgrammableMesh *mesh =
+                renderable->programmable_mesh;
+
+            if (mesh == NULL ||
+                mesh->vertices == NULL ||
+                mesh->indices == NULL ||
+                mesh->vertex_count == 0 ||
+                mesh->index_count == 0 )
+            {
+                continue;
+            }
+
+            stats.submitted_draw_count++;
+            stats.submitted_mesh_count++;
+            stats.submitted_vertex_count += mesh->vertex_count;
+            stats.submitted_triangle_count += mesh->index_count / 3;
+        }
+    }
+    return stats;
+}
+
+static void draw_primitive_mesh(
+        struct RendererState *renderer,
+        const Mesh *mesh,
+        mat4s model_matrix)
+{
+    if (renderer == NULL || mesh == NULL)
+    {
+        return;
     }
 
-    return stats;
+    Material *material = &renderer->primitive_material;
+
+    if (material->double_sided)
+    {
+        glDisable(GL_CULL_FACE);
+    }
+    else {
+        glEnable(GL_CULL_FACE);
+    }
+
+    glUniformMatrix4fv(
+        renderer->model_location,
+        1,
+        GL_FALSE,
+        (float *)model_matrix.raw
+    );
+
+    upload_material_diffuse_color(
+        &renderer->material_uniforms, 
+        material->diffuse_color
+    );
+
+    upload_material_shininess(
+        &renderer->material_uniforms, 
+        material->shininess
+    );
+
+    upload_material_alpha(
+        &renderer->material_uniforms, 
+        material->alpha_mode, 
+        material->alpha_cutoff
+    );
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, material->diffuse_texture);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, material->specular_texture);
+
+    glBindVertexArray(mesh->vao);
+    glDrawElements(GL_TRIANGLES, mesh->index_count, GL_UNSIGNED_INT, 0);
 }
 
 void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
@@ -151,6 +297,9 @@ void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
 
     upload_spot_light_collection(frame->spot_lights, renderer->spot_light_uniforms, renderer->spot_light_count_location);
 
+    programmable_mesh_resources_begin_frame(
+        &renderer->programmable_meshes
+    );
 
     for (size_t i = 0; i < frame->renderable_count; i++)
     {
@@ -158,14 +307,70 @@ void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
 
         mat4s model_matrix = renderable->model_matrix;
 
-        draw_model(
-            &renderer->test_model,
-            renderer->model_location,
-            &renderer->material_uniforms,
-            model_matrix.raw,
-            frame->camera->cameraPos.raw
-        );
+        switch (renderable->geometry_type)
+        {
+            case RENDERABLE_GEOMETRY_MODEL:
+                if (renderer->loaded_model_path == NULL ||
+                    renderable->model_path == NULL ||
+                    strcmp(renderer->loaded_model_path, renderable->model_path) != 0)
+                {
+                    break;
+                }
+
+                draw_model(
+                    &renderer->test_model,
+                    renderer->model_location,
+                    &renderer->material_uniforms,
+                    model_matrix.raw,
+                    frame->camera->cameraPos.raw
+                );
+                break;
+
+            case RENDERABLE_GEOMETRY_PRIMITIVE:
+            {
+                const Mesh *mesh = primitive_mesh_resources_get(
+                    &renderer->primitive_meshes, 
+                    renderable->primitive_type
+                    );
+
+                draw_primitive_mesh(
+                    renderer, 
+                    mesh, 
+                    renderable->model_matrix
+                );
+                break;
+            }
+
+            case RENDERABLE_GEOMETRY_PROGRAMMABLE:
+            {
+                if (!programmable_mesh_resources_sync(
+                        &renderer->programmable_meshes, 
+                        renderable->programmable_mesh_id, 
+                        renderable->programmable_mesh
+                    ))
+                {
+                    break;
+                }
+
+                const Mesh *mesh = programmable_mesh_resources_get(
+                    &renderer->programmable_meshes, 
+                    renderable->programmable_mesh_id
+                );
+
+                draw_primitive_mesh(
+                    renderer, 
+                    mesh, 
+                    renderable->model_matrix
+                );
+
+                break;
+            }
+        }
     }
+
+    programmable_mesh_resources_end_frame(
+        &renderer->programmable_meshes
+    );
 
     mat4s skybox_view = frame->camera->view;
     skybox_draw(&renderer->skybox, renderer->projection, skybox_view.raw);
@@ -236,6 +441,31 @@ static void init_material(struct RendererState *renderer)
     glUseProgram(renderer->shader_program);
     material_uniforms_init(&renderer->material_uniforms, renderer->shader_program);
     upload_material_samplers(&renderer->material_uniforms);
+}
+
+static int init_primitive_material(struct RendererState *renderer)
+{
+    renderer->primitive_material.diffuse_texture = 0;
+    renderer->primitive_material.specular_texture = 0;
+    renderer->primitive_material.diffuse_color =
+        (vec4s){{1.0f, 1.0f, 1.0f, 1.0f}};
+    renderer->primitive_material.shininess = 96.0f;
+    renderer->primitive_material.alpha_mode = ALPHA_MODE_OPAQUE;
+    renderer->primitive_material.alpha_cutoff = 0.5f;
+    renderer->primitive_material.double_sided = false;
+
+    if (create_solid_color_texture(
+                &renderer->primitive_material.diffuse_texture, 
+                255, 
+                255, 
+                255, 
+                255) != 0)
+    {
+        fprintf(stderr, "Failed to create primitive default texture\n");
+        return 1;
+    }
+
+    return 0;
 }
 
 static int init_screen_quad(struct RendererState *renderer)
@@ -310,6 +540,8 @@ static void init_lights(struct RendererState *renderer, const RendererConfig *co
 
 static int renderer_state_init(struct RendererState *renderer, const RendererConfig *config)
 {
+    primitive_mesh_resources_init(&renderer->primitive_meshes);
+    programmable_mesh_resources_init(&renderer->programmable_meshes);
     if (init_shader_program(renderer) != 0)
     {
         return 1;
@@ -332,12 +564,17 @@ static int renderer_state_init(struct RendererState *renderer, const RendererCon
         return 1;
     }
 
-    if (model_load_gltf(&renderer->test_model, config->model_path) != 0)
-    {
-        return 1;
-    }
+    renderer->loaded_model_path = NULL;
 
-    renderer->loaded_model_path = config->model_path;
+    if (config->model_path != NULL && config->model_path[0] != '\0')
+    {
+        if (model_load_gltf(&renderer->test_model, config->model_path))
+        {
+            return 1;
+        }
+
+        renderer->loaded_model_path = config->model_path;
+    }
 
     init_camera_projection(renderer, config);
 
@@ -364,9 +601,20 @@ static int renderer_state_init(struct RendererState *renderer, const RendererCon
 
     init_material(renderer);
 
+    if (init_primitive_material(renderer) != 0)
+    {
+        return 1;
+    }
+
     if (skybox_init(&renderer->skybox, config->skybox_faces) != 0)
     {
         fprintf(stderr, "Failed to initialize skybox\n");
+        return 1;
+    }
+
+    if (!primitive_mesh_resources_upload(&renderer->primitive_meshes))
+    {
+        fprintf(stderr, "Failed to upload primitive_meshes\n");
         return 1;
     }
 
@@ -375,6 +623,15 @@ static int renderer_state_init(struct RendererState *renderer, const RendererCon
 
 static void renderer_state_shutdown(struct RendererState *renderer)
 {
+    programmable_mesh_resources_free(&renderer->programmable_meshes);
+    primitive_mesh_resources_free(&renderer->primitive_meshes);
+
+    if (renderer->primitive_material.diffuse_texture != 0)
+    {
+        glDeleteTextures(1, &renderer->primitive_material.diffuse_texture);
+        renderer->primitive_material.diffuse_texture = 0;
+    }
+
     model_free(&renderer->test_model);
     // instanced_model_free(&renderer->instance_instances);
     skybox_free(&renderer->skybox);

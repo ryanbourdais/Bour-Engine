@@ -17,4 +17,6 @@ typedef struct Mesh {
     GLuint texture_count;
 } Mesh;
 
+void mesh_init(Mesh *mesh);
 int create_mesh_from_vertices(Mesh *mesh, const Vertex *vertices, size_t vertex_count, const unsigned int *indices, GLsizei index_count);
+void mesh_free(Mesh *mesh);
