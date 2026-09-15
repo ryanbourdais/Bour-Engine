@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "../../ecs/components.h"
 #include <cglm/struct.h>
 
 

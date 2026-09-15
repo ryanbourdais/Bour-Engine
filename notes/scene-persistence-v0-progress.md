@@ -1,8 +1,18 @@
 # Scene Persistence V0 Progress Handoff
 
-Current pause point: scene load parser foundation is in progress for Deliverable Set 2.
+Completed 2026-09-09: asset and built-in primitive write/parse/validate/apply, light components, editor Save/Load, and current-scene path tracking are implemented. Repeated Save → Load → Save → Load validation passed with the Supply Crate asset, skybox, primitives, transforms, lights, and active camera.
 
-## Current status
+## Completed Ownership Correction
+
+`apply_parsed_scene_to_runtime()` builds local `loaded_scene`. Before return, `scene_rebind_loaded_path_pointers()` redirects asset model and skybox pointers to the destination scene's owned arrays after `*scene = loaded_scene`. The repeated-load validation above confirms those pointers remain valid after the loader returns.
+
+The renderer still uses startup-loaded model/skybox resources; loading new paths does not automatically reload GPU assets. Runtime camera state remains engine-owned. Built-in primitive persistence and DS3A programmable-plane-definition persistence are implemented. Programmable V0 saves `programmable_type: "plane"` plus positive `width` and `depth`, then regenerates a fresh scene-owned mesh on load; raw vertex/index/color edits remain runtime-only.
+
+The accepted mesh source spelling is `"asset"`, not `"file"`. Malformed/duplicate entities reject the whole load. The historical handoff below records the earlier parser checkpoint, not current instructions.
+
+## Historical Parser Handoff (Superseded)
+
+### Earlier status
 
 The scene persistence deliverable has crossed from schema/save work into load parsing. The save path already writes the current runtime ECS scene to JSON, and the load path now has a parser foundation backed by `jsmn`.
 
@@ -50,7 +60,7 @@ Backlog exit criteria still require:
 - Basic scene switching or reload exists during development.
 - Serializer boilerplate/reflection notes are captured.
 
-## Recommended next slices
+## Historical next slices (already implemented; do not repeat)
 
 1. Parse mesh renderer next.
 
@@ -114,4 +124,3 @@ Backlog exit criteria still require:
 - Runtime string ownership may need scene-owned copied strings or a small asset/path storage strategy.
 - Load failure should not leave the runtime scene half-mutated.
 - Parser boilerplate is already repetitive; note this for the reflection/component-metadata backlog item, but do not block V0 on solving reflection.
-

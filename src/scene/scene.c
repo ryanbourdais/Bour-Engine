@@ -1,4 +1,5 @@
 #include "scene.h"
+#include "entity_factory.h"
 
 #include <stdio.h>
 
@@ -65,21 +66,81 @@ static const vec3s default_spot_light_directions[] = {
 
 static void init_default_scene_ecs(Scene *scene)
 {
-    EntityId model_entity = entity_registry_create(&scene->entities);
+    TransformComponent primitive_transform;
+    transform_component_init(&primitive_transform);
 
-    NameComponent name = {0};
-    snprintf(name.value, ENTITY_NAME_MAX_LENGTH, "Leopard");
+    transform_component_set_position(
+        &primitive_transform, 
+        (vec3s){{3.0f, 1.0f, 0.0f}}
+    );
 
-    TransformComponent transform;
-    transform_component_init(&transform);
-    MeshRendererComponent mesh_renderer = {
-        .source_type = MESH_SOURCE_ASSET,
-        .model_path = "assets/models/leopard_2a4_otco/scene.gltf"
-    };
+    scene_entity_factory_create_primitive(
+        scene, 
+        "Primitive Cube", 
+        BUILTIN_PRIMITIVE_CUBE, 
+        &primitive_transform
+    );
 
-    component_storage_add(&scene->names, model_entity, &name);
-    component_storage_add(&scene->transforms, model_entity, &transform);
-    component_storage_add(&scene->mesh_renderers, model_entity, &mesh_renderer);
+    TransformComponent plane_transform;
+    transform_component_init(&plane_transform);
+
+    transform_component_set_position(&plane_transform, (vec3s){{0.0f, -0.5f, 0.0f}});
+
+    transform_component_set_scale(&plane_transform, (vec3s){{10.0f, 1.0f, 10.0f}});
+
+    scene_entity_factory_create_primitive(
+        scene, 
+        "Primitive Plane", 
+        BUILTIN_PRIMITIVE_PLANE, 
+        &plane_transform
+    );
+
+    TransformComponent quad_transform;
+    transform_component_init(&quad_transform);
+
+    transform_component_set_position(&quad_transform, (vec3s){{-3.0f, 1.5f, 0.0f}});
+
+    transform_component_set_scale(&quad_transform, (vec3s){{2.0f, 2.0f, 1.0f}});
+
+    scene_entity_factory_create_primitive(
+        scene, 
+        "Primitive Quad", 
+        BUILTIN_PRIMITIVE_QUAD, 
+        &quad_transform
+    );
+
+    TransformComponent sphere_transform;
+    transform_component_init(&sphere_transform);
+    transform_component_set_position(&sphere_transform, (vec3s){{0.0f, 1.0f, -3.0f}});
+
+    scene_entity_factory_create_primitive(
+        scene, 
+        "Primitive UV Sphere", 
+        BUILTIN_PRIMITIVE_UV_SPHERE, 
+        &sphere_transform
+    );
+
+    TransformComponent cylinder_transform;
+    transform_component_init(&cylinder_transform);
+    transform_component_set_position(&cylinder_transform, (vec3s){{0.0f, 1.0f, 1.0f}});
+
+    scene_entity_factory_create_primitive(
+        scene, 
+        "Primitive Cylinder", 
+        BUILTIN_PRIMITIVE_CYLINDER, 
+        &cylinder_transform
+    );
+
+    TransformComponent supply_crate_transform;
+    transform_component_init(&supply_crate_transform);
+    transform_component_set_position(&supply_crate_transform, (vec3s){{3.0f, 1.0f, 1.0f}});
+
+    scene_entity_factory_create_asset(
+        scene, 
+        "Supply Crate", 
+        scene->model_path, 
+        &supply_crate_transform
+    );
 
     EntityId sun_entity = entity_registry_create(&scene->entities);
 
@@ -193,15 +254,62 @@ static void scene_extract_renderables(Scene *scene, SceneRenderConfig *out_confi
         {
             continue;
         }
-        if (mesh_renderer->source_type != MESH_SOURCE_ASSET || mesh_renderer->model_path == NULL)
+        RenderableDrawData *renderable =
+            &out_config->renderables[out_config->renderable_count];
+
+        switch (mesh_renderer->source_type) 
         {
-            continue;
+            case MESH_SOURCE_ASSET:
+                if (mesh_renderer->model_path == NULL)
+                {
+                    continue;
+                }
+
+                renderable->geometry_type = RENDERABLE_GEOMETRY_MODEL;
+                renderable->model_path = mesh_renderer->model_path;
+                renderable->primitive_type = BUILTIN_PRIMITIVE_COUNT;
+                renderable->programmable_mesh_id = PROGRAMMABLE_MESH_ID_INVALID;
+                renderable->programmable_mesh = NULL;
+                break;
+
+            case MESH_SOURCE_PRIMITIVE:
+                if (mesh_renderer->primitive_type >= BUILTIN_PRIMITIVE_COUNT)
+                {
+                    continue;
+                }
+
+                renderable->geometry_type = RENDERABLE_GEOMETRY_PRIMITIVE;
+                renderable->model_path = NULL;
+                renderable->primitive_type = mesh_renderer->primitive_type;
+                renderable->programmable_mesh_id = PROGRAMMABLE_MESH_ID_INVALID;
+                renderable->programmable_mesh = NULL;
+                break;
+
+            case MESH_SOURCE_PROGRAMMABLE:
+            {
+                ProgrammableMesh *programmable_mesh =
+                    programmable_mesh_collection_get(
+                        &scene->programmable_meshes, 
+                        mesh_renderer->programmable_mesh_id);
+                if (mesh_renderer->programmable_mesh_id == PROGRAMMABLE_MESH_ID_INVALID ||
+                    programmable_mesh == NULL)
+                {
+                    continue;
+                }
+
+                renderable->geometry_type = RENDERABLE_GEOMETRY_PROGRAMMABLE;
+                renderable->model_path = NULL;
+                renderable->primitive_type = BUILTIN_PRIMITIVE_COUNT;
+                renderable->programmable_mesh_id = mesh_renderer->programmable_mesh_id;
+                renderable->programmable_mesh = programmable_mesh;
+                break;
+            }
+            default:
+                continue;
         }
 
-        RenderableDrawData *renderable = &out_config->renderables[out_config->renderable_count];
-
-        renderable->model_path = mesh_renderer->model_path;
-        renderable->model_matrix = transform_component_model_matrix(transform);
+        renderable->model_matrix =
+            transform_component_model_matrix(transform);
 
         out_config->renderable_count++;
     }
@@ -232,7 +340,7 @@ static void init_default_scene_lighting(struct Scene *scene)
 
 static void init_default_scene_assets(Scene *scene)
 {
-    scene->model_path = "assets/models/leopard_2a4_otco/scene.gltf";
+    scene->model_path = "assets/models/supply_crate/supply_crate.gltf";
     scene->skybox_faces[0] = "assets/cubemaps/skybox/right.jpg";
     scene->skybox_faces[1] = "assets/cubemaps/skybox/left.jpg";
     scene->skybox_faces[2] = "assets/cubemaps/skybox/top.jpg";
@@ -287,6 +395,8 @@ static void init_scene_skybox(Scene *scene)
 void scene_init_empty(Scene *scene)
 {
     init_scene_ecs_storage(scene);
+
+    programmable_mesh_collection_init(&scene->programmable_meshes);
 
     scene->model_path = NULL;
     scene->loaded_model_path_count = 0;
@@ -392,6 +502,7 @@ void scene_shutdown(Scene *scene)
     component_storage_shutdown(&scene->point_lights);
     component_storage_shutdown(&scene->directional_lights);
     component_storage_shutdown(&scene->mesh_renderers);
+    programmable_mesh_collection_free(&scene->programmable_meshes);
     component_storage_shutdown(&scene->names);
     component_storage_shutdown(&scene->transforms);
     component_storage_shutdown(&scene->skyboxes);

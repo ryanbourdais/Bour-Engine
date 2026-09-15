@@ -5,7 +5,9 @@ This document diagrams the current architecture in two ways:
 - A 10,000-foot view of the major systems and ownership boundaries.
 - A fine-grained view of the frame loop, data flow, and active module responsibilities.
 
-The current architecture is intentionally mid-transition: renderer-owned demo state has mostly moved toward scene/ECS ownership, but some compatibility paths and legacy render data still exist while Scene Persistence V0 and editor workflow work continue.
+Reviewed against the working tree on 2026-09-07. Asset-scene persistence and editor save/load exist, and primitive GPU resource lifecycle is integrated. Primitive drawing is unfinished and persistence has a known loaded-string lifetime defect.
+
+The project is learning-first and C-first: source is implemented manually, ownership remains explicit, subsystems expose narrow interfaces, and small working milestones precede expansion. Subsystem independence remains a direction with known transitional dependencies.
 
 ## 10,000-Foot View
 
@@ -100,7 +102,7 @@ flowchart TD
     SceneState --> SceneExtract
     SceneState --> SceneSaveLoad
     SceneState --> Registry
-    Registry --> Storage
+    SceneState --> Storage
     Storage --> Components
 
     subgraph EditorModule["src/editor"]
@@ -278,7 +280,7 @@ Bour Engine runtime architecture
 |   `-- components.*
 |       |-- TransformComponent: position, rotation, scale, model matrix helper
 |       |-- NameComponent: fixed-size editor/entity name
-|       |-- MeshRendererComponent: model_path
+|       |-- MeshRendererComponent: source_type, model_path, primitive_type, programmable_mesh_id
 |       |-- DirectionalLightComponent
 |       |-- PointLightComponent
 |       |-- SpotLightComponent
@@ -306,6 +308,7 @@ Bour Engine runtime architecture
 |       |-- rename selected entity
 |       |-- create empty entity
 |       |-- create renderable entity
+|       |-- save/load current scene
 |       |-- duplicate selected entity
 |       |-- delete selected entity
 |       |-- transform changed
@@ -335,6 +338,8 @@ Bour Engine runtime architecture
 |   |
 |   |-- renderer/data_types
 |   |   |-- mesh, model, texture, material
+|   |   |-- primitive_mesh: borrowed static CPU definitions
+|   |   |-- primitive_mesh_resources: renderer-owned GPU mesh collection
 |   |   |-- lightObject
 |   |   |-- renderTarget
 |   |   |-- skybox
@@ -494,6 +499,17 @@ Candidate future direction:
 This should remain a future cleanup path, not a blocker for V0 scene persistence. The near-term rule is still explicit code first, abstraction after the repeated shape is proven stable.
 
 ## Known Transitional Boundaries
+
+- Neutral primitive identifiers live in `src/geometry/primitive_types.h`. Scene translates ECS `MeshSourceType` into renderer-owned `RenderableGeometryType`; Renderer does not include ECS component declarations.
+- Cube/plane/quad CPU arrays are borrowed and immutable. The primitive resource collection owns uploaded VAO/VBO/EBO handles; Renderer initializes, uploads, and frees that collection. Initialization must not overwrite live resources.
+- Primitive lifecycle integration builds, but drawing, default material/texture resources, primitive statistics, and primitive-only startup remain unfinished. The frame loop still calls `draw_model()` for every renderable.
+- Renderer holds one startup-loaded `test_model` and skybox. Per-draw model paths are not resolved into separate resources, and loading a scene does not automatically reload its GPU assets. Startup still requires a glTF model.
+- Sphere/cylinder definitions are unsupported. The programmable mesh ID is only a placeholder; DS3A details the programmable work within DS3.
+- Plane winding faces -Y while its normals face +Y; correct this before validating CCW/back-face-culled rendering.
+- Mesh creation does not currently detect OpenGL allocation/upload errors. Collection rollback handles reported failures but does not guarantee GPU error detection.
+- Runtime scene apply copies local `loaded_scene` path arrays without rebinding component pointers to the destination arrays. Fix string lifetime and repeat persistence validation before claiming reliable round trips.
+- Scene extraction precedes editor command application. Rendering consumes the earlier extraction; scene replacement also requires care with borrowed frame pointers.
+- ECS component definitions still depend on renderer light types. Primitive separation does not eliminate those existing dependencies.
 
 - The engine still owns the active runtime/editor `Camera`, while `CameraComponent` and `active_camera` are present in the scene for persistence/editor bridging.
 - Scene default setup still keeps some legacy/default light and asset paths while also creating ECS-backed entities/components.

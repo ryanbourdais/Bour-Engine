@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "mesh.h"
 #include "texture.h"
 
 typedef struct ModelImportDiagnostics
@@ -735,11 +736,7 @@ void model_free(Model *model)
 
     for (size_t i = 0; i < model->count; i++)
     {
-        Mesh *mesh = &model->meshes[i].mesh;
-
-        glDeleteBuffers(1, &mesh->vertex_vbo);
-        glDeleteBuffers(1, &mesh->ebo);
-        glDeleteVertexArrays(1, &mesh->vao);
+        mesh_free(&model->meshes[i].mesh);
     }
 
     for (size_t i = 0; i < model->texture_cache_count; i++)

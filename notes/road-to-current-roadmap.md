@@ -2,6 +2,8 @@
 
 This is a historical log of the work that led to the current Bour Engine roadmap and editor-foundation state. It is not the active backlog. Use `notes/backlog.md` for branch-sized deliverables and `notes/initiative-backlog.md` for long-term direction.
 
+Historical cutoff: 2026-08-18. Subsequent state as of 2026-09-07: asset persistence/editor save-load are implemented with a reopened string-lifetime defect; primitive resource integration is active. DS3A now specifies programmable mesh work within DS3, replacing the earlier initial-SDF proposal recorded here. Preserve the dated history below; use the canonical backlog for current scope.
+
 Dates are based on `git log`, planning-session records, and current note history. Durations are approximate unless a commit range makes the elapsed time obvious. "Work time" here means calendar span visible in project history, not uninterrupted hours at the keyboard.
 
 ## Summary Timeline

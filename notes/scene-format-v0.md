@@ -4,6 +4,8 @@ Scene Format V0 is the first human-readable scene persistence format for Bour En
 
 The format describes scene data, not renderer internals. Loading a scene should rebuild C-owned runtime scene/ECS state from this file.
 
+Reviewed 2026-09-14: asset, built-in primitive, and programmable-plane persistence, plus editor save/load, are implemented. Loaded asset model paths and skybox face paths are rebound to destination-owned scene storage. Repeated Save → Load → Save → Load validation passed with the Supply Crate asset, skybox, built-in primitives, transforms, lights, active camera, and a transformed 2×2 programmable plane.
+
 ## Design Rules
 
 - Entity IDs are saved and restored. A loaded scene should preserve the entity IDs present in the file.
@@ -12,9 +14,9 @@ The format describes scene data, not renderer internals. Loading a scene should 
 - `active_skybox.entity` is required in V0. Skyboxes are represented through normal entity component data instead of root-level special-case renderer data.
 - Entities may contain multiple component blocks directly. This mirrors the ECS model and leaves a natural path for custom script/component blocks later.
 - Component blocks are optional per entity. Missing optional component blocks mean the entity simply does not have that component.
-- Malformed required fields should be logged as errors. For V0, the loader should skip the malformed entity where possible instead of aborting the entire scene load.
+- Malformed required fields and duplicate IDs reject the whole load. Per-entity recovery is not implemented.
 - Strings loaded from JSON must be copied into owned runtime storage before being attached to components. The loader must not store pointers into a temporary JSON buffer.
-- V0 reserves obvious extension points, but unsupported reserved fields should be ignored with a warning rather than partially implemented.
+- Unrecognized fields are currently ignored without a general warning/preservation mechanism. Unsupported mesh source types are rejected.
 
 ## Top-Level Shape
 
@@ -100,17 +102,41 @@ All fields are optional within the transform block. Missing transform fields use
 ```json
 "mesh_renderer": {
   "source_type": "asset",
-  "model_path": "assets/models/leopard_2a4_otco/scene.gltf",
+  "model_path": "assets/models/supply_crate/supply_crate.gltf",
   "material": null,
   "lod": null
 }
 ```
 
-`source_type` is reserved for future primitive/programmatic mesh support. V0 only needs to support `asset`.
+`source_type` is required. V0 supports `asset`, `primitive`, and the generated programmable-plane definition below.
 
 `model_path` is required when `source_type` is `asset`. The path should be relative to the project/runtime working directory. The loader must copy this string into owned runtime storage.
 
-`material` and `lod` are reserved extension points. Unsupported values should be ignored with a warning in V0.
+```json
+"mesh_renderer": {
+  "source_type": "primitive",
+  "primitive_type": "cube",
+  "material": null,
+  "lod": null
+}
+```
+
+`primitive_type` is required when `source_type` is `primitive`. Supported stable names are `cube`, `plane`, `quad`, `uv_sphere`, and `cylinder`. Primitive renderers have no `model_path`.
+
+```json
+"mesh_renderer": {
+  "source_type": "programmable",
+  "programmable_type": "plane",
+  "width": 2.000,
+  "depth": 2.000,
+  "material": null,
+  "lod": null
+}
+```
+
+`programmable_type` is required when `source_type` is `programmable`. V0 accepts only `plane`; `width` and `depth` must be finite positive numbers. Loading regenerates a fresh scene-owned CPU mesh and a fresh runtime mesh ID from this definition. Raw vertex, index, and color edits made through the code-facing API are runtime-only in V0 and are not serialized. SDF generation, terrain generation, chunking, sculpting, collision, and advanced material workflows remain future work.
+
+`material` and `lod` are reserved extension points and currently ignored without warnings.
 
 ### Camera
 
@@ -247,7 +273,7 @@ All fields are required when the `spot_light` block is present.
     },
     {
       "id": 3,
-      "name": "Leopard",
+      "name": "Supply Crate",
       "transform": {
         "position": [0.0, 0.0, 0.0],
         "rotation": [0.0, 0.0, 0.0],
@@ -255,7 +281,7 @@ All fields are required when the `spot_light` block is present.
       },
       "mesh_renderer": {
         "source_type": "asset",
-        "model_path": "assets/models/leopard_2a4_otco/scene.gltf",
+        "model_path": "assets/models/supply_crate/supply_crate.gltf",
         "material": null,
         "lod": null
       }
@@ -307,19 +333,19 @@ All fields are required when the `spot_light` block is present.
 ## Loader Behavior Notes
 
 - Preserve entity IDs from the file.
-- Reject duplicate entity IDs by logging an error and skipping the duplicate entity.
+- Reject duplicate entity IDs for the entire load.
 - After loading, set the registry next ID above the highest valid loaded ID.
 - Log malformed required fields with entity ID and component name when possible.
-- Skip malformed entities instead of failing the entire scene load.
-- If `active_camera.entity` or `active_skybox.entity` points to a skipped/missing entity, the scene load should report an error and fall back to a safe default only if one exists.
+- Reject malformed entities rather than attempting partial recovery.
+- Missing or invalid active camera/skybox references reject the load; automatic fallback is not implemented.
 - Copy all loaded strings into runtime-owned storage.
-- Unknown component blocks should be preserved only if a future preservation layer exists; otherwise log and ignore them in V0.
+- Unknown component blocks are ignored; warning and preservation support is not implemented.
 
 ## Future Version Hooks
 
 Reserved fields in V0 exist to keep the file shape stable, not to imply full support. Likely future extensions include:
 
-- primitive and programmable mesh sources
+- programmable mesh variants beyond the generated plane, including serialized raw vertex/index/color buffers
 - material assignment
 - LOD policy
 - terrain entities

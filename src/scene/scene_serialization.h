@@ -38,6 +38,11 @@ typedef struct ParsedEntityV0 {
     PointLightComponent point_light;
     bool has_spot_light;
     SpotLightComponent spot_light;
+    MeshSourceType mesh_source_type;
+    BuiltinPrimitiveType mesh_primitive_type;
+    ProgrammableMeshType mesh_programmable_type;
+    float mesh_programmable_plane_width;
+    float mesh_programmable_plane_depth;
     char mesh_model_path[SCENE_PARSED_PATH_MAX_LENGTH];
 } ParsedEntityV0;
 

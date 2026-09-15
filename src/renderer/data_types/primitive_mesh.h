@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "../../ecs/components.h"
+#include "../../geometry/primitive_types.h"
 #include "vertex.h"
 
 typedef struct PrimitiveMeshData {

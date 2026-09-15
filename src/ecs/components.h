@@ -2,6 +2,7 @@
 
 #include <cglm/struct.h>
 #include "../renderer/data_types/lightObject.h"
+#include "../geometry/primitive_types.h"
 
 typedef struct TransformComponent {
     vec3s position;
@@ -19,14 +20,6 @@ typedef enum MeshSourceType {
     MESH_SOURCE_PRIMITIVE,
     MESH_SOURCE_PROGRAMMABLE,
 } MeshSourceType;
-
-typedef enum BuiltinPrimitiveType {
-    BUILTIN_PRIMITIVE_CUBE = 0,
-    BUILTIN_PRIMITIVE_PLANE,
-    BUILTIN_PRIMITIVE_QUAD,
-    BUILTIN_PRIMITIVE_UV_SPHERE,
-    BUILTIN_PRIMITIVE_CYLINDER
-} BuiltinPrimitiveType;
 
 typedef struct MeshRendererComponent {
     MeshSourceType source_type;

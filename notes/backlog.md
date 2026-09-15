@@ -1,22 +1,52 @@
 # Backlog
 
-## Current Milestone: Editor Foundation
+## Current Milestone: First Game MVP
 
-Commit 100 completed the first hierarchy-first editor alpha. The milestone is still active: the editor now exists, but it cannot yet author reusable scene data or support a clean scene-editing workflow.
+Commit 100 proved the hierarchy-first editor foundation. First Game MVP targets the first small, playable game made with Bour Engine, packaged by the project and runnable independently of the editor, source checkout, and development tools. Scene Authoring Alpha is an intermediate gate toward this goal.
+
+The north star: **author a small game, press Play to test it, build a distributable package, and let another person launch and finish it without the engine editor.** The engine remains C-first, with explicit ownership and narrow subsystem boundaries. Every implementation step stays small enough to understand and validate manually.
+
+Target a playable loop and rough standalone package by December 31, 2026, then MVP completion during January–March 2027, with March 31 as the planning deadline. This is approximately 9–12 months from the March 2026 project start, not 9–12 additional months. Historical velocity and staged scope are recorded in `notes/first-game-mvp-plan.md`.
+
+Use [the First Game MVP calendar and acceptance tracker](first-game-mvp-schedule.md) to follow feature gates, including the explicit Game Scripting and Entity Behavior V0 workstream. Target a playable/rough-package proof by December and MVP completion during January–March.
+
+There is no commit-count finish line. The playable game, standalone package, and acceptance criteria determine completion.
+
+## First Game MVP Demo
+
+- [ ] Ship one short, complete game loop: start, player action, objective, success/failure feedback, restart, and exit. Choose the exact game concept before adding gameplay-specific systems.
+- [ ] Keep game rules above the engine behind a narrow interface; exercise the planned Odin direction through a bounded integration trial, with any fallback decision documented.
+- [ ] Provide only the movement, collision/triggers, game UI, and feedback required by that game; avoid a general physics or scripting platform as an MVP prerequisite.
+- [ ] Separate Edit and Play state, restore the authored scene on Stop, and run the game through a standalone entry mode without editor initialization.
+- [ ] Produce a repeatable package for one explicitly chosen desktop platform, including required runtime libraries, shaders, scenes, and permitted assets.
+- [ ] Launch the package outside the repository on a clean user environment without compilers, CMake, source paths, or the editor; complete and restart the game.
+
+- [ ] Create a small scene using built-in primitives, including cube, plane, quad, sphere, and cylinder, without requiring third-party model files.
+- [ ] Include one programmable plane whose vertices/colors can be modified through a documented code-facing API; preserve its supported stable definition on save/load (DS3A within DS3).
+- [ ] Navigate a dedicated editor viewport, resize the window correctly, and edit entity transforms and lights without UI input driving the camera accidentally.
+- [ ] Create, select, duplicate, and delete supported entities, and assign supported geometry/assets with clear feedback for unsupported choices.
+- [ ] Render the authored scene with directional shadows through the normal scene-to-renderer path.
+- [ ] Save, restart, load, and verify entity data, geometry definitions, camera state, lights, and supported asset references. Repeated loads preserve string/resource ownership.
+- [ ] Provide a short reproducible demo checklist, accurate loaded/submitted statistics, known limitations, and clear dev-only asset notes.
+
+Editor Foundation is the first stage. A full project browser, blank-project startup workflow, PBR, advanced SDF, terrain, general-purpose physics, full scripting tooling, multiplayer, installers/store integration, and multi-platform release are outside the required MVP. Minimal game-code integration, game-specific collision, standalone execution, and one-platform packaging are now explicitly in scope. The larger roadmap is not a promise that every deliverable lands for First Game MVP.
+
+Progress reviewed against the working tree on 2026-09-07. A passing build confirms compilation, not graphical or round-trip correctness.
 
 The backlog is organized as deliverable sets instead of broad epics. Each deliverable set should be small enough to become one branch or a short sequence of related branches. If a task does not contribute to the deliverable set's exit criteria, move it to a later set instead of expanding the branch.
 
 Current language direction: keep engine/runtime architecture C-first. Odin is the chosen direction for future game-level scripting/customization above the engine core with Lua as a backup/secondary scripting language. Dear ImGui is the locked-in editor UI path for the current editor foundation milestone.
 
-## Milestone Exit Criteria
+## First Game MVP Exit Criteria
 
-Editor Foundation is complete when:
+Standalone MVP Game is complete when the playable/package demo above is repeatable, the authoring foundation below works, and the release checks in `notes/first-game-mvp-plan.md` pass:
 
 - Engine owns the application loop, timing, input, active camera, and active scene.
 - Renderer consumes renderable scene data instead of owning hardcoded models/lights.
 - A minimal ECS exists for entities, transforms, cameras, mesh renderers, and lights.
 - A minimal UI/editor shell can run beside the viewport.
 - A scene can be created, edited at a basic level, saved, loaded, and rendered again.
+- Built-in primitives and DS3A's programmable plane have explicit ownership and supported persistence paths.
 - Editor camera/input behavior is usable without fighting ImGui interaction.
 - The editor has a cleaner layout where the rendered game/scene view lives inside an editor viewport area instead of all UI floating over the main rendered window.
 - Asset/model assignment exists at a basic level for mesh-renderer entities.
@@ -115,10 +145,17 @@ Tasks:
 - [X] Define v0 scene file schema for entities, names, transforms, mesh renderers, light values, and active camera.
 - [X] Add scene save path from current runtime ECS scene to disk.
 - [X] Add scene load path from disk into C-owned runtime scene data.
-- [X] Add save/load round-trip validation for save -> load -> render.
+- [X] Revalidate save -> load -> render after correcting loaded scene string ownership; repeated Save → Load → Save → Load validation passed with the Supply Crate asset, skybox, primitives, transforms, lights, and active camera.
 - [X] Add editor action for save/load once the runtime path works.
 - [X] Add basic current-scene path tracking for development save/load.
 - [X] Note repeated serializer boilerplate and candidate component-metadata/reflection needs discovered during V0 implementation.
+
+Reopened correctness work:
+
+- [X] Fix component path pointers that still reference the local `loaded_scene` arrays after `*scene = loaded_scene`; rebind to destination-owned storage.
+- [X] Verify loaded model and skybox paths remain valid after the loader returns and across repeated loads.
+
+Completed 2026-09-09: the Supply Crate asset and skybox survived repeated Save → Load → Save → Load validation alongside primitives, transforms, lights, and active camera state. The implementation rejects malformed/duplicate entity data rather than skipping entities. See `notes/scene-format-v0.md` for the current contract and remaining limitations.
 
 ## Deliverable Set 3: Engine-Owned Primitive And Programmable Geometry
 
@@ -138,14 +175,30 @@ Exit criteria:
 Tasks:
 
 - [X] Define mesh source/component model for asset-backed, primitive, and programmable mesh renderables.
-- [X] Add built-in primitive definitions for cube, plane, and quad.
-- [ ] Add renderer path for built-in primitive mesh resources without requiring glTF files.
-- [ ] Add editor create actions for primitive entities.
-- [ ] Add programmable mesh entity/component with explicit ownership rules for generated vertex/index data.
-- [ ] Add save/load schema support for primitive and programmable mesh entities.
-- [ ] Add sphere or UV sphere and cylinder primitive definitions before closing this deliverable.
-- [ ] Replace current third-party test-scene dependency with primitives or project-owned geometry before public distribution.
-- [ ] Document which third-party test assets remain local/dev-only and which engine-owned assets are safe to distribute.
+- [X] Add built-in primitive definitions for cube, plane, quad, UV sphere, and cylinder.
+- [X] Add renderer path for built-in primitive mesh resources without requiring glTF files.
+  - [X] Move primitive identifiers to a neutral geometry header and remove renderer-to-ECS includes.
+  - [X] Define renderer-owned geometry tags and translate scene mesh sources into draw data.
+  - [X] Add explicit mesh initialization and standalone GPU cleanup.
+  - [X] Implement primitive resource initialization, lookup, upload orchestration, and cleanup.
+  - [X] Connect primitive resource ownership to renderer startup/shutdown; build passes.
+  - [X] Add default primitive material/texture resources and draw dispatch.
+  - [X] Correct plane winding to match its +Y normals and the renderer's CCW front-face convention.
+  - [X] Allow primitive-only scenes without mandatory glTF model loading.
+  - [X] Include primitives in loaded/submitted statistics.
+- [X] Verify repeated lifecycle behavior and add GPU error reporting; allocation and upload failures now report OpenGL errors and clean up partial resources. Three fresh startup/shutdown cycles rendered all primitives without upload errors.
+- [X] Add editor create actions for primitive entities; manual validation confirmed all five actions create, select, render, transform, and survive save/load, while the Supply Crate asset action remains available.
+- [X] Add programmable mesh entity/component with explicit ownership rules for generated vertex/index data. DS3A completed 2026-09-15: scene-owned CPU meshes use stable runtime IDs; renderer-owned GPU cache entries synchronize on dirty data and are released for deleted entities.
+- [X] Add save/load schema support for built-in primitive entities.
+  - Built-in primitive persistence is complete: stable names parse into primitive enums, runtime components retain `model_path = NULL`, and repeated Save → Load → Save → Load validation passed for all five primitives. Programmable mesh persistence remains DS3A scope.
+- [X] Add save/load schema support for programmable mesh entities (DS3A). V0 round-trips the generated plane definition and dimensions; raw vertex/index/color edits remain runtime-only.
+- [X] Add sphere or UV sphere and cylinder primitive definitions before closing this deliverable.
+- [X] Replace current third-party test-scene dependency with primitives or approved project models before public distribution.
+- [X] Document asset distribution policy: all files under `assets/models/` are user-approved project models; five unreferenced starter textures were removed on 2026-09-10.
+
+DS3A below details the programmable-mesh task within this deliverable. It is a child work package, not an alternative scope: DS3 remains open until its programmable ownership and persistence criteria are met through DS3A.
+
+Completed 2026-09-15: DS3 and DS3A passed final regression validation, including repeated editor create, inspect, duplicate, delete, restart, and Save → Load → Save → Load checks for programmable planes, alongside renderer statistics and GPU lifecycle checks.
 
 ## Deliverable Set 3B: Window And Render Target Resizing V0
 
@@ -176,6 +229,8 @@ Tasks:
 
 ## Deliverable Set 3A: Programmable Mesh Primitive V0
 
+Parent: Deliverable Set 3, programmable mesh entity/component and persistence tasks. This section expands those tasks into an implementable sequence; completing it contributes to DS3 completion.
+
 Suggested branch: `feat-programmable-mesh-primitive-v0`
 
 Goal: create the first user-code-modifiable programmable mesh primitive: a flat plane by default, with vertices and colors that can be generated or modified in code while still flowing through normal scene, renderer, editor, and persistence paths.
@@ -192,13 +247,15 @@ Exit criteria:
 
 Tasks:
 
-- [ ] Define programmable mesh primitive data: vertex/index buffers, color data, optional UVs, normal strategy, dirty flags, and ownership rules.
-- [ ] Add default flat-plane generation with stable dimensions, subdivisions if reasonable, and predictable winding.
-- [ ] Add a code-facing API for modifying vertices and color data safely.
-- [ ] Submit programmable mesh primitive data through the existing engine-owned geometry renderer path.
-- [ ] Add editor create/inspect path for the programmable mesh primitive at a minimal level.
-- [ ] Add save/load schema support for the programmable mesh primitive's stable definition and editable parameters.
-- [ ] Document how this primitive can later feed SDF shader experiments, SDF-generated meshes, and terrain prototypes without committing to those systems now.
+- [X] Define programmable mesh primitive data: vertex/index buffers, color data, optional UVs, normal strategy, dirty flags, and ownership rules.
+- [X] Add default flat-plane generation with stable dimensions, subdivisions if reasonable, and predictable winding.
+- [X] Add a code-facing API for modifying vertices and color data safely.
+- [X] Submit programmable mesh primitive data through the existing engine-owned geometry renderer path. Manual validation: editor-created 2×2 planes render, select, delete, and recreate without console or OpenGL errors.
+- [X] Add editor create/inspect path for the programmable mesh primitive at a minimal level. Manual validation: Inspector shows plane type, dimensions, runtime mesh ID, and GPU-sync status; duplicated planes receive independent IDs, and deleting a duplicate leaves the original intact.
+- [X] Add save/load schema support for the programmable mesh primitive's stable definition and editable parameters. Manual validation: a 2×2 programmable plane with a distinctive transform survived Save → Load → Save → Load, rendered correctly, and remained deletable.
+- [X] Document how this primitive can later feed SDF shader experiments, SDF-generated meshes, and terrain prototypes without committing to those systems now. Scene Format V0 records generated-plane persistence and explicitly defers raw-buffer persistence, SDF, terrain, chunking, sculpting, collision, and advanced materials.
+
+Completed 2026-09-15: final regression validation passed. V0 supports generated programmable planes with scene-owned CPU data, renderer-owned GPU resources, editor create/inspect/duplicate/delete workflows, submitted/resident statistics, and plane-definition persistence.
 
 ## Deliverable Set 4: Editor Camera And Input V1
 
@@ -459,14 +516,14 @@ Tasks:
 - Hardware/system diagnostics profiler expansion: track CPU/GPU/memory utilization where platform support is clear, log hardware spikes, and investigate memory-leak tracking with an intentional debug-allocation strategy.
 - PBR materials and image-based lighting.
 - Post-PBR flat profiler, logging, and optimization pass.
-- Physics.
-- Audio.
-- Scripting.
+- General-purpose physics beyond the MVP's movement/collision/trigger needs.
+- General audio tooling; a minimal sound path may be included if the selected game needs it.
+- Full scripting runtime/tooling beyond the MVP game-code boundary.
 - Networking.
-- Distribution/build packaging.
+- Multi-platform distribution, installers, and store packaging beyond the MVP's single-platform standalone package.
 - Blank default scene, scene file viewing, and project asset management workflow.
 - Advanced asset database/import pipeline.
-- Odin scripting/custom component bridge.
+- Broad Odin scripting/custom component tooling beyond the bounded MVP integration.
 - Zig/C++ tooling experiments, only if a concrete tool need appears.
 
 ## Future Deliverable: Blank Scene And Project File Browser V0

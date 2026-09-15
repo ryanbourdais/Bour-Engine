@@ -1,11 +1,13 @@
 #include "scene_serialization.h"
 #include "scene.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <jsmn.h>
+#include <math.h>
 
 static bool write_indent(FILE *file, int indent)
 {
@@ -80,9 +82,39 @@ static bool write_transform_component(FILE *file, const TransformComponent *tran
     return true;
 }
 
-static bool write_mesh_renderer_component(FILE *file, const MeshRendererComponent *mesh_renderer)
+
+static const char *builtin_primitive_type_name(
+        BuiltinPrimitiveType primitive_type)
 {
-    if (file == NULL || mesh_renderer == NULL)
+    switch (primitive_type) 
+    {
+        case BUILTIN_PRIMITIVE_CUBE:
+            return "cube";
+
+        case BUILTIN_PRIMITIVE_PLANE:
+            return "plane";
+
+        case BUILTIN_PRIMITIVE_QUAD:
+            return "quad";
+
+        case BUILTIN_PRIMITIVE_UV_SPHERE:
+            return "uv_sphere";
+
+        case BUILTIN_PRIMITIVE_CYLINDER:
+            return "cylinder";
+
+        default:
+            return NULL;
+    }
+}
+
+static bool write_mesh_renderer_component(
+    FILE *file,
+    const Scene *scene,
+    const MeshRendererComponent *mesh_renderer
+)
+{
+    if (file == NULL || scene == NULL || mesh_renderer == NULL)
     {
         return false;
     }
@@ -121,11 +153,82 @@ static bool write_mesh_renderer_component(FILE *file, const MeshRendererComponen
 
             return true;
         case MESH_SOURCE_PRIMITIVE:
-            fprintf(stderr, "Not yet implemented\n");
-            return false;
+        {
+            const char *primitive_name = builtin_primitive_type_name(
+                mesh_renderer->primitive_type
+            );
+
+            if (primitive_name == NULL)
+            {
+                return false;
+            }
+
+            fprintf(file, "\"mesh_renderer\": {\n");
+
+            write_indent(file, 4);
+            fprintf(file, "\"source_type\": \"primitive\",\n");
+
+            write_indent(file, 4);
+            fprintf(
+                file, 
+                "\"primitive_type\": \"%s\",\n",
+                primitive_name
+            );
+
+            write_indent(file, 4);
+            fprintf(file, "\"material\": null,\n");
+
+            write_indent(file, 4);
+            fprintf(file, "\"lod\": null\n");
+
+            write_indent(file, 3);
+            fprintf(file, "}");
+
+            return true;
+        }
+        
         case MESH_SOURCE_PROGRAMMABLE:
-            fprintf(stderr, "Not yet implemented\n");
-            return false;
+        {   
+            const ProgrammableMesh *mesh =
+                programmable_mesh_collection_get_const(
+                    &scene->programmable_meshes, 
+                    mesh_renderer->programmable_mesh_id
+                );
+
+            if (mesh == NULL ||
+                mesh->type != PROGRAMMABLE_MESH_TYPE_PLANE ||
+                mesh->plane_width <= 0.0f ||
+                mesh->plane_depth <= 0.0f)
+            {
+                return false;
+            }
+
+            fprintf(file, "\"mesh_renderer\": {\n");
+
+            write_indent(file, 4);
+            fprintf(file, "\"source_type\": \"programmable\",\n");
+
+            write_indent(file, 4);
+            fprintf(file, "\"programmable_type\": \"plane\",\n");
+
+            write_indent(file, 4);
+            fprintf(file, "\"width\": %.3f,\n", mesh->plane_width);
+
+            write_indent(file, 4);
+            fprintf(file, "\"depth\": %.3f,\n", mesh->plane_depth);
+
+            write_indent(file, 4);
+            fprintf(file, "\"material\": null,\n");
+
+            write_indent(file, 4);
+            fprintf(file, "\"lod\": null\n");
+
+            write_indent(file, 3);
+            fprintf(file, "}");
+            
+            return true;
+        }
+
         default:
             fprintf(stderr, "Invalid mesh source type\n");
             return false;
@@ -195,8 +298,6 @@ static bool write_skybox_component(FILE *file, const SkyboxComponent *skybox)
 
     return true;
 }
-
-
 
 static bool write_light_color_fields(FILE *file, const LightColor *color)
 {
@@ -410,7 +511,7 @@ static bool write_entity(FILE *file, const Scene *scene, EntityId entity)
         {
             return false;
         }
-        if (!write_mesh_renderer_component(file, mesh_renderer))
+        if (!write_mesh_renderer_component(file, scene, mesh_renderer))
         {
             return false;
         }
@@ -597,6 +698,43 @@ static bool json_token_equals(const char *json, const jsmntok_t *token, const ch
 
     return token_length == value_length &&
         strncmp(json + token->start, value, value_length) == 0;
+}
+
+static bool parse_builtin_primitive_type(
+    const char *json,
+    const jsmntok_t *token,
+    BuiltinPrimitiveType *out_primitive_type )
+{
+    if (json == NULL || token == NULL || out_primitive_type == NULL)
+    {
+        return false;
+    }
+
+    if (json_token_equals(json, token, "cube"))
+    {
+        *out_primitive_type = BUILTIN_PRIMITIVE_CUBE;
+    }
+    else if (json_token_equals(json, token, "plane"))
+    {
+        *out_primitive_type = BUILTIN_PRIMITIVE_PLANE;
+    }
+    else if (json_token_equals(json, token, "quad"))
+    {
+        *out_primitive_type = BUILTIN_PRIMITIVE_QUAD;
+    }
+    else if (json_token_equals(json, token, "uv_sphere"))
+    {
+        *out_primitive_type = BUILTIN_PRIMITIVE_UV_SPHERE;
+    }
+    else if (json_token_equals(json, token, "cylinder"))
+    {
+        *out_primitive_type = BUILTIN_PRIMITIVE_CYLINDER;
+    }
+    else {
+        return false;
+    }
+
+    return true;
 }
 
 static int json_skip_token(const jsmntok_t *tokens, int index)
@@ -1064,10 +1202,10 @@ static SceneLoadResult parse_mesh_renderer_component_v0(
     const char *json,
     const jsmntok_t *tokens, 
     int mesh_renderer_index, 
-    char out_model_path[SCENE_PARSED_PATH_MAX_LENGTH]
+    ParsedEntityV0 *out_entity
 )
 {
-   if (json == NULL || tokens == NULL || out_model_path == NULL)
+   if (json == NULL || tokens == NULL || out_entity == NULL)
    {
        return SCENE_LOAD_INVALID_SCENE;
    }
@@ -1076,26 +1214,139 @@ static SceneLoadResult parse_mesh_renderer_component_v0(
        return SCENE_LOAD_INVALID_SCENE;
    }
 
-   int model_path_index = -1;
-   if (!json_object_find_field(json , tokens, mesh_renderer_index, "model_path", &model_path_index))
-   {
-       return SCENE_LOAD_INVALID_SCENE;
-   }
+    int source_type_index = -1;
+    if (!json_object_find_field(
+            json, 
+            tokens, 
+            mesh_renderer_index, 
+            "source_type", 
+            &source_type_index))
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
 
-   if (!json_token_copy_string(json, &tokens[model_path_index], out_model_path, SCENE_PARSED_PATH_MAX_LENGTH))
-   {
-       return SCENE_LOAD_INVALID_SCENE;
-   }
+    if (tokens[source_type_index].type != JSMN_STRING)
+    {
+        return SCENE_LOAD_INVALID_SCENE;
+    }
 
-   int source_type_index = -1;
-   if (json_object_find_field(json, tokens, mesh_renderer_index, "source_type", &source_type_index))
-   {
-       if (!json_token_equals(json, &tokens[source_type_index], "asset"))
-       {
-           return SCENE_LOAD_INVALID_SCENE;
-       }
-   }
-   return SCENE_LOAD_OK;
+    if (json_token_equals(json, &tokens[source_type_index], "asset"))
+    {
+        int model_path_index = -1;
+        if (!json_object_find_field(
+                json,
+                tokens,
+                mesh_renderer_index,
+                "model_path",
+                &model_path_index))
+        {
+            return SCENE_LOAD_INVALID_SCENE;
+        }
+
+        if (!json_token_copy_string(
+                json, 
+                &tokens[model_path_index], 
+                out_entity->mesh_model_path, 
+                SCENE_PARSED_PATH_MAX_LENGTH))
+        {
+            return SCENE_LOAD_INVALID_SCENE;
+        }
+        
+        out_entity->mesh_source_type = MESH_SOURCE_ASSET;
+        return SCENE_LOAD_OK;
+    }
+
+    if (json_token_equals(json, &tokens[source_type_index], "primitive"))
+    {
+        int primitive_type_index = -1;
+        if (!json_object_find_field(
+                json, 
+                tokens, 
+                mesh_renderer_index, 
+                "primitive_type", 
+                &primitive_type_index))
+        {
+            return SCENE_LOAD_INVALID_SCENE;
+        }
+
+        if (tokens[primitive_type_index].type != JSMN_STRING)
+        {
+            return SCENE_LOAD_INVALID_SCENE;
+        }
+
+        if (!parse_builtin_primitive_type(
+                json, 
+                &tokens[primitive_type_index], 
+                &out_entity->mesh_primitive_type))
+        {
+            return SCENE_LOAD_INVALID_SCENE;
+        }
+
+        out_entity->mesh_source_type = MESH_SOURCE_PRIMITIVE;
+        return SCENE_LOAD_OK;
+    }
+
+    if (json_token_equals(json, &tokens[source_type_index], "programmable"))
+    {
+        int programmable_type_index = -1;
+        int width_index = -1;
+        int depth_index = -1;
+
+        if (!json_object_find_field(
+                json, 
+                tokens, 
+                mesh_renderer_index, 
+                "programmable_type", 
+                &programmable_type_index
+            ) ||
+            !json_object_find_field(
+                json,
+                tokens,
+                mesh_renderer_index,
+                "width",
+                &width_index
+            ) ||
+            !json_object_find_field(
+                json, 
+                tokens, 
+                mesh_renderer_index, 
+                "depth", 
+                &depth_index
+            ))
+        {
+            return SCENE_LOAD_INVALID_SCENE;
+        }
+
+        if (!json_token_equals(
+                json, 
+                &tokens[programmable_type_index], 
+                "plane"
+            ) ||
+            !json_token_to_float(
+                json,
+                &tokens[width_index],
+                &out_entity->mesh_programmable_plane_width
+            ) ||
+            !json_token_to_float(
+                json, 
+                &tokens[depth_index], 
+                &out_entity->mesh_programmable_plane_depth
+            ) ||
+           !isfinite(out_entity->mesh_programmable_plane_width) ||
+           !isfinite(out_entity->mesh_programmable_plane_depth) ||
+           out_entity->mesh_programmable_plane_width <= 0.0f ||
+           out_entity->mesh_programmable_plane_depth <= 0.0f)
+        {
+            return SCENE_LOAD_INVALID_SCENE;
+        }
+
+        out_entity->mesh_source_type = MESH_SOURCE_PROGRAMMABLE;
+        out_entity->mesh_programmable_type =
+            PROGRAMMABLE_MESH_TYPE_PLANE;
+
+        return SCENE_LOAD_OK;
+    }
+   return SCENE_LOAD_INVALID_SCENE;
 }
 
 static SceneLoadResult parse_light_color_fields_v0(
@@ -1240,7 +1491,7 @@ static SceneLoadResult parse_point_light_component_v0(
     if (parse_light_color_fields_v0(json, tokens, light_index, &out_light->light.color) != SCENE_LOAD_OK)
     {
         return SCENE_LOAD_INVALID_SCENE;
-    }
+}
 
     if (!json_token_to_float(json, &tokens[constant_index], &out_light->light.constant))
     {
@@ -1390,6 +1641,11 @@ static SceneLoadResult parse_entity_v0_shallow(const char *json, const jsmntok_t
     out_entity->camera.far_clip = 100.0f;
     out_entity->has_skybox = false;
     out_entity->has_mesh_renderer = false;
+    out_entity->mesh_source_type = MESH_SOURCE_ASSET;
+    out_entity->mesh_primitive_type = BUILTIN_PRIMITIVE_COUNT;
+    out_entity->mesh_programmable_type = PROGRAMMABLE_MESH_TYPE_NONE;
+    out_entity->mesh_programmable_plane_width = 0.0f;
+    out_entity->mesh_programmable_plane_depth = 0.0f;
     out_entity->mesh_model_path[0] = '\0';
     out_entity->has_directional_light = false;
     out_entity->has_point_light = false;
@@ -1459,7 +1715,7 @@ static SceneLoadResult parse_entity_v0_shallow(const char *json, const jsmntok_t
         }
         else if (json_token_equals(json, key, "mesh_renderer"))
         {
-            SceneLoadResult result = parse_mesh_renderer_component_v0(json, tokens, index + 1, out_entity->mesh_model_path);
+            SceneLoadResult result = parse_mesh_renderer_component_v0(json, tokens, index + 1, out_entity);
 
             if (result != SCENE_LOAD_OK)
             {
@@ -1861,6 +2117,41 @@ static SceneLoadResult parse_scene_json(const char *json, size_t json_size, Scen
     return validation_result;
 }
 
+static void scene_rebind_loaded_path_pointers(Scene *scene)
+{
+    size_t model_path_index = 0;
+
+    for (size_t i = 0; i < scene->mesh_renderers.count; i++)
+    {
+        MeshRendererComponent *mesh_renderer =
+            component_storage_at(&scene->mesh_renderers, i);
+
+        if (mesh_renderer == NULL)
+        {
+            continue;
+        }
+
+        if (mesh_renderer->source_type == MESH_SOURCE_ASSET &&
+            mesh_renderer->model_path != NULL &&
+            model_path_index < scene->loaded_model_path_count)
+        {
+            mesh_renderer->model_path = scene->loaded_model_paths[model_path_index];
+            model_path_index++;
+        }
+    }
+
+    SkyboxComponent *skybox = 
+        component_storage_get(&scene->skyboxes, scene->active_skybox);
+
+    if (skybox != NULL)
+    {
+        for (int face = 0; face < 6; face++)
+        {
+            skybox->faces[face] = scene->loaded_skybox_faces[face];
+        }
+    }
+}
+
 static SceneLoadResult apply_parsed_scene_to_runtime(Scene *scene, const ParsedSceneV0 *parsed)
 {
     if (scene == NULL || parsed == NULL)
@@ -1930,24 +2221,60 @@ static SceneLoadResult apply_parsed_scene_to_runtime(Scene *scene, const ParsedS
 
         if (parsed_entity->has_mesh_renderer)
         {
-            if (loaded_scene.loaded_model_path_count >= MAX_RENDERABLES)
+            MeshRendererComponent mesh_renderer = {
+                .source_type = parsed_entity->mesh_source_type,
+                .model_path = NULL,
+                .primitive_type = parsed_entity->mesh_primitive_type,
+                .programmable_mesh_id = PROGRAMMABLE_MESH_ID_INVALID,
+            };
+
+            if (parsed_entity->mesh_source_type == MESH_SOURCE_ASSET)
+            {
+                if (loaded_scene.loaded_model_path_count >= MAX_RENDERABLES)
+                {
+                    scene_shutdown(&loaded_scene);
+                    return SCENE_LOAD_INVALID_SCENE;
+                }
+
+                size_t path_index = loaded_scene.loaded_model_path_count;
+
+                snprintf(
+                    loaded_scene.loaded_model_paths[path_index], 
+                    SCENE_PATH_MAX_LENGTH, 
+                    "%s",
+                    parsed_entity->mesh_model_path
+                );
+
+                loaded_scene.loaded_model_path_count++;
+
+                mesh_renderer.model_path =
+                    loaded_scene.loaded_model_paths[path_index];
+            }
+            else if (parsed_entity->mesh_source_type == MESH_SOURCE_PROGRAMMABLE)
+            {
+                if (parsed_entity->mesh_programmable_type !=
+                        PROGRAMMABLE_MESH_TYPE_PLANE ||
+                    !programmable_mesh_collection_create_plane(
+                        &loaded_scene.programmable_meshes, 
+                        parsed_entity->mesh_programmable_plane_width, 
+                        parsed_entity->mesh_programmable_plane_depth, 
+                        &mesh_renderer.programmable_mesh_id
+                    ))
+                {
+                    scene_shutdown(&loaded_scene);
+                    return SCENE_LOAD_INVALID_SCENE;
+                }
+            }
+            else if (parsed_entity->mesh_source_type != MESH_SOURCE_PRIMITIVE)
             {
                 scene_shutdown(&loaded_scene);
                 return SCENE_LOAD_INVALID_SCENE;
             }
 
-            size_t path_index = loaded_scene.loaded_model_path_count;
-
-            snprintf(loaded_scene.loaded_model_paths[path_index], SCENE_PATH_MAX_LENGTH, "%s", parsed_entity->mesh_model_path);
-
-            loaded_scene.loaded_model_path_count++;
-
-            MeshRendererComponent mesh_renderer = {
-                .source_type = MESH_SOURCE_ASSET,
-                .model_path = loaded_scene.loaded_model_paths[path_index],
-           };
-
-            if (!component_storage_add(&loaded_scene.mesh_renderers, parsed_entity->id, &mesh_renderer))
+            if (!component_storage_add(
+                    &loaded_scene.mesh_renderers, 
+                    parsed_entity->id, 
+                    &mesh_renderer))
             {
                 scene_shutdown(&loaded_scene);
                 return SCENE_LOAD_INVALID_SCENE;
@@ -1994,6 +2321,7 @@ static SceneLoadResult apply_parsed_scene_to_runtime(Scene *scene, const ParsedS
 
     scene_shutdown(scene);
     *scene = loaded_scene;
+    scene_rebind_loaded_path_pointers(scene);
 
     return SCENE_LOAD_OK;
 }

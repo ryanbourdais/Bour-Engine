@@ -60,6 +60,9 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         .edited_name = {0},
         .create_empty_entity = false,
         .create_renderable_entity = false,
+        .create_primitive_entity = false,
+        .create_programmable_plane = false,
+        .primitive_type_to_create = BUILTIN_PRIMITIVE_COUNT,
         .duplicate_selected_entity = false,
         .delete_selected_entity = false,
         .transform_changed = false,
@@ -143,6 +146,28 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         else 
         {
             ImGui::Text("No transform component");
+        }
+
+        if (frame->selected_entity_is_programmable_mesh)
+        {
+            ImGui::Separator();
+            ImGui::Text("Programmable Mesh");
+            ImGui::Text("Type: Plane");
+            ImGui::Text(
+                "Runtime Mesh ID: %u",
+                frame->selected_programmable_mesh_id
+            );
+            ImGui::Text(
+                "Dimensions: %.3f x %.3f",
+                frame->selected_programmable_plane_width,
+                frame->selected_programmable_plane_depth
+            );
+            ImGui::Text(
+                "GPU Sync: %s",
+                frame->selected_programmable_mesh_dirty
+                    ? "Pending upload"
+                    : "Current"
+            );
         }
 
         if (frame->selected_light_type != EDITOR_SELECTED_LIGHT_NONE)
@@ -259,6 +284,36 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
     if (ImGui::Button("Create Renderable Entity"))
     {
         result.create_renderable_entity = true;
+    }
+
+    if (ImGui::Button("Create Cube"))
+    {
+        result.create_primitive_entity = true;
+        result.primitive_type_to_create = BUILTIN_PRIMITIVE_CUBE;
+    }
+    if (ImGui::Button("Create Plane"))
+    {
+        result.create_primitive_entity = true;
+        result.primitive_type_to_create = BUILTIN_PRIMITIVE_PLANE;
+    }
+    if (ImGui::Button("Create Quad"))
+    {
+        result.create_primitive_entity = true;
+        result.primitive_type_to_create = BUILTIN_PRIMITIVE_QUAD;
+    }
+    if (ImGui::Button("Create UV Sphere"))
+    {
+        result.create_primitive_entity = true;
+        result.primitive_type_to_create = BUILTIN_PRIMITIVE_UV_SPHERE;
+    }
+    if (ImGui::Button("Create Cylinder"))
+    {
+        result.create_primitive_entity = true;
+        result.primitive_type_to_create = BUILTIN_PRIMITIVE_CYLINDER;
+    }
+    if (ImGui::Button("Create Programmable Plane"))
+    {
+        result.create_programmable_plane = true;
     }
     if (frame != nullptr && frame->has_selected_entity)
     {
