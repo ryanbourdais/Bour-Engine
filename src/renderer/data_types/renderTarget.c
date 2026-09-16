@@ -73,7 +73,55 @@ void render_target_free(RenderTarget *target)
     target->width = 0;
     target->height = 0;
 }
-//TODO: render_target_resize
+
+int render_target_resize(RenderTarget *target, int width, int height)
+{
+    if (target == NULL || width <= 0 || height <= 0)
+    {
+        return 1;
+    }
+
+    if (target->width == width && target->height == height)
+    {
+        return 0;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, target->framebuffer);
+
+    glBindTexture(GL_TEXTURE_2D, target->color_texture);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_SRGB8,
+        width,
+        height,
+        0,
+        GL_RGB,
+        GL_UNSIGNED_BYTE,
+        NULL
+    );
+
+    glBindRenderbuffer(GL_RENDERBUFFER, target->depth_stencil_renderbuffer);
+    glRenderbufferStorage(
+        GL_RENDERBUFFER,
+        GL_DEPTH24_STENCIL8,
+        width,
+        height
+    );
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        fprintf(stderr, "RenderTarget framebuffer is not complete after resize\n");
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        return 1;
+    }
+
+    target->width = width;
+    target->height = height;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return 0;
+}
 
 int msaa_render_target_init(MsaaRenderTarget *target, int width, int height, int samples)
 {
@@ -107,6 +155,55 @@ int msaa_render_target_init(MsaaRenderTarget *target, int width, int height, int
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    return 0;
+}
+
+int msaa_render_target_resize(
+    MsaaRenderTarget *target,
+    int width,
+    int height
+)
+{
+    if (target == NULL || width <= 0 || height <= 0)
+    {
+        return 1;
+    }
+
+    if (target->width == width && target->height == height)
+    {
+        return 0;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, target->framebuffer);
+
+    glBindRenderbuffer(GL_RENDERBUFFER, target->color_renderbuffer);
+    glRenderbufferStorageMultisample(
+        GL_RENDERBUFFER,
+        target->samples,
+        GL_SRGB8,
+        width,
+        height
+    );
+
+    glBindRenderbuffer(GL_RENDERBUFFER, target->depth_stencil_renderbuffer);
+    glRenderbufferStorageMultisample(
+        GL_RENDERBUFFER,
+        target->samples,
+        GL_DEPTH24_STENCIL8,
+        width,
+        height
+    );
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        fprintf(stderr, "MSAA RenderTarget framebuffer is not complete after resize\n");
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        return 1;
+    }
+
+    target->width = width;
+    target->height = height;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return 0;
 }
 

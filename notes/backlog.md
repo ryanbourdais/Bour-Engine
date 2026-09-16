@@ -218,14 +218,16 @@ Exit criteria:
 
 Tasks:
 
-- [ ] Add resize operations for the single-sample scene render target and MSAA render target, including color and depth/stencil attachments.
-- [ ] Detect drawable framebuffer dimension changes and resize renderer-owned targets only when dimensions actually change.
-- [ ] Recalculate the camera projection from the current non-zero framebuffer width and height before uploading camera data.
-- [ ] Keep offscreen rendering, MSAA resolve dimensions, and final default-framebuffer viewport dimensions consistent.
-- [ ] Skip or defer rendering safely while the drawable framebuffer width or height is zero.
+- [X] Add resize operations for the single-sample scene render target and MSAA render target, including color and depth/stencil attachments.
+- [X] Detect drawable framebuffer dimension changes and resize renderer-owned targets only when dimensions actually change.
+- [X] Recalculate the camera projection from the current non-zero framebuffer width and height before uploading camera data.
+- [X] Keep offscreen rendering, MSAA resolve dimensions, and final default-framebuffer viewport dimensions consistent.
+- [X] Skip or defer rendering safely while the drawable framebuffer width or height is zero.
 - [ ] Confirm ImGui continues to use logical display coordinates while OpenGL rendering uses framebuffer pixel dimensions and framebuffer scale.
 - [ ] Validate interactive resize, Hyprland tiling, floating-window resize, maximize/restore, minimize/restore, fullscreen, and any available fractional-scaling configuration.
 - [ ] Add focused resize validation or debug assertions for framebuffer completeness, current dimensions, and unchanged-size no-op behavior.
+
+Progress 2026-09-16: renderer-owned scene and MSAA targets now reallocate their existing attachments only when drawable framebuffer pixels change. Projection updates use the same non-zero framebuffer dimensions, and rendering defers while dimensions are zero. Manual interactive resize validation confirmed correct scene aspect ratio without crashes or framebuffer-completeness errors. HiDPI/UI coordinate confirmation and focused diagnostics remain open.
 
 ## Deliverable Set 3A: Programmable Mesh Primitive V0
 
@@ -296,9 +298,9 @@ Exit criteria:
 
 Tasks:
 
-- [ ] Decide first layout model: fixed left/right/bottom panels, simple manually arranged ImGui windows, or an ImGui docking prototype.
+- [X] Decide first layout model: fixed left/right/bottom panels, simple manually arranged ImGui windows, or an ImGui docking prototype. Decision 2026-09-16: use fixed panes around a central Scene View first; defer docking, saved layouts, tabs, and multi-window workflows.
 - [ ] Define editor viewport bounds and feed them into input focus/capture decisions.
-- [ ] Decide whether rendered scene output stays as the main framebuffer temporarily or moves to a framebuffer texture drawn inside an ImGui viewport panel.
+- [X] Decide whether rendered scene output stays as the main framebuffer temporarily or moves to a framebuffer texture drawn inside an ImGui viewport panel. Decision 2026-09-16: draw the resolved scene texture in the Scene View panel; size renderer targets from that panel's framebuffer-pixel bounds.
 - [ ] Arrange hierarchy, inspector, stats, scene actions, and camera settings around the viewport.
 - [ ] Update camera/input behavior so viewport interaction drives camera movement only when the viewport is focused or captured.
 - [ ] Make the layout good enough for viewport picking, transform tools, asset assignment, scene workflow, and editor documentation to build against.

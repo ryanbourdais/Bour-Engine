@@ -1,24 +1,18 @@
-# Current Handoff — 2026-09-08
+# Current Handoff — 2026-09-16
 
-Active branch: `feat-engine-owned-geometry`. Canonical tasks: `notes/backlog.md`, DS3; DS3A details its programmable-mesh subtask.
+Active branch: `feat/window-render-target-resizing`.
 
-Implemented and visually checked: neutral primitive identifiers; cube, plane, quad, UV-sphere, and cylinder definitions; scene draw-data translation; explicit mesh lifecycle; primitive resource collection; renderer-owned default material; draw dispatch; primitive statistics; and primitive-only renderer startup. Default-scene construction uses the scene entity factory.
+DS2, DS3, and DS3A are complete and merged to `main`. DS3B's renderer-resize core is implemented and manually validated on this branch:
 
-Completed corrections:
+- Scene and MSAA render targets resize their existing color and depth/stencil attachments only when framebuffer-pixel dimensions change.
+- The camera projection updates from current non-zero framebuffer dimensions.
+- Zero-sized framebuffers defer scene rendering safely.
+- Interactive window resizing preserved aspect ratio and produced no crashes or framebuffer-completeness errors.
 
-1. Loaded component paths are rebound to destination-owned scene storage after runtime scene replacement; repeated persistence validation remains pending.
-2. Plane indices now match `+Y` normals and the renderer's CCW front-face convention.
+Current uncommitted source changes are limited to `src/renderer/data_types/renderTarget.c`, `src/renderer/data_types/renderTarget.h`, and `src/renderer/renderer.c`. `git diff --check` and `cmake --build src/build --parallel` pass.
 
-Persistence verification completed: built-in primitive and asset scene entries, including the Supply Crate and skybox, survived repeated Save → Load → Save → Load validation with hierarchy, transforms, lights, and active camera state intact. DS2 is complete.
+Next commit checkpoint: commit the DS3B renderer core and these notes with `feat(renderer): resize scene render targets with framebuffer`.
 
-Editor primitive creation completed: Cube, Plane, Quad, UV Sphere, and Cylinder actions create and select renderable entities; manual validation covered transforms, save/load, and the preserved Supply Crate asset action.
+Next branch: `feat/editor-layout-foundation-v0`. DS4A will use fixed left/right/bottom ImGui panes around a central Scene View. The resolved scene texture will be drawn with `ImGui::Image`, while renderer target dimensions come from the panel's content bounds converted from logical ImGui units to framebuffer pixels. Docking, saved layouts, tabs, and multi-window workflows remain deferred.
 
-Asset policy completed: every model under `assets/models/` is user-approved; the unreferenced starter textures were removed.
-
-Primitive lifecycle reliability completed: allocation/upload failures report OpenGL errors and clean up partial resources; three fresh startup/shutdown cycles rendered all primitives without upload errors.
-
-DS3 and DS3A completed 2026-09-15. Final regression validation covered repeated editor create/inspect/duplicate/delete, fresh lifecycle runs without console or OpenGL errors, renderer statistics, and Save → Load → Save → Load for transformed programmable planes. The V0 persistence contract saves only the generated plane definition and dimensions; raw vertex/index/color edits are runtime-only.
-
-Backlog synchronization: keep `notes/backlog.md` and `notes/initiative-backlog.md` aligned with Linear as scope and verified progress change. DS3 maps to RYA-9 and DS3A maps to RYA-11; both are ready to mark Done following the completed validation.
-
-Engine coordinator, explicit renderer state, engine-owned camera updates, and timing abstraction are already implemented. Shadow maps remain a later renderer deliverable.
+DS3B remains open for HiDPI/UI-coordinate confirmation, expanded window-manager validation, and focused resize diagnostics. Keep `notes/backlog.md` and Linear synchronized as those checks are verified.
