@@ -31,3 +31,9 @@ int msaa_render_target_init(MsaaRenderTarget *target, int width, int height, int
 void msaa_render_target_bind(MsaaRenderTarget *target);
 void msaa_render_target_resolve_to(MsaaRenderTarget *source, RenderTarget *destination);
 void msaa_render_target_free(MsaaRenderTarget *target);
+int render_target_resize(RenderTarget *target, int width, int height);
+int msaa_render_target_resize(
+    MsaaRenderTarget *target,
+    int width,
+    int height
+);

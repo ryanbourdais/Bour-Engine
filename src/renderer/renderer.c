@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -277,8 +278,85 @@ static void draw_primitive_mesh(
     glDrawElements(GL_TRIANGLES, mesh->index_count, GL_UNSIGNED_INT, 0);
 }
 
+static void renderer_update_projection(
+    struct RendererState *renderer,
+    const Camera *camera,
+    int width,
+    int height
+)
+{
+    glm_perspective(
+        glm_rad(camera->cameraFOV),
+        (float)width / (float)height,
+        0.1f,
+        100.0f,
+        renderer->projection
+    );
+}
+
+static bool renderer_resize_for_viewport(
+    struct RendererState *renderer,
+    const Camera *camera,
+    RendererViewport viewport
+)
+{
+    if (viewport.width <= 0 || viewport.height <= 0)
+    {
+        return false;
+    }
+
+    if (renderer->scene_target.width == viewport.width &&
+        renderer->scene_target.height == viewport.height &&
+        renderer->scene_msaa_target.width == viewport.width &&
+        renderer->scene_msaa_target.height == viewport.height)
+    {
+        return true;
+    }
+
+    if (render_target_resize(
+            &renderer->scene_target,
+            viewport.width,
+            viewport.height
+        ) != 0)
+    {
+        return false;
+    }
+
+    if (msaa_render_target_resize(
+            &renderer->scene_msaa_target,
+            viewport.width,
+            viewport.height
+        ) != 0)
+    {
+        return false;
+    }
+
+    renderer_update_projection(
+        renderer,
+        camera,
+        viewport.width,
+        viewport.height
+    );
+
+    return true;
+}
+
 void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
 {
+    if (renderer == NULL || frame == NULL || frame->camera == NULL)
+    {
+        return;
+    }
+
+    if (!renderer_resize_for_viewport(
+            renderer,
+            frame->camera,
+            frame->viewport
+        ))
+    {
+        return;
+    }
+
     // Wipe drawing surface clear
     msaa_render_target_bind(&renderer->scene_msaa_target);
     glEnable(GL_DEPTH_TEST);
@@ -428,8 +506,12 @@ static int init_shader_program(struct RendererState *renderer)
 
 static void init_camera_projection(struct RendererState *renderer, const RendererConfig *config)
 {
-
-    glm_perspective(glm_rad(config->camera->cameraFOV), (float)config->viewport.width / (float)config->viewport.height, 0.1f, 100.0f, renderer->projection);
+    renderer_update_projection(
+        renderer,
+        config->camera,
+        config->viewport.width,
+        config->viewport.height
+    );
 
     camera_ubo_init(&renderer->camera_ubo);
 
