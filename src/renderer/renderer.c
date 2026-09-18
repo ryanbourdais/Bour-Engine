@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include <GL/gl.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -341,6 +342,16 @@ static bool renderer_resize_for_viewport(
     return true;
 }
 
+unsigned int renderer_get_resolved_scene_texture(const Renderer *renderer)
+{
+    if (renderer == NULL)
+    {
+        return 0;
+    }
+
+    return renderer->scene_target.color_texture;
+}
+
 void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
 {
     if (renderer == NULL || frame == NULL || frame->camera == NULL)
@@ -457,8 +468,12 @@ void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
 
     render_target_unbind();
 
-    glViewport(0, 0, frame->viewport.width, frame->viewport.height);
+    if (!frame->present_to_default_framebuffer)
+    {
+        return;
+    }
 
+    glViewport(0, 0, frame->viewport.width, frame->viewport.height);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
