@@ -52,18 +52,6 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         inspector_height = side_pane_height - 220.0f - margin;
     }
 
-    const float stats_height =
-        side_pane_height - inspector_height - margin;
-
-    const ImVec2 hierarchy_size =
-        ImVec2(hierarchy_width, side_pane_height);
-
-    const ImVec2 inspector_size =
-        ImVec2(right_pane_width, inspector_height);
-    
-    const ImVec2 stats_size =
-        ImVec2(right_pane_width, stats_height);
-
     const float minimum_scene_width = 320.0f;
     const float minimum_pane_width = 180.0f;
 
@@ -78,6 +66,15 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
             ? maximum_hierarchy_width_candidate
             : minimum_pane_width;
 
+    if (hierarchy_width < minimum_pane_width)
+    {
+        hierarchy_width = minimum_pane_width;
+    }
+    else if (hierarchy_width > maximum_hierarchy_width)
+    {
+        hierarchy_width = maximum_hierarchy_width;
+    }
+
     const float maximum_right_pane_width_candidate =
         display_size.x -
         hierarchy_width -
@@ -89,6 +86,15 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
             ? maximum_right_pane_width_candidate    
             : minimum_pane_width;
 
+    if (right_pane_width < minimum_pane_width)
+    {
+        right_pane_width = minimum_pane_width;
+    }
+    else if (right_pane_width > maximum_right_pane_width)
+    {
+        right_pane_width = maximum_right_pane_width;
+    }
+
     const float minimum_inspector_height = 180.0f;
     const float minimum_stats_height = 160.0f;
 
@@ -99,6 +105,27 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         maximum_inspector_height_candidate > minimum_inspector_height
             ? maximum_inspector_height_candidate
             : minimum_inspector_height;
+
+    if (inspector_height < minimum_inspector_height)
+    {
+        inspector_height = minimum_inspector_height;
+    }
+    else if (inspector_height > maximum_inspector_height)
+    {
+        inspector_height = maximum_inspector_height;
+    }
+
+    const float stats_height =
+        side_pane_height - inspector_height - margin;
+
+    const ImVec2 hierarchy_size =
+        ImVec2(hierarchy_width, side_pane_height);
+
+    const ImVec2 inspector_size =
+        ImVec2(right_pane_width, inspector_height);
+    
+    const ImVec2 stats_size =
+        ImVec2(right_pane_width, stats_height);
 
     const ImVec2 hierarchy_pos = ImVec2(margin, margin);
     const ImVec2 inspector_pos = ImVec2(display_size.x - margin, margin);

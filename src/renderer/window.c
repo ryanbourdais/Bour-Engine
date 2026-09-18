@@ -74,6 +74,17 @@ GLFWwindow *window_create(bool fullscreen, bool vsync_enabled)
         return NULL;
     }
 
+    if (!fullscreen)
+    {
+        glfwSetWindowSizeLimits(
+            window, 
+            960, 
+            640,
+            GLFW_DONT_CARE,
+            GLFW_DONT_CARE
+        );
+    }
+
     create_window_context(window);
 
     window_set_vsync(vsync_enabled);
