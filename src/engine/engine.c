@@ -122,6 +122,11 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 
 static void engine_update_camera(struct EngineState *engine)
 {
+    if (engine->editor_enabled && engine->editor_cursor_enabled)
+    {
+        return;
+    }
+
     vec2s movement_axis = input_get_movement_axis();
 
     camera_movement(&engine->camera, movement_axis, frame_clock_delta_time(&engine->clock));
@@ -703,6 +708,7 @@ static void run_engine_loop(struct EngineState *engine)
         RendererFrame frame = {
             .camera = &engine->camera,
             .viewport = {0},
+            .present_to_default_framebuffer = !engine->editor_enabled,
             .renderables = scene_render_config.renderables,
             .renderable_count = scene_render_config.renderable_count,
             .directional_light = scene_render_config.directional_light,
@@ -751,6 +757,8 @@ static void run_engine_loop(struct EngineState *engine)
             .renderer_submitted_triangle_count = renderer_stats.submitted_triangle_count,
             .renderer_missing_model_count = renderer_stats.missing_model_count,
             .editor_cursor_enabled = engine->editor_cursor_enabled,
+            .resolved_scene_texture =
+                renderer_get_resolved_scene_texture(engine->renderer),
             .profile_engine_update_ms = engine->profile.engine_update_timer.last_ms,
             .profile_scene_extract_ms = engine->profile.scene_extract_timer.last_ms,
             .profile_editor_begin_ms = engine->profile.editor_begin_timer.last_ms,
@@ -761,13 +769,26 @@ static void run_engine_loop(struct EngineState *engine)
             .hierarchy_item_count = hierarchy_count,
         };
 
-        window_get_framebuffer_size(engine->window, &frame.viewport.width, &frame.viewport.height);
+        int window_framebuffer_width = 0;
+        int window_framebuffer_height = 0;
+
+        window_get_framebuffer_size(
+            engine->window,
+            &window_framebuffer_width,
+            &window_framebuffer_height
+        );
+
+        frame.viewport.width = window_framebuffer_width;
+        frame.viewport.height = window_framebuffer_height;
 
         if (engine->editor_enabled)
         {
             process_timer_begin(&engine->profile.editor_begin_timer, glfwGetTime());
 
             EditorFrameResult editor_result = editor_ui_begin_frame(&editor_frame);
+
+            frame.viewport.width = editor_result.viewport.framebuffer_width;
+            frame.viewport.height = editor_result.viewport.framebuffer_height;
 
             process_timer_end(&engine->profile.editor_begin_timer, glfwGetTime());
             process_timer_log_report(&engine->profile.editor_begin_timer, &engine->profile_log_config);
@@ -898,6 +919,11 @@ static void run_engine_loop(struct EngineState *engine)
         if (engine->editor_enabled)
         {
             process_timer_begin(&engine->profile.editor_render_timer, glfwGetTime());
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glViewport(0, 0, window_framebuffer_width, window_framebuffer_height);
+            glClearColor(0.08f, 0.08f, 0.08f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             editor_ui_render();
 

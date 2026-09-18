@@ -45,7 +45,6 @@ typedef struct EditorFrameData {
     float selected_position[3];
     float selected_rotation[3];
     float selected_scale[3];
-    bool editor_cursor_enabled;
 
     EditorSelectedLightType selected_light_type;
     float selected_light_ambient[3];
@@ -67,12 +66,32 @@ typedef struct EditorFrameData {
     size_t renderer_submitted_triangle_count;
     size_t renderer_missing_model_count;
 
+    bool editor_cursor_enabled;
+    unsigned int resolved_scene_texture;
+
     const EditorHierarchyItem *hierarchy_items;
     size_t hierarchy_item_count;
 } EditorFrameData;
 
 #define EDITOR_ENTITY_NAME_MAX_LENGTH 64
+
+typedef struct EditorViewport {
+    float x;
+    float y;
+    float width;
+    float height;
+
+    int framebuffer_width;
+    int framebuffer_height;
+
+    bool hovered;
+    bool focused;
+
+    unsigned int resolved_scene_texture;
+} EditorViewport;
+
 typedef struct EditorFrameResult {
+    EditorViewport viewport;
     unsigned int selected_entity_id;
     bool selection_changed;
     bool toggle_editor_cursor;

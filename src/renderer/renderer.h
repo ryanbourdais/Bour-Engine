@@ -16,6 +16,7 @@ typedef struct RendererViewport {
 typedef struct RendererFrame {
     const Camera *camera;
     RendererViewport viewport;
+    bool present_to_default_framebuffer;
 
     const RenderableDrawData *renderables;
     size_t renderable_count;
@@ -51,6 +52,7 @@ typedef struct RendererStats {
 Renderer *renderer_create(void);
 int renderer_init(Renderer *renderer, const RendererConfig *config);
 void renderer_render_frame(Renderer *renderer, const RendererFrame *frame);
+unsigned int renderer_get_resolved_scene_texture(const Renderer *renderer);
 void renderer_shutdown(Renderer *renderer);
 void renderer_destroy(Renderer *renderer);
 RendererStats renderer_get_stats(const Renderer *renderer);
