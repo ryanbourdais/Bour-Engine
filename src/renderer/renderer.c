@@ -32,6 +32,9 @@ struct RendererState
 
     RenderTarget scene_target;
     MsaaRenderTarget scene_msaa_target;
+    size_t render_target_resize_count;
+    size_t render_target_noop_count;
+    size_t zero_size_viewport_count;
 
     DirectionalLightUniforms directional_light_uniforms;
     PointLightUniforms point_light_uniforms[MAX_SHADER_POINT_LIGHTS];
@@ -126,6 +129,11 @@ RendererStats renderer_get_stats(const Renderer *renderer)
         stats.triangle_count += mesh->index_count / 3;
     }
 
+    stats.viewport_width = renderer->scene_target.width;
+    stats.viewport_height = renderer->scene_target.height;
+    stats.render_target_resize_count = renderer->render_target_resize_count;
+    stats.render_target_noop_count = renderer->render_target_noop_count;
+    stats.zero_size_viewport_count = renderer->zero_size_viewport_count;
     return stats;
 }
 
@@ -303,6 +311,7 @@ static bool renderer_resize_for_viewport(
 {
     if (viewport.width <= 0 || viewport.height <= 0)
     {
+        renderer->zero_size_viewport_count++;
         return false;
     }
 
@@ -311,6 +320,7 @@ static bool renderer_resize_for_viewport(
         renderer->scene_msaa_target.width == viewport.width &&
         renderer->scene_msaa_target.height == viewport.height)
     {
+        renderer->render_target_noop_count++;
         return true;
     }
 
@@ -339,6 +349,7 @@ static bool renderer_resize_for_viewport(
         viewport.height
     );
 
+    renderer->render_target_resize_count++;
     return true;
 }
 

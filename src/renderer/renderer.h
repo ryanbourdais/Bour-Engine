@@ -47,6 +47,11 @@ typedef struct RendererStats {
     size_t submitted_vertex_count;
     size_t submitted_triangle_count;
     size_t missing_model_count;
+    int viewport_width;
+    int viewport_height;
+    size_t render_target_resize_count;
+    size_t render_target_noop_count;
+    size_t zero_size_viewport_count;
 } RendererStats;
 
 Renderer *renderer_create(void);

@@ -508,6 +508,25 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         ImGui::Text("Submitted Vertices: %zu", frame->renderer_submitted_vertex_count);    
         ImGui::Text("Submitted Triangles: %zu", frame->renderer_submitted_triangle_count);    
         ImGui::Text("Missing Models: %zu", frame->renderer_missing_model_count);    
+        ImGui::Separator();
+        ImGui::Text("Resize Diagnostics");
+        ImGui::Text(
+            "Target: %d x %d px",
+            frame->renderer_viewport_width,
+            frame->renderer_viewport_height
+        );
+        ImGui::Text(
+            "Resize Events: %zu",
+            frame->renderer_render_target_resize_count
+        );
+        ImGui::Text(
+            "Unchanged Frames: %zu",
+            frame->renderer_render_target_noop_count
+        );
+        ImGui::Text(
+            "Zero-Size Frames: %zu",
+            frame->renderer_zero_size_viewport_count
+        );
     }
 
     ImGui::Separator();
