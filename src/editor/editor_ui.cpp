@@ -510,6 +510,15 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         ImGui::Text("Missing Models: %zu", frame->renderer_missing_model_count);    
         ImGui::Separator();
         ImGui::Text("Resize Diagnostics");
+        ImGui::Text("Logical: %.0f x %.0f",
+            viewport_size.x,
+            viewport_size.y
+        );
+        ImGui::Text(
+            "Framebuffer Scale: %.2f x %.2f",
+            io.DisplayFramebufferScale.x,
+            io.DisplayFramebufferScale.y
+        );
         ImGui::Text(
             "Target: %d x %d px",
             frame->renderer_viewport_width,
