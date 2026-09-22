@@ -37,6 +37,7 @@ Current deliverable anchors:
 - Deliverable Set 2: Scene Persistence V0.
 - Deliverable Set 6: Scene Editing Workflow V1.
 - Deliverable Set 9: Editor Play/Simulation Separation.
+- Deliverable Set 9C: Engine/Editor Boundary And Separate Builds V0.
 
 Done signals:
 

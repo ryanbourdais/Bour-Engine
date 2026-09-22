@@ -416,6 +416,35 @@ Tasks:
 - [ ] Add UI-visible editor/play state.
 - [ ] Ensure renderer still receives scene data in both editor and play modes.
 
+## Deliverable Set 9C: Engine/Editor Boundary And Separate Builds V0
+
+Parent: Deliverable Set 9, editor/play abstraction and standalone runtime work.
+
+Suggested branch: `feat-engine-editor-boundary-v0`
+
+Goal: make the game/runtime and editor independently buildable and runnable. The editor may host and author shared engine state, but the runtime must never compile, link, initialize, or otherwise rely on editor code or Dear ImGui.
+
+Exit criteria:
+
+- Runtime and editor have explicit entry points and build targets with a documented ownership boundary.
+- The runtime target builds and launches without `src/editor`, Dear ImGui, editor-only adapters, or editor-only resources.
+- Shared scene, ECS, renderer, input, timing, serialization, geometry, and physics interfaces are runtime-owned and do not depend on editor types.
+- The editor consumes runtime interfaces through an optional authoring host rather than being required by the engine/game loop.
+- A standalone game launch loads a scene, updates, renders, receives input, and executes one game-code behavior without editor initialization.
+- A dependency/build check fails when runtime code introduces an editor dependency.
+
+Tasks:
+
+- [ ] Map current engine/editor calls, data types, build dependencies, and initialization paths, including the `engine.c`/`editor_ui` boundary.
+- [ ] Define runtime-owned frame, command, inspection, and lifecycle interfaces for editor consumption without exporting editor types into runtime code.
+- [ ] Split CMake targets and entry points so the runtime/game target builds without editor sources or Dear ImGui.
+- [ ] Move editor-only startup, frame gathering, command application, and presentation behind the editor-host boundary.
+- [ ] Add a dependency/build check proving runtime targets do not link editor libraries or include editor headers.
+- [ ] Validate a standalone runtime launch from outside the editor workflow with a saved scene and one game-code behavior.
+- [ ] Document shared ownership, allowed dependency direction, and deferred decoupling work.
+
+Scope: this 13-point architecture/build-boundary slice is not a rewrite of shared engine subsystems. It supports DS9 Edit/Play work and the MVP standalone package; full general-purpose runtime/editor decoupling remains deferred.
+
 ## Deliverable Set 10: Phong Shadow Maps
 
 Suggested branch: `feat-phong-shadow-maps`

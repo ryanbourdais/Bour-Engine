@@ -45,7 +45,7 @@ The scripting/behavior workstream exposes an uncertainty previously hidden insid
 
 - [ ] Game definition: choose one level/arena-sized experience, required controls, objective, result state, restart behavior, and target platform.
 - [ ] Game-code boundary: prove one game-owned update behavior through a small C-facing engine API; evaluate the intended Odin integration and document any simpler fallback if build/debug friction threatens the schedule.
-- [ ] Edit/Play and standalone runtime: separate authoring from simulation, restore editing state on Stop, launch a selected game scene without initializing editor UI.
+- [ ] Edit/Play and standalone runtime: separate authoring from simulation, restore editing state on Stop, and complete DS9C's separate runtime/editor targets so a selected game scene launches without editor UI, editor code, or Dear ImGui.
 - [ ] Gameplay: implement only the movement, collision/triggers, UI, and optional audio necessary for the chosen loop.
 - [ ] Package: include executable, required runtime dependencies, scene/shaders/assets, notices, and launch instructions through a repeatable build/package command. No source-tree absolute paths or dev-only assets.
 - [ ] Release validation: launch from outside the repository in a clean target environment; play to the result, restart, exit, and repeat. Check missing-file errors and the absence of editor/toolchain requirements.
