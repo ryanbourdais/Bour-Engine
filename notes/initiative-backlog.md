@@ -39,6 +39,14 @@ Current deliverable anchors:
 - Deliverable Set 9: Editor Play/Simulation Separation.
 - Deliverable Set 9C: Engine/Editor Boundary And Separate Builds V0.
 
+DS9C target: `bour_engine` is a reusable runtime library; `bour_game` and `bour_editor` are separate executable clients. The editor owns authoring and preview behavior, while the game target never depends on editor code or Dear ImGui.
+
+Dependency direction: each executable depends on `bour_engine`; the engine library never depends on an executable or editor-only UI. This keeps editor-only changes isolated and leaves room for future scripting-language runners to consume the same runtime-facing interfaces.
+
+Runners own native-window creation, event polling, buffer swapping, and final presentation. The runtime renders only to runner-supplied targets: the game may present to its framebuffer and the editor may present an off-screen runtime texture. Runtime sessions are independent so the editor can host authoring and preview sessions; the game starts one session from an explicit scene/project argument with a documented development default.
+
+Runtime-facing API: clients use an opaque `EngineRuntime` handle with plain C lifecycle, inspection, rendering, and command data. Raw scene, renderer, camera, and component-storage pointers remain engine-private.
+
 Done signals:
 
 - Default scene state is represented as real ECS-backed scene data.

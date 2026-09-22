@@ -45,7 +45,7 @@ All entries below are planned or in progress, not accepted. Do not infer complet
 | Editor and renderer | DS3B, DS4/4A, minimum DS5/6/8, DS10; initiatives 2, 2A, 4 | Resize-safe usable viewport, input, selection/transforms, supported assignment, directional shadows. | Planned slices on existing editor alpha. |
 | Game Scripting and Entity Behavior V0 | MVP game-code work package, DS9/DS9C integration; initiatives 1, 6, 7 | C-facing runtime operations, entity-attached behavior identity/configuration, create/update/destroy lifecycle across load and Play/Stop, explicit ownership, packaged gameplay dependencies. | Planned; early proof needed. |
 | Playable game | DS9, DS9C, and MVP gameplay work package; initiatives 1, 6, 7 | Select one small game/platform, prove movement/collision/objective/result/restart and restoration on Stop. | Planned; game and platform not selected. |
-| Standalone package | DS9C and MVP package work package; initiatives 5, 7 | Repeatable runtime executable/dependency/scene/shader/asset package; launch and finish outside the repository without editor code, Dear ImGui, or toolchain requirements. | Planned; rough proof due in December. |
+| Standalone package | DS9C and MVP package work package; initiatives 5, 7 | Repeatable `bour_game` executable/dependency/scene/shader/asset package built from the shared `bour_engine` library; launch and finish outside the repository without editor code, Dear ImGui, or toolchain requirements. | Planned; rough proof due in December. |
 | Integration and release | DS7 and cross-cutting acceptance; initiatives 1, 2, 4, 5 | Repeated load/play/restart, clear errors, clean-environment playthrough, notices and launch instructions. | Planned; continuous checks before final release pass. |
 
 Odin is the primary gameplay-language direction; Lua remains a fallback, not a simultaneous deliverable. Arbitrary custom components, hot reload, and general scripting-inspector tooling are outside V0 unless required by the selected game. Scriptable entities are now an explicit workstream rather than hidden inside gameplay time.
@@ -75,7 +75,7 @@ This mapping distinguishes scheduled work from later roadmap items so the chart 
 | DS6 | Minimum feedback, component visibility, dirty/delete behavior needed by the MVP in B/D. Multi-select/group editing and broad undo/redo can remain open unless essential to the selected game workflow. |
 | DS7 | Documentation updated in every stage; final authoring and package guide in E. |
 | DS8 | Minimal usable selection/transform interaction in B. Advanced gizmo polish is not required. |
-| DS9 + DS9C | DS9 provides Edit/Play isolation; DS9C creates separate runtime/editor targets with a one-way editor-to-runtime dependency in C, validated in E. |
+| DS9 + DS9C | DS9 provides Unity-like Edit/Play isolation: an authoring state and disposable runtime preview, with Play-mode changes discarded on Stop. DS9C creates `bour_engine` plus separate `bour_game` and `bour_editor` targets with a one-way editor-to-runtime dependency in C; runners own native presentation while runtime sessions render to supplied targets, validated in E. |
 | DS10 | Directional shadows in B. True visible/cull-surviving stats remain deferred until a real visibility path exists; loaded/submitted stats are sufficient for MVP reporting. |
 | DS11 LOD | Deferred unless measurements show the small game requires a bounded remedy. |
 | DS11A advanced SDF, DS12 terrain | Deferred; no speculative frontier allocation in this baseline. |

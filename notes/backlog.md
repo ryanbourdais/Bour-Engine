@@ -422,28 +422,38 @@ Parent: Deliverable Set 9, editor/play abstraction and standalone runtime work.
 
 Suggested branch: `feat-engine-editor-boundary-v0`
 
-Goal: make the game/runtime and editor independently buildable and runnable. The editor may host and author shared engine state, but the runtime must never compile, link, initialize, or otherwise rely on editor code or Dear ImGui.
+Goal: make `bour_engine` a reusable runtime library and build `bour_game` and `bour_editor` as independently runnable peer executables. The editor may host and author shared engine state through an engine preview session, but the game/runtime must never compile, link, initialize, or otherwise rely on editor code or Dear ImGui.
 
 Exit criteria:
 
-- Runtime and editor have explicit entry points and build targets with a documented ownership boundary.
-- The runtime target builds and launches without `src/editor`, Dear ImGui, editor-only adapters, or editor-only resources.
+- `bour_engine`, `bour_game`, and `bour_editor` have explicit roles, entry points, build targets, and a documented ownership boundary.
+- `bour_game` builds and launches without `src/editor`, Dear ImGui, editor-only adapters, or editor-only resources.
 - Shared scene, ECS, renderer, input, timing, serialization, geometry, and physics interfaces are runtime-owned and do not depend on editor types.
-- The editor consumes runtime interfaces through an optional authoring host rather than being required by the engine/game loop.
+- `bour_editor` consumes runtime interfaces through an optional authoring host and preview session rather than being required by the engine/game loop.
 - A standalone game launch loads a scene, updates, renders, receives input, and executes one game-code behavior without editor initialization.
 - A dependency/build check fails when runtime code introduces an editor dependency.
 
 Tasks:
 
-- [ ] Map current engine/editor calls, data types, build dependencies, and initialization paths, including the `engine.c`/`editor_ui` boundary.
+- [x] Map current engine/editor calls, data types, build dependencies, and initialization paths, including the `engine.c`/`editor_ui` boundary. `engine.c` currently owns the GLFW loop/window, runtime state, scene mutation, editor frame/commands, ImGui lifecycle, and presentation; the renderer already supports default-framebuffer versus resolved off-screen rendering.
 - [ ] Define runtime-owned frame, command, inspection, and lifecycle interfaces for editor consumption without exporting editor types into runtime code.
-- [ ] Split CMake targets and entry points so the runtime/game target builds without editor sources or Dear ImGui.
+- [ ] Split CMake into `bour_engine`, `bour_game`, and `bour_editor` targets so the game target builds without editor sources or Dear ImGui.
 - [ ] Move editor-only startup, frame gathering, command application, and presentation behind the editor-host boundary.
 - [ ] Add a dependency/build check proving runtime targets do not link editor libraries or include editor headers.
 - [ ] Validate a standalone runtime launch from outside the editor workflow with a saved scene and one game-code behavior.
 - [ ] Document shared ownership, allowed dependency direction, and deferred decoupling work.
 
-Scope: this 13-point architecture/build-boundary slice is not a rewrite of shared engine subsystems. It supports DS9 Edit/Play work and the MVP standalone package; full general-purpose runtime/editor decoupling remains deferred.
+Scope: this 13-point architecture/build-boundary slice is not a rewrite of shared engine subsystems. It establishes reusable engine-library services for game running and editor preview, supports DS9 Edit/Play work and the MVP standalone package, and defers in-editor build orchestration plus full general-purpose runtime/editor decoupling.
+
+Dependency rule: `bour_game` and `bour_editor` own their native window and outer loop, then depend on `bour_engine`. `bour_engine` must never depend on either executable, `editor_ui`, or Dear ImGui. Editor-only changes must not require runtime API, initialization, or behavior changes; shared-subsystem changes cross the boundary only through stable runtime-owned interfaces.
+
+Runtime API rule: `bour_engine` exposes an opaque C-facing `EngineRuntime` handle. Game, editor, and future scripting-language runners use lifecycle, update, render, inspection, and command APIs; they do not receive raw scene, renderer, camera, or component-storage pointers. Inspection uses plain runtime-owned snapshot data and mutation uses plain runtime-owned command data.
+
+Preview direction: `bour_editor` keeps authoring state separate from an isolated runtime preview. DS9 Play starts the preview from the authoring state; Game input and temporary Play-mode edits affect only that preview, and Stop discards it to return to unchanged authoring state. Apply-back behavior and the editor's in-app game-build controls are deferred. DS9C establishes the independently runnable targets and session boundary needed for this flow; DS9 implements the visible Play/Pause/Stop lifecycle.
+
+Rendering and session rule: runners own native-window creation, event polling, buffer swapping, and presentation. `EngineRuntime` only updates and renders to a runner-supplied target: `bour_game` may use its window framebuffer, while `bour_editor` presents an off-screen runtime texture in Scene/Game panes. `EngineRuntime` is multi-session-capable from DS9C: the game has one session; the editor may host authoring plus an optional preview session. No ImGui type crosses this boundary.
+
+Launch rule: `bour_game` accepts an explicit scene/project launch argument and has one documented development default. This makes standalone launch deterministic without editor startup assumptions.
 
 ## Deliverable Set 10: Phong Shadow Maps
 
