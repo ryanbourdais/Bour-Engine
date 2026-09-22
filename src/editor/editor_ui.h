@@ -65,6 +65,11 @@ typedef struct EditorFrameData {
     size_t renderer_submitted_vertex_count;
     size_t renderer_submitted_triangle_count;
     size_t renderer_missing_model_count;
+    int renderer_viewport_width;
+    int renderer_viewport_height;
+    size_t renderer_render_target_resize_count;
+    size_t renderer_render_target_noop_count;
+    size_t renderer_zero_size_viewport_count;
 
     bool editor_cursor_enabled;
     unsigned int resolved_scene_texture;

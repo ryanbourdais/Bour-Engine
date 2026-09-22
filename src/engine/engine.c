@@ -756,6 +756,14 @@ static void run_engine_loop(struct EngineState *engine)
             .renderer_submitted_vertex_count = renderer_stats.submitted_vertex_count,
             .renderer_submitted_triangle_count = renderer_stats.submitted_triangle_count,
             .renderer_missing_model_count = renderer_stats.missing_model_count,
+            .renderer_viewport_width = renderer_stats.viewport_width,
+            .renderer_viewport_height = renderer_stats.viewport_height,
+            .renderer_render_target_resize_count =
+                renderer_stats.render_target_resize_count,
+            .renderer_render_target_noop_count =
+                renderer_stats.render_target_noop_count,
+            .renderer_zero_size_viewport_count =
+                renderer_stats.zero_size_viewport_count,
             .editor_cursor_enabled = engine->editor_cursor_enabled,
             .resolved_scene_texture =
                 renderer_get_resolved_scene_texture(engine->renderer),
