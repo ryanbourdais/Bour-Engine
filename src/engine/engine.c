@@ -42,13 +42,14 @@ struct EngineState
 
     char current_scene_path[ENGINE_SCENE_PATH_MAX_LENGTH];
     bool has_current_scene_path;
-
     EngineFrameProfile profile;
     ProcessTimerLogConfig profile_log_config;
 
     EntityId selected_entity;
     bool editor_enabled;
     bool editor_cursor_enabled;
+    bool editor_scene_view_focused;
+    bool editor_camera_capture_active;
     bool fps_enabled;
     FrameClock clock;
     double fps_title_countdown_time;
@@ -112,7 +113,9 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 
     vec2s offsets = input_get_mouse_offsets(xpos, ypos);
 
-    if (engine->editor_enabled && engine->editor_cursor_enabled)
+    if (engine->editor_enabled && 
+            (engine->editor_cursor_enabled || 
+             (!engine->editor_scene_view_focused && !engine->editor_camera_capture_active)))
     {
         return;
     }
@@ -122,7 +125,9 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 
 static void engine_update_camera(struct EngineState *engine)
 {
-    if (engine->editor_enabled && engine->editor_cursor_enabled)
+    if (engine->editor_enabled && 
+            (engine->editor_cursor_enabled || 
+             (!engine->editor_scene_view_focused && !engine->editor_camera_capture_active)))
     {
         return;
     }
@@ -142,9 +147,13 @@ static void engine_update_editor_cursor_mode(struct EngineState *engine)
 
     bool tab_is_pressed = glfwGetKey(engine->window, GLFW_KEY_TAB) == GLFW_PRESS;
 
-    if (tab_is_pressed && !engine->tab_was_pressed)
+    if (tab_is_pressed && 
+            !engine->tab_was_pressed &&
+            (!engine->editor_cursor_enabled || engine->editor_scene_view_focused))
     {
         engine->editor_cursor_enabled = !engine->editor_cursor_enabled;
+
+        engine->editor_camera_capture_active = false;
 
         glfwSetInputMode(engine->window, GLFW_CURSOR, engine->editor_cursor_enabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
     }
@@ -155,7 +164,6 @@ static void engine_update(struct EngineState *engine)
 {
     scene_update(&engine->scene, frame_clock_delta_time(&engine->clock));
     engine_update_editor_cursor_mode(engine);
-    engine_update_camera(engine);
 }
 
 static EntityId engine_create_empty_entity(struct EngineState *engine, const char *name_value)
@@ -795,6 +803,9 @@ static void run_engine_loop(struct EngineState *engine)
 
             EditorFrameResult editor_result = editor_ui_begin_frame(&editor_frame);
 
+            engine->editor_scene_view_focused =
+                editor_result.viewport.focused;
+            engine_update_camera(engine);
             frame.viewport.width = editor_result.viewport.framebuffer_width;
             frame.viewport.height = editor_result.viewport.framebuffer_height;
 
@@ -909,6 +920,7 @@ static void run_engine_loop(struct EngineState *engine)
             {
                 engine->editor_cursor_enabled = !engine->editor_cursor_enabled;
 
+                engine->editor_camera_capture_active = !engine->editor_cursor_enabled;
                 glfwSetInputMode(engine->window,GLFW_CURSOR,engine->editor_cursor_enabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
             }
 
@@ -916,6 +928,9 @@ static void run_engine_loop(struct EngineState *engine)
             {
                 engine->selected_entity = editor_result.selected_entity_id;
             }
+        }
+        else {
+            engine_update_camera(engine);
         }
         process_timer_begin(&engine->profile.renderer_timer, glfwGetTime());
 
@@ -972,6 +987,7 @@ int engine_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
         .has_current_scene_path = true,
         .current_scene_path = ENGINE_DEFAULT_SCENE_PATH,
         .editor_cursor_enabled = true,
+        .editor_camera_capture_active = false,
         .selected_entity = INVALID_ENTITY_ID,
         .fps_enabled = fps_enabled,
         .fps_title_countdown_time = 0.1,
@@ -985,7 +1001,9 @@ int engine_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
     glfwSetInputMode(
         engine.window,
         GLFW_CURSOR,
-        engine.editor_cursor_enabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED
+        engine.editor_enabled && engine.editor_cursor_enabled
+        ? GLFW_CURSOR_NORMAL
+        : GLFW_CURSOR_DISABLED
     );
 
     frame_clock_init(&engine.clock, glfwGetTime());
