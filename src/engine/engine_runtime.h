@@ -55,6 +55,59 @@ typedef struct EngineRuntimeEntitySnapshot {
     float light_position[3];
 } EngineRuntimeEntitySnapshot;
 
+#define ENGINE_RUNTIME_SCENE_PATH_MAX_LENGTH 256
+typedef enum EngineRuntimePrimitiveType {
+    ENGINE_RUNTIME_PRIMITIVE_CUBE = 0,
+    ENGINE_RUNTIME_PRIMITIVE_PLANE,
+    ENGINE_RUNTIME_PRIMITIVE_QUAD,
+    ENGINE_RUNTIME_PRIMITIVE_UV_SPHERE,
+    ENGINE_RUNTIME_PRIMITIVE_CYLINDER,
+} EngineRuntimePrimitiveType;
+
+typedef enum EngineRuntimeCommandType {
+    ENGINE_RUNTIME_COMMAND_CREATE_EMPTY_ENTITY = 0,
+    ENGINE_RUNTIME_COMMAND_CREATE_RENDERABLE_ENTITY,
+    ENGINE_RUNTIME_COMMAND_CREATE_PRIMITIVE_ENTITY,
+    ENGINE_RUNTIME_COMMAND_CREATE_PROGRAMMABLE_PLANE,
+    ENGINE_RUNTIME_COMMAND_DELETE_ENTITY,
+    ENGINE_RUNTIME_COMMAND_DUPLICATE_ENTITY,
+    ENGINE_RUNTIME_COMMAND_RENAME_ENTITY,
+    ENGINE_RUNTIME_COMMAND_SET_TRANSFORM,
+    ENGINE_RUNTIME_COMMAND_SET_LIGHT,
+    ENGINE_RUNTIME_COMMAND_SAVE_SCENE,
+    ENGINE_RUNTIME_COMMAND_LOAD_SCENE,
+} EngineRuntimeCommandType; 
+
+typedef enum EngineRuntimeCommandResult {
+    ENGINE_RUNTIME_COMMAND_OK = 0,
+    ENGINE_RUNTIME_COMMAND_INVALID_ARGUMENT,
+    ENGINE_RUNTIME_COMMAND_ENTITY_NOT_FOUND,
+    ENGINE_RUNTIME_COMMAND_OPERATION_FAILED,
+    ENGINE_RUNTIME_COMMAND_SCENE_IO_FAILED,
+} EngineRuntimeCommandResult;
+
+typedef struct EngineRuntimeCommand {
+    EngineRuntimeCommandType type;
+    uint32_t entity_id;
+
+    char name[ENGINE_RUNTIME_ENTITY_NAME_MAX_LENGTH];
+    char scene_path[ENGINE_RUNTIME_SCENE_PATH_MAX_LENGTH];
+
+    EngineRuntimePrimitiveType primitive_type;
+    float programmable_plane_width;
+    float programmable_plane_depth;
+    
+    float position[3];
+    float rotation[3];
+    float scale[3];
+
+    float light_ambient[3];
+    float light_diffuse[3];
+    float light_specular[3];
+    float light_direction[3];
+    float light_position[3];
+} EngineRuntimeCommand;
+
 typedef struct EngineRuntimeCreateInfo {
     const char *scene_path;
     int framebuffer_width;
@@ -100,6 +153,12 @@ bool engine_runtime_get_entity_snapshot(
     const EngineRuntime *runtime,
     uint32_t entity_id,
     EngineRuntimeEntitySnapshot *snapshot
+);
+
+EngineRuntimeCommandResult engine_runtime_execute_command(
+    EngineRuntime *runtime,
+    const EngineRuntimeCommand *command,
+    uint32_t *out_affected_entity_id
 );
 
 void engine_runtime_update(
