@@ -47,6 +47,8 @@ Runners own native-window creation, event polling, buffer swapping, and final pr
 
 Runtime-facing API: clients use an opaque `EngineRuntime` handle with plain C lifecycle, inspection, rendering, and command data. Raw scene, renderer, camera, and component-storage pointers remain engine-private.
 
+Runtime implementation is deliberately split for human maintenance: lifecycle/update/render live in `engine_runtime.c`, caller-copied read models in `engine_runtime_inspection.c`, mutation dispatch in `engine_runtime_commands.c`, and shared private state in `engine_runtime_internal.h`. Scene/ECS operations retain their domain ownership. Add modules for concrete responsibilities, not future speculation.
+
 Done signals:
 
 - Default scene state is represented as real ECS-backed scene data.

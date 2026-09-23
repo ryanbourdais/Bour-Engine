@@ -12,6 +12,8 @@ add_subdirectory(external/cglm EXCLUDE_FROM_ALL)
 
 set(BOUR_ENGINE_SOURCES
       engine/engine_runtime.c
+      engine/engine_runtime_inspection.c
+      engine/engine_runtime_commands.c
       external/glad/src/glad.c
       external/stb/stb_image.c
       external/cgltf/cgltf.c
