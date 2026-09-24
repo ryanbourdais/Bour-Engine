@@ -72,7 +72,7 @@ target_link_libraries(bour_game PRIVATE
 
 add_executable(bour_editor
     main.c
-    engine/engine.c
+    editor/editor_app.c
     engine/timing.c
     utils/profiler.c
     renderer/window.c

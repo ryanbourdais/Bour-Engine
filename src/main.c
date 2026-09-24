@@ -1,7 +1,7 @@
-#include "engine/engine.h"
+#include "editor/editor_app.h"
 
 int main()
 {
-    return engine_run(false, false, false);
+    return editor_app_run(false, false, false);
 }
 

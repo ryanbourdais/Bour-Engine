@@ -10,4 +10,6 @@ struct EngineRuntime {
     Camera camera;
     Renderer *renderer;
     Scene scene;
+    char current_scene_path[ENGINE_RUNTIME_SCENE_PATH_MAX_LENGTH];
+    bool has_current_scene_path;
 };

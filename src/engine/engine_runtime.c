@@ -1,6 +1,8 @@
+#include "engine_runtime.h"
 #include "engine_runtime_internal.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "../scene/scene_serialization.h"
 
@@ -34,6 +36,18 @@ EngineRuntime *engine_runtime_create(
         scene_shutdown(&runtime->scene);
         free(runtime);
         return NULL;
+    }
+
+    if (create_info->scene_path != NULL)
+    {
+        snprintf(
+            runtime->current_scene_path, 
+            ENGINE_RUNTIME_SCENE_PATH_MAX_LENGTH, 
+            "%s",
+            create_info->scene_path
+        );
+
+        runtime->has_current_scene_path = true;
     }
 
     runtime->renderer = renderer_create();
@@ -174,4 +188,61 @@ uint32_t engine_runtime_get_resolved_texture(
     }
 
     return renderer_get_resolved_scene_texture(runtime->renderer);
+}
+
+EngineRuntimeRenderStats engine_runtime_get_render_stats(
+    EngineRuntime *runtime
+)
+{
+    EngineRuntimeRenderStats runtime_stats = {0};
+
+    if (runtime == NULL || runtime->renderer == NULL)
+    {
+        return runtime_stats;
+    }
+
+    SceneRenderConfig scene_render_config = {0};
+    scene_get_render_config(&runtime->scene, &scene_render_config);
+
+    RendererFrame frame = {
+        .camera = &runtime->camera,
+        .viewport = {0},
+        .present_to_default_framebuffer = false,
+        .renderables = scene_render_config.renderables,
+        .renderable_count = scene_render_config.renderable_count,
+        .directional_light = scene_render_config.directional_light,
+        .point_lights = scene_render_config.point_lights,
+        .spot_lights = scene_render_config.spot_lights,
+    };
+
+    RendererStats renderer_stats = renderer_get_frame_stats(
+        runtime->renderer, 
+        &frame
+    );
+
+    runtime_stats.renderable_count  = scene_render_config.renderable_count;
+    runtime_stats.mesh_count = renderer_stats.mesh_count;
+    runtime_stats.vertex_count = renderer_stats.vertex_count;
+    runtime_stats.triangle_count = renderer_stats.triangle_count;
+    runtime_stats.texture_count = renderer_stats.texture_count;
+    runtime_stats.submitted_draw_count =
+        renderer_stats.submitted_draw_count;
+    runtime_stats.submitted_mesh_count =
+        renderer_stats.submitted_mesh_count;
+    runtime_stats.submitted_vertex_count =
+        renderer_stats.submitted_vertex_count;
+    runtime_stats.submitted_triangle_count =
+      renderer_stats.submitted_triangle_count;
+    runtime_stats.missing_model_count =
+      renderer_stats.missing_model_count;
+    runtime_stats.viewport_width = renderer_stats.viewport_width;
+    runtime_stats.viewport_height = renderer_stats.viewport_height;
+    runtime_stats.render_target_resize_count =
+        renderer_stats.render_target_resize_count;
+    runtime_stats.render_target_noop_count =
+        renderer_stats.render_target_noop_count;
+    runtime_stats.zero_size_viewport_count =
+        renderer_stats.zero_size_viewport_count;
+
+    return runtime_stats;
 }

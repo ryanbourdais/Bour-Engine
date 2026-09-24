@@ -55,6 +55,27 @@ typedef struct EngineRuntimeEntitySnapshot {
     float light_position[3];
 } EngineRuntimeEntitySnapshot;
 
+typedef struct EngineRuntimeRenderStats {
+    size_t renderable_count;
+
+    size_t mesh_count;
+    size_t vertex_count;
+    size_t triangle_count;
+    size_t texture_count;
+    
+    size_t submitted_draw_count;
+    size_t submitted_mesh_count;
+    size_t submitted_vertex_count;
+    size_t submitted_triangle_count;
+    size_t missing_model_count;
+
+    int viewport_width;
+    int viewport_height;
+    size_t render_target_resize_count;
+    size_t render_target_noop_count;
+    size_t zero_size_viewport_count;
+} EngineRuntimeRenderStats;
+
 #define ENGINE_RUNTIME_SCENE_PATH_MAX_LENGTH 256
 typedef enum EngineRuntimePrimitiveType {
     ENGINE_RUNTIME_PRIMITIVE_CUBE = 0,
@@ -153,6 +174,10 @@ bool engine_runtime_get_entity_snapshot(
     const EngineRuntime *runtime,
     uint32_t entity_id,
     EngineRuntimeEntitySnapshot *snapshot
+);
+
+EngineRuntimeRenderStats engine_runtime_get_render_stats(
+    EngineRuntime *runtime
 );
 
 EngineRuntimeCommandResult engine_runtime_execute_command(

@@ -1,4 +1,4 @@
-#include "engine.h"
+#include "editor_app.h"
 // openGL 4.1 Core
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -11,7 +11,7 @@
 #include "../renderer/camera.h"
 #include "../editor/editor_ui.h"
 #include "../scene/scene.h"
-#include "timing.h"
+#include "../engine/timing.h"
 #include "../utils/math_utils.h"
 #include "../utils/profiler.h"
 #include "../scene/scene_serialization.h"
@@ -962,7 +962,7 @@ static void run_engine_loop(struct EngineState *engine)
     }
 }
 
-int engine_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
+int editor_app_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
 {
     initialize_glfw();
     if (!glfwInit())

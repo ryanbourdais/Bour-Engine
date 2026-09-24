@@ -1,8 +1,11 @@
+#include "engine_runtime.h"
 #include "engine_runtime_internal.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 
 #include "../scene/entity_factory.h"
+#include "../scene/scene_serialization.h"
 
 
 static bool engine_runtime_entity_is_valid(
@@ -19,7 +22,7 @@ static bool engine_runtime_entity_is_valid(
 
 static EntityId engine_runtime_create_empty_entity(
     EngineRuntime *runtime,
-    const char name_value[ENGINE_RUNTIME_ENTITY_NAME_MAX_LENGTH]
+    const char *name_value
 )
 {
     EntityId entity = entity_registry_create(&runtime->scene.entities);
@@ -357,6 +360,266 @@ static bool engine_runtime_delete_entity(
     );
 }
 
+static EntityId engine_runtime_duplicate_entity(
+    EngineRuntime *runtime,
+    EntityId entity_id
+)
+{
+    if (!engine_runtime_entity_is_valid(runtime, entity_id))
+    {
+        return INVALID_ENTITY_ID;
+    }
+
+    const TransformComponent *source_transform =
+        component_storage_get_const(
+            &runtime->scene.transforms, 
+            entity_id
+        );
+
+    const MeshRendererComponent *source_mesh =
+        component_storage_get_const(
+            &runtime->scene.mesh_renderers, 
+            entity_id
+        );
+
+    if (source_transform == NULL || source_mesh == NULL)
+    {
+        return INVALID_ENTITY_ID;
+    }
+
+    TransformComponent duplicate_transform = *source_transform;
+    duplicate_transform.position.x += 1.0f;
+
+    if (source_mesh->source_type == MESH_SOURCE_PROGRAMMABLE)
+    {
+        const ProgrammableMesh *source_programmable_mesh =
+            programmable_mesh_collection_get_const(
+                &runtime->scene.programmable_meshes, 
+                source_mesh->programmable_mesh_id
+            );
+
+        if (source_programmable_mesh == NULL ||
+            source_programmable_mesh->type !=
+                PROGRAMMABLE_MESH_TYPE_PLANE)
+        {
+            return INVALID_ENTITY_ID;
+        }
+
+        return scene_entity_factory_create_programmable_plane(
+            &runtime->scene,
+            "Duplicated Programmable Plane",
+            source_programmable_mesh->plane_width,
+            source_programmable_mesh->plane_depth,
+            &duplicate_transform
+        );
+    }
+    EntityId duplicate = engine_runtime_create_empty_entity(
+        runtime, 
+        "Duplicated Entity"
+    );
+
+    if (duplicate == INVALID_ENTITY_ID)
+    {
+        return INVALID_ENTITY_ID;
+    }
+
+    TransformComponent *transform =
+        component_storage_get(&runtime->scene.transforms, duplicate);
+
+    if (transform == NULL ||
+        !component_storage_add(
+            &runtime->scene.mesh_renderers, 
+            duplicate, 
+            source_mesh
+        ))
+    {
+        engine_runtime_delete_entity(runtime, duplicate);
+        return INVALID_ENTITY_ID;
+    }
+
+    *transform = duplicate_transform;
+    return duplicate;
+}
+
+static bool engine_runtime_set_light(
+    EngineRuntime *runtime,
+    EntityId entity_id,
+    const EngineRuntimeCommand *command
+)
+{
+    if (!engine_runtime_entity_is_valid(runtime, entity_id) ||
+        command == NULL)
+    {
+        return false;
+    }
+
+    vec3s ambient = {{
+        command->light_ambient[0],
+        command->light_ambient[1],
+        command->light_ambient[2],
+    }};
+
+    vec3s diffuse = {{
+        command->light_diffuse[0],
+        command->light_diffuse[1],
+        command->light_diffuse[2],
+    }};
+
+    vec3s specular = {{
+        command->light_specular[0],
+        command->light_specular[1],
+        command->light_specular[2],
+    }};
+
+    vec3s direction = {{
+        command->light_direction[0],
+        command->light_direction[1],
+        command->light_direction[2],
+    }};
+
+    vec3s position = {{
+        command->light_position[0],
+        command->light_position[1],
+        command->light_position[2],
+    }};
+
+    DirectionalLightComponent *directional =
+        component_storage_get(
+            &runtime->scene.directional_lights, 
+            entity_id
+        );
+
+    PointLightComponent *point =
+        component_storage_get(
+            &runtime->scene.point_lights, 
+            entity_id
+        );
+
+    SpotLightComponent *spot =
+        component_storage_get(
+            &runtime->scene.spot_lights, 
+            entity_id
+        );
+
+    if (directional != NULL)
+    {
+        directional->light.color.ambient = ambient;
+        directional->light.color.diffuse = diffuse;
+        directional->light.color.specular = specular;
+        directional->light.direction = direction;
+        return true;
+    }
+
+    if (point != NULL)
+    {
+        point->light.color.ambient = ambient;
+        point->light.color.diffuse = diffuse;
+        point->light.color.specular = specular;
+        point->light.position = position;
+        return true;
+    }
+
+    if (spot != NULL)
+    {
+        spot->light.color.ambient = ambient;
+        spot->light.color.diffuse = diffuse;
+        spot->light.color.specular = specular;
+        spot->light.direction = direction;
+        spot->light.position = position;
+        return true;
+    }
+
+    return false;
+}
+
+static const char *engine_runtime_get_scene_path(
+    const EngineRuntime *runtime,
+    const EngineRuntimeCommand *command
+)
+{
+    if (command != NULL && command->scene_path[0] != '\0')
+    {
+        return command->scene_path;
+    }
+
+    if (runtime != NULL && runtime->has_current_scene_path)
+    {
+        return runtime->current_scene_path;
+    }
+
+    return NULL;
+}
+
+static void engine_runtime_set_current_scene_path(
+    EngineRuntime *runtime,
+    const char *scene_path
+)
+{
+    if (runtime == NULL || scene_path == NULL)
+    {
+        return;
+    }
+
+    snprintf(
+        runtime->current_scene_path, 
+        ENGINE_RUNTIME_SCENE_PATH_MAX_LENGTH, 
+        "%s",
+        scene_path
+    );
+
+    runtime->has_current_scene_path = true;
+}
+
+static EngineRuntimeCommandResult engine_runtime_save_scene(
+    EngineRuntime *runtime,
+    const EngineRuntimeCommand *command
+)
+{
+    const char *scene_path = engine_runtime_get_scene_path(
+        runtime, 
+        command
+    );
+
+    if (scene_path == NULL)
+    {
+        return ENGINE_RUNTIME_COMMAND_INVALID_ARGUMENT;
+    }
+
+    if (scene_save_to_file(&runtime->scene, scene_path) !=
+            SCENE_SAVE_OK)
+    {
+        return ENGINE_RUNTIME_COMMAND_SCENE_IO_FAILED;
+    }
+
+    engine_runtime_set_current_scene_path(runtime, scene_path);
+    return ENGINE_RUNTIME_COMMAND_OK;
+}
+
+static EngineRuntimeCommandResult engine_runtime_load_scene(
+    EngineRuntime *runtime,
+    const EngineRuntimeCommand *command
+)
+{
+    const char *scene_path = engine_runtime_get_scene_path(
+        runtime, 
+        command
+    );
+
+    if (scene_path == NULL)
+    {
+        return ENGINE_RUNTIME_COMMAND_INVALID_ARGUMENT;
+    }
+
+    if (scene_load_from_file(&runtime->scene, scene_path) !=
+            SCENE_LOAD_OK)
+    {
+        return  ENGINE_RUNTIME_COMMAND_SCENE_IO_FAILED;
+    }
+
+    engine_runtime_set_current_scene_path(runtime, scene_path);
+    return ENGINE_RUNTIME_COMMAND_OK;
+}
+
 EngineRuntimeCommandResult engine_runtime_execute_command(
     EngineRuntime *runtime, 
     const EngineRuntimeCommand *command, 
@@ -472,6 +735,33 @@ EngineRuntimeCommandResult engine_runtime_execute_command(
             )
                 ? ENGINE_RUNTIME_COMMAND_OK
                 : ENGINE_RUNTIME_COMMAND_OPERATION_FAILED;
+        case ENGINE_RUNTIME_COMMAND_DUPLICATE_ENTITY:
+        {
+            if (!engine_runtime_entity_is_valid(
+                    runtime, 
+                    command->entity_id
+                ))
+            {
+                return ENGINE_RUNTIME_COMMAND_ENTITY_NOT_FOUND;
+            }
+
+            EntityId duplicate = engine_runtime_duplicate_entity(
+                runtime, 
+                command->entity_id
+            );
+
+            if (duplicate == INVALID_ENTITY_ID)
+            {
+                return ENGINE_RUNTIME_COMMAND_OPERATION_FAILED;
+            }
+
+            if (out_affected_entity_id != NULL)
+            {
+                *out_affected_entity_id = duplicate;
+            }
+
+            return ENGINE_RUNTIME_COMMAND_OK;
+        }
         case ENGINE_RUNTIME_COMMAND_RENAME_ENTITY:
         {
             if (!engine_runtime_entity_is_valid(
@@ -525,6 +815,36 @@ EngineRuntimeCommandResult engine_runtime_execute_command(
 
             return ENGINE_RUNTIME_COMMAND_OK;
         }
+        case ENGINE_RUNTIME_COMMAND_SET_LIGHT:
+        {
+            if (!engine_runtime_entity_is_valid(
+                    runtime, 
+                    command->entity_id
+                ))
+            {
+                return ENGINE_RUNTIME_COMMAND_ENTITY_NOT_FOUND;
+            }
+
+            if (!engine_runtime_set_light(
+                    runtime, 
+                    command->entity_id, 
+                    command
+                ))
+            {
+                return ENGINE_RUNTIME_COMMAND_OPERATION_FAILED;
+            }
+
+            if (out_affected_entity_id != NULL)
+            {
+                *out_affected_entity_id = command->entity_id;
+            }
+
+            return ENGINE_RUNTIME_COMMAND_OK;
+        }
+        case ENGINE_RUNTIME_COMMAND_SAVE_SCENE:
+            return engine_runtime_save_scene(runtime, command);
+        case ENGINE_RUNTIME_COMMAND_LOAD_SCENE:
+            return engine_runtime_load_scene(runtime, command);
         default:
             return ENGINE_RUNTIME_COMMAND_OPERATION_FAILED;
     }
