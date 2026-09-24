@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stdatomic.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -14,25 +15,167 @@
 #include "../engine/timing.h"
 #include "../utils/math_utils.h"
 #include "../utils/profiler.h"
+#include "../controller/input.h"
 #include "../scene/scene_serialization.h"
 #include "../scene/entity_factory.h"
-#include "../controller/input.h"
+#include "../engine/engine_runtime.h"
 
 #define MAX_EDITOR_HIERARCHY_ITEMS 256
 
 #define ENGINE_SCENE_PATH_MAX_LENGTH 256
 #define ENGINE_DEFAULT_SCENE_PATH "test_scene.json"
 
-typedef struct EngineFrameProfile {
+typedef struct EditorAppFrameProfile {
     ProcessTimer engine_update_timer;
     ProcessTimer scene_extract_timer;
     ProcessTimer editor_begin_timer;
     ProcessTimer renderer_timer;
     ProcessTimer editor_render_timer;
     ProcessTimer present_timer;
-} EngineFrameProfile;
+} EditorAppFrameProfile;
 
-struct EngineState
+typedef struct EditorRuntimeFrameScratch {
+    EngineRuntimeHierarchyItem runtime_hierarchy_items[
+        MAX_EDITOR_HIERARCHY_ITEMS
+    ];
+    EditorHierarchyItem hierarchy_items[MAX_EDITOR_HIERARCHY_ITEMS];
+    EngineRuntimeEntitySnapshot selected_entity;
+} EditorRuntimeFrameScratch;
+
+static EditorSelectedLightType editor_app_light_type_from_runtime(
+    EngineRuntimeLightType light_type
+)
+{
+    switch (light_type)
+    {
+        case ENGINE_RUNTIME_LIGHT_DIRECTIONAL:
+            return EDITOR_SELECTED_LIGHT_DIRECTIONAL;
+        case ENGINE_RUNTIME_LIGHT_POINT:
+            return EDITOR_SELECTED_LIGHT_POINT;
+        case ENGINE_RUNTIME_LIGHT_SPOT:
+            return EDITOR_SELECTED_LIGHT_SPOT;
+        default:
+            return EDITOR_SELECTED_LIGHT_NONE;
+    }
+}
+
+static void editor_app_populate_runtime_frame(
+    EngineRuntime *runtime,
+    EntityId selected_entity_id,
+    EditorFrameData *frame,
+    EditorRuntimeFrameScratch *scratch
+)
+{
+    if (runtime == NULL || frame == NULL || scratch == NULL)
+    {
+        return;
+    }
+
+    *scratch = (EditorRuntimeFrameScratch){0};
+
+    size_t hierarchy_count = engine_runtime_copy_hierarchy(
+        runtime, 
+        scratch->runtime_hierarchy_items, 
+        MAX_EDITOR_HIERARCHY_ITEMS
+    );
+
+    for (size_t index = 0; index < hierarchy_count; index++)
+    {
+        scratch->hierarchy_items[index].entity_id =
+            scratch->runtime_hierarchy_items[index].entity_id;
+        scratch->hierarchy_items[index].name =
+            scratch->runtime_hierarchy_items[index].name;
+    }
+
+    EngineRuntimeRenderStats render_stats =
+        engine_runtime_get_render_stats(runtime);
+
+    
+    frame->entity_count = engine_runtime_get_entity_count(runtime);
+    frame->renderable_count = render_stats.renderable_count;
+    frame->renderer_mesh_count = render_stats.mesh_count;
+    frame->renderer_vertex_count = render_stats.vertex_count;
+    frame->renderer_triangle_count = render_stats.triangle_count;
+    frame->renderer_texture_count = render_stats.texture_count;
+    frame->renderer_submitted_draw_count =
+        render_stats.submitted_draw_count;
+    frame->renderer_submitted_mesh_count =
+        render_stats.submitted_mesh_count;
+    frame->renderer_submitted_vertex_count =
+        render_stats.submitted_vertex_count;
+    frame->renderer_submitted_triangle_count =
+        render_stats.submitted_triangle_count;
+    frame->renderer_missing_model_count =
+        render_stats.missing_model_count;
+    frame->renderer_viewport_width = render_stats.viewport_width;
+    frame->renderer_viewport_height = render_stats.viewport_height;
+    frame->renderer_render_target_resize_count =
+        render_stats.render_target_resize_count;
+    frame->renderer_render_target_noop_count =
+        render_stats.render_target_noop_count;
+    frame->renderer_zero_size_viewport_count =
+        render_stats.zero_size_viewport_count;
+    frame->resolved_scene_texture =
+        engine_runtime_get_resolved_texture(runtime);
+    frame->hierarchy_items = scratch->hierarchy_items;
+    frame->hierarchy_item_count = hierarchy_count;
+
+    frame->selected_entity_id = selected_entity_id;
+    frame->has_selected_entity = engine_runtime_get_entity_snapshot(
+        runtime,
+        selected_entity_id,
+        &scratch->selected_entity
+    );
+
+    
+    if (!frame->has_selected_entity)
+    {
+        frame->selected_entity_name = "No entity selected";
+        return;
+    }
+
+    frame->selected_entity_name = scratch->selected_entity.name;
+    frame->selected_entity_has_transform =
+        scratch->selected_entity.has_transform;
+    frame->selected_entity_is_renderable =
+        scratch->selected_entity.has_mesh_renderer;
+    frame->selected_entity_is_programmable_mesh =
+        scratch->selected_entity.is_programmable_mesh;
+    frame->selected_programmable_mesh_id =
+        scratch->selected_entity.programmable_mesh_id;
+    frame->selected_programmable_plane_width =
+        scratch->selected_entity.programmable_plane_width;
+    frame->selected_programmable_plane_depth =
+        scratch->selected_entity.programmable_plane_depth;
+    frame->selected_programmable_mesh_dirty =
+        scratch->selected_entity.programmable_mesh_dirty;
+
+    for (size_t index = 0; index < 3; index++)
+    {
+        frame->selected_position[index] =
+            scratch->selected_entity.position[index];
+        frame->selected_rotation[index] =
+            scratch->selected_entity.rotation[index];
+        frame->selected_scale[index] =
+            scratch->selected_entity.scale[index];
+        frame->selected_light_ambient[index] =
+            scratch->selected_entity.light_ambient[index];
+        frame->selected_light_diffuse[index] =
+            scratch->selected_entity.light_diffuse[index];
+        frame->selected_light_specular[index] =
+            scratch->selected_entity.light_specular[index];
+        frame->selected_light_direction[index] =
+            scratch->selected_entity.light_direction[index];
+        frame->selected_light_position[index] =
+            scratch->selected_entity.light_position[index];
+    }
+
+    frame->selected_light_type = editor_app_light_type_from_runtime(
+        scratch->selected_entity.light_type
+    );
+}
+
+struct EditorAppState
 {
     GLFWwindow *window;
     // Active runtime/editor camera. ECS CameraComponent is scene data for future editor bridging.
@@ -42,7 +185,7 @@ struct EngineState
 
     char current_scene_path[ENGINE_SCENE_PATH_MAX_LENGTH];
     bool has_current_scene_path;
-    EngineFrameProfile profile;
+    EditorAppFrameProfile profile;
     ProcessTimerLogConfig profile_log_config;
 
     EntityId selected_entity;
@@ -82,7 +225,7 @@ static void set_hints()
     glfwWindowHint(GLFW_SAMPLES, 8);
 }
 
-static bool engine_entity_is_valid(struct EngineState *engine, EntityId entity)
+static bool engine_entity_is_valid(struct EditorAppState *engine, EntityId entity)
 {
     return entity_registry_is_alive(&engine->scene.entities, entity);
 }
@@ -109,7 +252,7 @@ static double elapsed_timer(double start, double end)
 
 static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 {
-    struct EngineState *engine = glfwGetWindowUserPointer(window);
+    struct EditorAppState *engine = glfwGetWindowUserPointer(window);
 
     vec2s offsets = input_get_mouse_offsets(xpos, ypos);
 
@@ -123,7 +266,7 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     handle_mouse(&engine->camera, offsets, true);
 }
 
-static void engine_update_camera(struct EngineState *engine)
+static void engine_update_camera(struct EditorAppState *engine)
 {
     if (engine->editor_enabled && 
             (engine->editor_cursor_enabled || 
@@ -138,7 +281,7 @@ static void engine_update_camera(struct EngineState *engine)
     camera_update(&engine->camera);
 }
 
-static void engine_update_editor_cursor_mode(struct EngineState *engine)
+static void engine_update_editor_cursor_mode(struct EditorAppState *engine)
 {
     if (!engine->editor_enabled)
     {
@@ -160,13 +303,13 @@ static void engine_update_editor_cursor_mode(struct EngineState *engine)
     engine->tab_was_pressed = tab_is_pressed;
 }
 
-static void engine_update(struct EngineState *engine)
+static void engine_update(struct EditorAppState *engine)
 {
     scene_update(&engine->scene, frame_clock_delta_time(&engine->clock));
     engine_update_editor_cursor_mode(engine);
 }
 
-static EntityId engine_create_empty_entity(struct EngineState *engine, const char *name_value)
+static EntityId engine_create_empty_entity(struct EditorAppState *engine, const char *name_value)
 {
     EntityId entity = entity_registry_create(&engine->scene.entities);
 
@@ -182,7 +325,7 @@ static EntityId engine_create_empty_entity(struct EngineState *engine, const cha
     return entity;
 }
 
-static EntityId engine_create_renderable_entity(struct EngineState *engine, const char *name_value)
+static EntityId engine_create_renderable_entity(struct EditorAppState *engine, const char *name_value)
 {
     if (engine == NULL)
     {
@@ -201,7 +344,7 @@ static EntityId engine_create_renderable_entity(struct EngineState *engine, cons
 }
 
 static EntityId engine_create_primitive_entity(
-    struct EngineState *engine,
+    struct EditorAppState *engine,
     BuiltinPrimitiveType primitive_type
 )
 {
@@ -245,7 +388,7 @@ static EntityId engine_create_primitive_entity(
 }
 
 static EntityId engine_create_programmable_plane_entity(
-    struct EngineState *engine
+    struct EditorAppState *engine
 )
 {
     if (engine == NULL)
@@ -266,7 +409,7 @@ static EntityId engine_create_programmable_plane_entity(
 }
 
 static bool engine_get_selected_transform(
-    struct EngineState *engine,
+    struct EditorAppState *engine,
     EntityId selected_entity,
     float out_position[3],
     float out_rotation[3],
@@ -291,7 +434,7 @@ static bool engine_get_selected_transform(
 }
 
 static EditorSelectedLightType engine_get_selected_light(
-    struct EngineState *engine,
+    struct EditorAppState *engine,
     EntityId selected_entity,
     float out_ambient[3], 
     float out_diffuse[3],
@@ -338,7 +481,7 @@ static EditorSelectedLightType engine_get_selected_light(
     return selected_light_type;
 }
 
-static void engine_delete_selected_entity(struct EngineState *engine, EntityId selected_entity)
+static void engine_delete_selected_entity(struct EditorAppState *engine, EntityId selected_entity)
 {
     if (!engine_entity_is_valid(engine, selected_entity))
     {
@@ -379,7 +522,7 @@ static void engine_delete_selected_entity(struct EngineState *engine, EntityId s
     engine->selected_entity = INVALID_ENTITY_ID;
 }
 
-static void engine_duplicate_selected_entity(struct EngineState *engine, EntityId selected_entity)
+static void engine_duplicate_selected_entity(struct EditorAppState *engine, EntityId selected_entity)
 {
     if (!engine_entity_is_valid(engine, selected_entity))
     {
@@ -445,7 +588,7 @@ static void engine_duplicate_selected_entity(struct EngineState *engine, EntityI
     }
 }
 
-static void engine_rename_selected_entity(struct EngineState *engine, EntityId selected_entity, char* edited_name)
+static void engine_rename_selected_entity(struct EditorAppState *engine, EntityId selected_entity, char* edited_name)
 {
     if (!engine_entity_is_valid(engine, selected_entity))
     {
@@ -465,7 +608,7 @@ static void engine_rename_selected_entity(struct EngineState *engine, EntityId s
 }
 
 static void engine_change_selected_transform(
-    struct EngineState *engine,
+    struct EditorAppState *engine,
     EntityId selected_entity,
     float* new_position,
     float* new_rotation,
@@ -501,7 +644,7 @@ static void engine_change_selected_transform(
 }
 
 static void engine_modify_selected_light(
-    struct EngineState *engine,
+    struct EditorAppState *engine,
     EntityId selected_entity,
     float* edited_ambient,
     float* edited_diffuse,
@@ -572,7 +715,7 @@ static void engine_modify_selected_light(
 }
 
 
-static void run_engine_loop(struct EngineState *engine)
+static void run_editor_app_loop(struct EditorAppState *engine)
 {
     while (!window_should_close(engine->window))
     {
@@ -817,7 +960,7 @@ static void run_engine_loop(struct EngineState *engine)
             bool result_entity_alive = entity_registry_is_alive(&engine->scene.entities, result_entity);
 
             if (editor_result.create_empty_entity)
-            {
+{
                 engine->selected_entity = engine_create_empty_entity(engine, "Empty Entity");
             }
 
@@ -981,7 +1124,7 @@ int editor_app_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
         return 1;
     }
 
-    struct EngineState engine = {
+    struct EditorAppState engine = {
         .window = window,
         .editor_enabled = true,
         .has_current_scene_path = true,
@@ -1087,7 +1230,7 @@ int editor_app_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
         fprintf(stderr, "Failed to open profiler log fields\n");
     }
 
-    run_engine_loop(&engine);
+    run_editor_app_loop(&engine);
     process_timer_log_config_close(&engine.profile_log_config);
     
     renderer_shutdown(engine.renderer);
