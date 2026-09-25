@@ -16,9 +16,9 @@ This file is the long-term initiative backlog for Bour Engine. It should stay hi
 
 Bour Engine is moving toward a C-first, editor-capable, scene-authored 3D engine where runtime ownership is explicit, saved scene data is reusable, renderer input comes from scene/ECS state, and higher-level gameplay/customization can eventually live above the core engine instead of inside renderer/debug scaffolding.
 
-The next concrete target is **First Game MVP**, building on commit 100's hierarchy-first editor. Scene authoring is an intermediate gate; the finish line is a short playable game that can be packaged and run without the editor or source checkout. `notes/backlog.md` owns acceptance criteria; `notes/first-game-mvp-plan.md` records the historical velocity forecast and stage gates.
+The next concrete target is **First Game MVP**: a short underwater exploration dive that can be authored, packaged, and run without the editor or source checkout. Scene authoring is an intermediate gate, not the finish line. `notes/backlog.md` owns acceptance criteria; `notes/first-game-mvp-plan.md` records the dependency plan and stage gates.
 
-Target December 2026 for a playable loop and rough package, and January–March 2027 for MVP completion. Minimal game-code integration, required movement/collision, game UI, Edit/Play separation, standalone execution, and one-platform packaging are promoted into scope. PBR, advanced SDF, terrain, general physics/scripting platforms, networking, and project-browser expansion remain deferred. Working behavior, explicit ownership, and a verified standalone package determine completion.
+The current Linear target is June 15, 2027. The MVP is one 10–20 minute dive site with roughly 8–12 discoverable species, 2–3 landmarks, and one showcase encounter. Minimal game-code integration, required movement/collision, game UI, audio, animation playback, asset references, Edit/Play separation, standalone execution, and one-platform packaging are promoted into scope. PBR, advanced SDF, terrain, general physics/scripting platforms, networking, project-browser expansion, full animation authoring, and generalized water simulation remain deferred. Working behavior, explicit ownership, and a verified standalone package determine completion.
 
 ## Initiative 1: Runtime Ownership And Scene Truth
 
@@ -38,6 +38,16 @@ Current deliverable anchors:
 - Deliverable Set 6: Scene Editing Workflow V1.
 - Deliverable Set 9: Editor Play/Simulation Separation.
 - Deliverable Set 9C: Engine/Editor Boundary And Separate Builds V0.
+
+DS9C target: `bour_engine` is a reusable runtime library; `bour_game` and `bour_editor` are separate executable clients. The editor owns authoring and preview behavior, while the game target never depends on editor code or Dear ImGui.
+
+Dependency direction: each executable depends on `bour_engine`; the engine library never depends on an executable or editor-only UI. This keeps editor-only changes isolated and leaves room for future scripting-language runners to consume the same runtime-facing interfaces.
+
+Runners own native-window creation, event polling, buffer swapping, and final presentation. The runtime renders only to runner-supplied targets: the game may present to its framebuffer and the editor may present an off-screen runtime texture. Runtime sessions are independent so the editor can host authoring and preview sessions; the game starts one session from an explicit scene/project argument with a documented development default.
+
+Runtime-facing API: clients use an opaque `EngineRuntime` handle with plain C lifecycle, inspection, rendering, and command data. Raw scene, renderer, camera, and component-storage pointers remain engine-private.
+
+Runtime implementation is deliberately split for human maintenance: lifecycle/update/render live in `engine_runtime.c`, caller-copied read models in `engine_runtime_inspection.c`, mutation dispatch in `engine_runtime_commands.c`, and shared private state in `engine_runtime_internal.h`. Scene/ECS operations retain their domain ownership. Add modules for concrete responsibilities, not future speculation.
 
 Done signals:
 

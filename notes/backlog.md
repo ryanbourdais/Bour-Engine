@@ -6,17 +6,17 @@ Commit 100 proved the hierarchy-first editor foundation. First Game MVP targets 
 
 The north star: **author a small game, press Play to test it, build a distributable package, and let another person launch and finish it without the engine editor.** The engine remains C-first, with explicit ownership and narrow subsystem boundaries. Every implementation step stays small enough to understand and validate manually.
 
-Target a playable loop and rough standalone package by December 31, 2026, then MVP completion during January–March 2027, with March 31 as the planning deadline. This is approximately 9–12 months from the March 2026 project start, not 9–12 additional months. Historical velocity and staged scope are recorded in `notes/first-game-mvp-plan.md`.
+The current Linear target for MVP completion is June 15, 2027. Dates are planning signals, not acceptance criteria; reforecast after each major dependency gate using demonstrated work. Historical velocity and staged scope are recorded in `notes/first-game-mvp-plan.md`.
 
-Use [the First Game MVP calendar and acceptance tracker](first-game-mvp-schedule.md) to follow feature gates, including the explicit Game Scripting and Entity Behavior V0 workstream. Target a playable/rough-package proof by December and MVP completion during January–March.
+Use [the First Game MVP calendar and acceptance tracker](first-game-mvp-schedule.md) to follow feature gates, including the explicit Game Scripting and Entity Behavior V0 workstream.
 
 There is no commit-count finish line. The playable game, standalone package, and acceptance criteria determine completion.
 
 ## First Game MVP Demo
 
-- [ ] Ship one short, complete game loop: start, player action, objective, success/failure feedback, restart, and exit. Choose the exact game concept before adding gameplay-specific systems.
+- [ ] Ship one compact 10–20 minute underwater exploration dive: start, swim, discover/document marine life and landmarks, reach one showcase encounter, complete the survey, restart, and exit.
 - [ ] Keep game rules above the engine behind a narrow interface; exercise the planned Odin direction through a bounded integration trial, with any fallback decision documented.
-- [ ] Provide only the movement, collision/triggers, game UI, and feedback required by that game; avoid a general physics or scripting platform as an MVP prerequisite.
+- [ ] Provide only underwater diver movement, collision/query support, bounded wildlife behavior, game UI, audio, animation playback, and feedback required by the dive; avoid general physics, AI, or scripting platforms as MVP prerequisites.
 - [ ] Separate Edit and Play state, restore the authored scene on Stop, and run the game through a standalone entry mode without editor initialization.
 - [ ] Produce a repeatable package for one explicitly chosen desktop platform, including required runtime libraries, shaders, scenes, and permitted assets.
 - [ ] Launch the package outside the repository on a clean user environment without compilers, CMake, source paths, or the editor; complete and restart the game.
@@ -29,7 +29,7 @@ There is no commit-count finish line. The playable game, standalone package, and
 - [ ] Save, restart, load, and verify entity data, geometry definitions, camera state, lights, and supported asset references. Repeated loads preserve string/resource ownership.
 - [ ] Provide a short reproducible demo checklist, accurate loaded/submitted statistics, known limitations, and clear dev-only asset notes.
 
-Editor Foundation is the first stage. A full project browser, blank-project startup workflow, PBR, advanced SDF, terrain, general-purpose physics, full scripting tooling, multiplayer, installers/store integration, and multi-platform release are outside the required MVP. Minimal game-code integration, game-specific collision, standalone execution, and one-platform packaging are now explicitly in scope. The larger roadmap is not a promise that every deliverable lands for First Game MVP.
+Editor Foundation is the first stage. A full project browser, blank-project startup workflow, PBR, advanced SDF, terrain, general-purpose physics, full scripting tooling, multiplayer, installers/store integration, multi-platform release, full animation authoring, and generalized water/ocean simulation are outside the required MVP. Minimal game-code integration, game-specific collision/query support, standalone execution, one-platform packaging, runtime UI/audio, animation playback, asset references, and bounded underwater rendering are explicitly in scope. The larger roadmap is not a promise that every deliverable lands for First Game MVP.
 
 Progress reviewed against the working tree on 2026-09-07. A passing build confirms compilation, not graphical or round-trip correctness.
 
@@ -422,28 +422,40 @@ Parent: Deliverable Set 9, editor/play abstraction and standalone runtime work.
 
 Suggested branch: `feat-engine-editor-boundary-v0`
 
-Goal: make the game/runtime and editor independently buildable and runnable. The editor may host and author shared engine state, but the runtime must never compile, link, initialize, or otherwise rely on editor code or Dear ImGui.
+Goal: make `bour_engine` a reusable runtime library and build `bour_game` and `bour_editor` as independently runnable peer executables. The editor may host and author shared engine state through an engine preview session, but the game/runtime must never compile, link, initialize, or otherwise rely on editor code or Dear ImGui.
 
 Exit criteria:
 
-- Runtime and editor have explicit entry points and build targets with a documented ownership boundary.
-- The runtime target builds and launches without `src/editor`, Dear ImGui, editor-only adapters, or editor-only resources.
+- `bour_engine`, `bour_game`, and `bour_editor` have explicit roles, entry points, build targets, and a documented ownership boundary.
+- `bour_game` builds and launches without `src/editor`, Dear ImGui, editor-only adapters, or editor-only resources.
 - Shared scene, ECS, renderer, input, timing, serialization, geometry, and physics interfaces are runtime-owned and do not depend on editor types.
-- The editor consumes runtime interfaces through an optional authoring host rather than being required by the engine/game loop.
+- `bour_editor` consumes runtime interfaces through an optional authoring host and preview session rather than being required by the engine/game loop.
 - A standalone game launch loads a scene, updates, renders, receives input, and executes one game-code behavior without editor initialization.
 - A dependency/build check fails when runtime code introduces an editor dependency.
 
 Tasks:
 
-- [ ] Map current engine/editor calls, data types, build dependencies, and initialization paths, including the `engine.c`/`editor_ui` boundary.
+- [x] Map current engine/editor calls, data types, build dependencies, and initialization paths, including the `engine.c`/`editor_ui` boundary. `engine.c` currently owns the GLFW loop/window, runtime state, scene mutation, editor frame/commands, ImGui lifecycle, and presentation; the renderer already supports default-framebuffer versus resolved off-screen rendering.
 - [ ] Define runtime-owned frame, command, inspection, and lifecycle interfaces for editor consumption without exporting editor types into runtime code.
-- [ ] Split CMake targets and entry points so the runtime/game target builds without editor sources or Dear ImGui.
+- [ ] Split CMake into `bour_engine`, `bour_game`, and `bour_editor` targets so the game target builds without editor sources or Dear ImGui.
 - [ ] Move editor-only startup, frame gathering, command application, and presentation behind the editor-host boundary.
 - [ ] Add a dependency/build check proving runtime targets do not link editor libraries or include editor headers.
 - [ ] Validate a standalone runtime launch from outside the editor workflow with a saved scene and one game-code behavior.
 - [ ] Document shared ownership, allowed dependency direction, and deferred decoupling work.
 
-Scope: this 13-point architecture/build-boundary slice is not a rewrite of shared engine subsystems. It supports DS9 Edit/Play work and the MVP standalone package; full general-purpose runtime/editor decoupling remains deferred.
+Scope: this 13-point architecture/build-boundary slice is not a rewrite of shared engine subsystems. It establishes reusable engine-library services for game running and editor preview, supports DS9 Edit/Play work and the MVP standalone package, and defers in-editor build orchestration plus full general-purpose runtime/editor decoupling.
+
+Dependency rule: `bour_game` and `bour_editor` own their native window and outer loop, then depend on `bour_engine`. `bour_engine` must never depend on either executable, `editor_ui`, or Dear ImGui. Editor-only changes must not require runtime API, initialization, or behavior changes; shared-subsystem changes cross the boundary only through stable runtime-owned interfaces.
+
+Runtime API rule: `bour_engine` exposes an opaque C-facing `EngineRuntime` handle. Game, editor, and future scripting-language runners use lifecycle, update, render, inspection, and command APIs; they do not receive raw scene, renderer, camera, or component-storage pointers. Inspection uses plain runtime-owned snapshot data and mutation uses plain runtime-owned command data.
+
+Runtime implementation rule: keep the public handle small and the implementation legible. `engine_runtime.c` owns only session lifecycle, update, render, and resolved-texture presentation; `engine_runtime_inspection.c` owns caller-copied read models; `engine_runtime_commands.c` owns command dispatch and mutation coordination; and `engine_runtime_internal.h` is the sole private state definition. Scene/ECS operations remain in their domain modules. Do not add speculative empty modules; introduce a focused file only when it has a concrete responsibility.
+
+Preview direction: `bour_editor` keeps authoring state separate from an isolated runtime preview. DS9 Play starts the preview from the authoring state; Game input and temporary Play-mode edits affect only that preview, and Stop discards it to return to unchanged authoring state. Apply-back behavior and the editor's in-app game-build controls are deferred. DS9C establishes the independently runnable targets and session boundary needed for this flow; DS9 implements the visible Play/Pause/Stop lifecycle.
+
+Rendering and session rule: runners own native-window creation, event polling, buffer swapping, and presentation. `EngineRuntime` only updates and renders to a runner-supplied target: `bour_game` may use its window framebuffer, while `bour_editor` presents an off-screen runtime texture in Scene/Game panes. `EngineRuntime` is multi-session-capable from DS9C: the game has one session; the editor may host authoring plus an optional preview session. No ImGui type crosses this boundary.
+
+Launch rule: `bour_game` accepts an explicit scene/project launch argument and has one documented development default. This makes standalone launch deterministic without editor startup assumptions.
 
 ## Deliverable Set 10: Phong Shadow Maps
 

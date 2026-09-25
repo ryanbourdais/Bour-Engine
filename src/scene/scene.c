@@ -466,14 +466,21 @@ void scene_get_render_config(Scene *scene, SceneRenderConfig *out_config)
 
     out_config->model_path = scene->model_path;
 
-    const MeshRendererComponent *mesh_renderer = 
-        (const MeshRendererComponent *)component_storage_first_const(&scene->mesh_renderers);
-
-    if (mesh_renderer != NULL &&
-        mesh_renderer->source_type == MESH_SOURCE_ASSET &&
-        mesh_renderer->model_path != NULL)
+    for (size_t index = 0; index < scene->mesh_renderers.count; index++)
     {
-        out_config->model_path = mesh_renderer->model_path;
+        const MeshRendererComponent *mesh_renderer =
+            component_storage_at_const(
+                &scene->mesh_renderers, 
+                index
+            );
+
+        if (mesh_renderer != NULL &&
+            mesh_renderer->source_type == MESH_SOURCE_ASSET &&
+            mesh_renderer->model_path != NULL)
+        {
+            out_config->model_path = mesh_renderer->model_path;
+            break;
+        }
     }
     
     scene_extract_active_skybox(scene, out_config);

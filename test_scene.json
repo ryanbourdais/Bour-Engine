@@ -217,40 +217,6 @@
           "assets/cubemaps/skybox/back.jpg"
         ]
       }
-    },
-    {
-      "id": 17,
-      "name": "Programmable Plane",
-      "transform": {
-        "position": [0.000, 0.700, 0.000],
-        "rotation": [0.000, 1.000, 42.500],
-        "scale": [1.000, 1.000, 1.000]
-      },
-      "mesh_renderer": {
-        "source_type": "programmable",
-        "programmable_type": "plane",
-        "width": 2.000,
-        "depth": 2.000,
-        "material": null,
-        "lod": null
-      }
-    },
-    {
-      "id": 18,
-      "name": "Duplicated Programmable Plane",
-      "transform": {
-        "position": [1.000, 0.700, 0.000],
-        "rotation": [0.000, 1.000, 42.500],
-        "scale": [1.000, 1.000, 1.000]
-      },
-      "mesh_renderer": {
-        "source_type": "programmable",
-        "programmable_type": "plane",
-        "width": 2.000,
-        "depth": 2.000,
-        "material": null,
-        "lod": null
-      }
     }
   ]
 }

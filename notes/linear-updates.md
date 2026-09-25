@@ -1,3 +1,9 @@
+# Linear Update Reference — historical snapshot
+
+This file records the September 16 DS3B/DS4A synchronization state and is no longer the current source of truth. As of 2026-09-25, inspect Linear directly and use `notes/wip.md` plus `notes/first-game-mvp-schedule.md` for local DS9C and First Game MVP context.
+
+---
+
 # Linear Update Reference — 2026-09-16
 
 Linear was unavailable from this chat. Use these verified updates when the board is available. Do not change priority, assignee, cycle, or target date without separate direction.

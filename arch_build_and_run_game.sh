@@ -20,13 +20,12 @@ if ! pkg-config --exists glfw3; then
     exit 1
 fi
 
-if [[ ! -f "${project_root}/src/external/cglm/CMakeLists.txt" || \
-      ! -f "${project_root}/src/external/imgui/imgui.cpp" ]]; then
+if [[ ! -f "${project_root}/src/external/cglm/CMakeLists.txt" ]]; then
     git -C "${project_root}" submodule update --init --recursive
 fi
 
 cmake -S "${project_root}/src" -B "${build_dir}" -DCMAKE_BUILD_TYPE=Debug
-cmake --build "${build_dir}" --parallel
+cmake --build "${build_dir}" --target bour_game --parallel
 
 cd "${project_root}"
-exec "${build_dir}/bour_engine"
+exec "${build_dir}/bour_game"
