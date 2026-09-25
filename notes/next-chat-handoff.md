@@ -1,51 +1,33 @@
-# Handoff — Editor Layout Foundation V0
+# Handoff — DS9C Complete; DS8 Next
 
-Date: 2026-09-16
-Active branch: `feat/editor-layout-foundation-v0`
-Base: `main` at `ffbbf0b` (`Merge pull request #1 from ryanbourdais/feat/window-render-target-resizing`)
+Date: 2026-09-25
+Completed deliverable: DS9C / RYA-44 — Engine/Editor Boundary And Separate Builds V0
 
 ## Repository Rules
 
-The user manually edits all source code. The assistant may inspect source, run diagnostics, and edit documentation when asked. Do not edit source or perform Git state changes. Before work, inspect the related backlog/Linear issue; Linear is unavailable in this chat, so use `notes/linear-updates.md` as the prepared update reference.
+The user manually edits all source code. The assistant may inspect source, run diagnostics, and edit documentation when asked. Do not edit source or perform Git state changes. Before work, inspect the related Linear issue. `notes/linear-updates.md` is historical only; use Linear directly for current status.
 
-## Delivered And Merged
+## DS9C Delivered
 
-- DS2, DS3, and DS3A are complete. DS3/DS3A were merged in `111675c` and manually regression-validated on 2026-09-15.
-- DS3B renderer-resize core was committed in `2c7a1ff` and merged by PR #1 in `ffbbf0b`.
-- `RenderTarget` and `MsaaRenderTarget` resize their existing attachments only when framebuffer-pixel dimensions change, then validate completeness.
-- Renderer target sizes and camera projection use current non-zero framebuffer dimensions. Zero-size frames defer scene rendering.
-- `git diff --check` and `cmake --build src/build --parallel` passed before the DS3B merge.
-- Manual resize validation passed: repeated resize preserved scene aspect ratio with no crash or framebuffer-completeness error.
+- `bour_engine` is a shared runtime library. `bour_game` and `bour_editor` are separate executable clients.
+- The public runtime boundary is an opaque `EngineRuntime` plus C-owned inspection snapshots, mutation commands, input, and render-target models.
+- The editor owns native window/event/UI state and talks to the runtime through that boundary; it no longer owns raw `Scene`, `Renderer`, or `Camera` state.
+- Manual validation has passed for editor save/load, primitive creation, and asset-backed renderable creation through the runtime command path.
+- CMake configuration rejects editor/ImGui files or includes from the `bour_engine` source and runtime-header boundary set.
+- Standalone validation passed using `./src/build/bour_game test_scene.json`: saved-scene load/render, WASD/mouse camera input, no editor/ImGui initialization, and clean exit.
+- `bour_game` contains no `imgui`, `editor_ui`, or `editor_app` symbols.
+- RYA-44 is Done in Linear with build, standalone-validation, and symbol-scan evidence.
 
-## Current Deliverable: DS4A
+## Immediate Architectural Rules
 
-The first-pass layout decision is fixed panes, not docking:
+- `bour_engine` never depends on an executable, `editor/`, or Dear ImGui.
+- Runners own windows, event loops, swap/presentation, and native input collection. The runtime renders to caller-supplied targets.
+- Editor preview remains the later DS9 responsibility: Play uses a disposable preview session and Stop discards temporary changes. DS9C establishes the boundary, not the full play lifecycle.
+- Keep runtime modules small by responsibility: lifecycle/render, inspection, commands, and private state. Scene/ECS retain their own domain logic.
 
-- Left pane: hierarchy and scene actions.
-- Right pane: inspector and stats.
-- Optional bottom pane: camera or future tool controls.
-- Center: `Scene View`, containing the resolved scene texture through `ImGui::Image`.
+## Next Work After DS9C
 
-The Scene View owns the authoritative viewport rectangle. Its logical ImGui content size must be multiplied by `ImGuiIO::DisplayFramebufferScale` before it is passed to the renderer as pixel dimensions. That same rectangle will later govern camera capture, picking, and transform tools.
-
-Defer docking, persistent layouts, tabs, multi-window support, and theming polish.
-
-## First Implementation Checkpoint
-
-Read these files before proposing changes:
-
-- `src/editor/editor_ui.cpp` — current independent floating windows and `editor_ui_begin_frame`.
-- `src/editor/editor_ui.h` — editor frame/result API.
-- `src/engine/engine.c` — calls `editor_ui_begin_frame` before `renderer_render_frame`, which permits using panel dimensions in the same frame.
-- `src/renderer/renderer.c/.h` — currently resolves the scene target and draws a fullscreen quad to the default framebuffer.
-- `src/renderer/data_types/renderTarget.c/.h` — current resizeable offscreen target ownership.
-
-First define a small editor viewport result with logical bounds, framebuffer-pixel size, hover/focus state, and the resolved scene texture handle. Do not add docking. Keep renderer pixels separate from ImGui logical coordinates.
-
-## Remaining DS3B Work
-
-- Verify ImGui logical coordinates, framebuffer pixels, and display scale under HiDPI or fractional scaling.
-- Expand manual checks for tiling, maximize/restore, fullscreen, and minimize/restore.
-- Add focused resize diagnostics for completeness, dimensions, and unchanged-size no-op behavior.
-
-These checks can be completed while DS4A establishes the viewport contract.
+- DS8 / RYA-17 is unblocked and is the next implementation target: editor-owned viewport picking and transform tools against the runtime boundary.
+- RYA-93 refactors runtime commands to a tagged union before DS6 adds component/editing operations; it does not block DS8.
+- The first-game target is a compact underwater discovery dive. The current delivery map and scope guards are in `notes/first-game-mvp-schedule.md`.
+- Do not activate speculative post-MVP tooling. Complete only the bounded input, scene lifecycle, collision/query, game behavior, runtime UI/audio, animation, asset-reference, underwater-rendering, packaging, and game-specific items listed in the delivery audit.

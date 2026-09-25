@@ -42,6 +42,44 @@ set(BOUR_ENGINE_SOURCES
       external/jsmn/jsmn.c
   )
 
+  set(BOUR_ENGINE_BOUNDARY_HEADERS
+      engine/engine_runtime.h
+      engine/engine_runtime_internal.h
+  )
+
+  set(BOUR_ENGINE_BOUNDARY_FILES
+      ${BOUR_ENGINE_SOURCES}
+      ${BOUR_ENGINE_BOUNDARY_HEADERS}
+  )
+
+  foreach(boundary_file IN LISTS BOUR_ENGINE_BOUNDARY_FILES)
+        if(boundary_file MATCHES "(^|/)editor/" OR
+            boundary_file MATCHES "(^|/)external/imgui/")
+                message(FATAL_ERROR
+                    "bour_engine must not compile editor or Dear ImGui file: "
+                    "${boundary_file}"
+                )
+        endif()
+
+        file(READ
+            "${CMAKE_CURRENT_SOURCE_DIR}/${boundary_file}"
+            boundary_file_contents
+        )
+
+        string(REGEX MATCH
+            "#[ \t]*include[ \t]*[<\"][^>\"]*(editor|imgui)"
+            forbidden_runtime_include
+            "${boundary_file_contents}"
+        )
+
+        if(forbidden_runtime_include)
+            message(FATAL_ERROR
+                "bour_engine boundary file must not include editor or Dear ImGUi: "
+                "${boundary_file}"
+            )
+        endif()
+endforeach()
+
 add_library(bour_engine STATIC ${BOUR_ENGINE_SOURCES})
 
 target_include_directories(bour_engine PRIVATE

@@ -10,6 +10,7 @@ extern "C" {
 
 typedef struct EngineRuntime EngineRuntime;
 
+#define ENGINE_RUNTIME_INVALID_ENTITY_ID 0
 #define ENGINE_RUNTIME_ENTITY_NAME_MAX_LENGTH 64
 #define ENGINE_RUNTIME_MAX_HIERARCHY_ITEMS 256
 

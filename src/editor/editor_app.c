@@ -4,20 +4,15 @@
 #include <GLFW/glfw3.h>
 #include <stdatomic.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include "../renderer/window.h"
-#include "../renderer/renderer.h"
-#include "../renderer/camera.h"
 #include "../editor/editor_ui.h"
-#include "../scene/scene.h"
 #include "../engine/timing.h"
-#include "../utils/math_utils.h"
 #include "../utils/profiler.h"
 #include "../controller/input.h"
-#include "../scene/scene_serialization.h"
-#include "../scene/entity_factory.h"
 #include "../engine/engine_runtime.h"
 
 #define MAX_EDITOR_HIERARCHY_ITEMS 256
@@ -61,7 +56,7 @@ static EditorSelectedLightType editor_app_light_type_from_runtime(
 
 static void editor_app_populate_runtime_frame(
     EngineRuntime *runtime,
-    EntityId selected_entity_id,
+    uint32_t selected_entity_id,
     EditorFrameData *frame,
     EditorRuntimeFrameScratch *scratch
 )
@@ -178,17 +173,15 @@ static void editor_app_populate_runtime_frame(
 struct EditorAppState
 {
     GLFWwindow *window;
-    // Active runtime/editor camera. ECS CameraComponent is scene data for future editor bridging.
-    Camera camera;
-    Renderer *renderer;
-    Scene scene;
 
-    char current_scene_path[ENGINE_SCENE_PATH_MAX_LENGTH];
-    bool has_current_scene_path;
+    EngineRuntime *runtime;
+    float pending_mouse_delta_x;
+    float pending_mouse_delta_y;
+
     EditorAppFrameProfile profile;
     ProcessTimerLogConfig profile_log_config;
 
-    EntityId selected_entity;
+    uint32_t selected_entity;
     bool editor_enabled;
     bool editor_cursor_enabled;
     bool editor_scene_view_focused;
@@ -225,11 +218,6 @@ static void set_hints()
     glfwWindowHint(GLFW_SAMPLES, 8);
 }
 
-static bool engine_entity_is_valid(struct EditorAppState *engine, EntityId entity)
-{
-    return entity_registry_is_alive(&engine->scene.entities, entity);
-}
-
 static void fps_counter(double *delta_time, double *title_countdown_time, GLFWwindow *window)
 {
     *title_countdown_time -= *delta_time;
@@ -263,22 +251,48 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
         return;
     }
 
-    handle_mouse(&engine->camera, offsets, true);
+    engine->pending_mouse_delta_x = offsets.x;
+    engine->pending_mouse_delta_y = offsets.y;
 }
 
-static void engine_update_camera(struct EditorAppState *engine)
+static void editor_app_update_runtime(
+    struct EditorAppState *engine
+)
 {
-    if (engine->editor_enabled && 
-            (engine->editor_cursor_enabled || 
-             (!engine->editor_scene_view_focused && !engine->editor_camera_capture_active)))
+    if (engine == NULL || engine->runtime == NULL)
     {
         return;
     }
 
-    vec2s movement_axis = input_get_movement_axis();
+    bool camera_input_enabled =
+        !engine->editor_enabled ||
+        (!engine->editor_cursor_enabled &&
+            (engine->editor_scene_view_focused ||
+             engine->editor_camera_capture_active));
 
-    camera_movement(&engine->camera, movement_axis, frame_clock_delta_time(&engine->clock));
-    camera_update(&engine->camera);
+    vec2s movement_axis = {0};
+
+    if (camera_input_enabled)
+    {
+        movement_axis = input_get_movement_axis();
+    }
+
+    EngineRuntimeInput input = {
+        .movement_x = movement_axis.x,
+        .movement_y = movement_axis.y,
+        .mouse_delta_x = engine->pending_mouse_delta_x,
+        .mouse_delta_y = engine->pending_mouse_delta_y,
+        .camera_input_enabled = camera_input_enabled,
+    };
+
+    engine_runtime_update(
+        engine->runtime, 
+        frame_clock_delta_time(&engine->clock),
+        &input
+    );
+
+    engine->pending_mouse_delta_x = 0.0f;
+    engine->pending_mouse_delta_y = 0.0f;
 }
 
 static void engine_update_editor_cursor_mode(struct EditorAppState *engine)
@@ -303,417 +317,37 @@ static void engine_update_editor_cursor_mode(struct EditorAppState *engine)
     engine->tab_was_pressed = tab_is_pressed;
 }
 
-static void engine_update(struct EditorAppState *engine)
-{
-    scene_update(&engine->scene, frame_clock_delta_time(&engine->clock));
-    engine_update_editor_cursor_mode(engine);
-}
-
-static EntityId engine_create_empty_entity(struct EditorAppState *engine, const char *name_value)
-{
-    EntityId entity = entity_registry_create(&engine->scene.entities);
-
-    NameComponent name = {0};
-    snprintf(name.value, ENTITY_NAME_MAX_LENGTH, "%s", name_value);
-
-    TransformComponent transform;
-    transform_component_init(&transform);
-
-    component_storage_add(&engine->scene.names, entity, &name);
-    component_storage_add(&engine->scene.transforms, entity, &transform);
-
-    return entity;
-}
-
-static EntityId engine_create_renderable_entity(struct EditorAppState *engine, const char *name_value)
-{
-    if (engine == NULL)
-    {
-        return INVALID_ENTITY_ID;
-    }
-
-    TransformComponent transform;
-    transform_component_init(&transform);
-
-    return scene_entity_factory_create_asset(
-        &engine->scene, 
-        name_value, 
-        engine->scene.model_path, 
-        &transform
-    );
-}
-
-static EntityId engine_create_primitive_entity(
+static bool editor_app_execute_command(
     struct EditorAppState *engine,
-    BuiltinPrimitiveType primitive_type
+    const EngineRuntimeCommand *command,
+    uint32_t *out_affected_entity_id
 )
 {
-    if (engine == NULL || primitive_type >= BUILTIN_PRIMITIVE_COUNT)
-    {
-        return INVALID_ENTITY_ID;
-    }
-
-    const char *name_value = "Primitive";
-
-    switch (primitive_type) {
-        case BUILTIN_PRIMITIVE_CUBE:
-            name_value = "Cube";
-            break;
-        case BUILTIN_PRIMITIVE_PLANE:
-            name_value = "Plane";
-            break;
-        case BUILTIN_PRIMITIVE_QUAD:
-            name_value = "Quad";
-            break;
-        case BUILTIN_PRIMITIVE_UV_SPHERE:
-            name_value = "UV Sphere";
-            break;
-        case BUILTIN_PRIMITIVE_CYLINDER:
-            name_value = "Cylinder";
-            break;
-
-        default:
-            return INVALID_ENTITY_ID;
-    }
-
-    TransformComponent transform;
-    transform_component_init(&transform);
-
-    return scene_entity_factory_create_primitive(
-        &engine->scene, 
-        name_value, 
-        primitive_type, 
-        &transform
-    );
-}
-
-static EntityId engine_create_programmable_plane_entity(
-    struct EditorAppState *engine
-)
-{
-    if (engine == NULL)
-    {
-        return INVALID_ENTITY_ID;
-    }
-
-    TransformComponent transform;
-    transform_component_init(&transform);
-
-    return scene_entity_factory_create_programmable_plane(
-        &engine->scene, 
-        "Programmable Plane", 
-        2.0f, 
-        2.0f, 
-        &transform
-    );
-}
-
-static bool engine_get_selected_transform(
-    struct EditorAppState *engine,
-    EntityId selected_entity,
-    float out_position[3],
-    float out_rotation[3],
-    float out_scale[3]
-)
-{
-    if (!engine_entity_is_valid(engine, selected_entity))
+    if (engine == NULL || engine->runtime == NULL || command == NULL)
     {
         return false;
     }
-    const TransformComponent *selected_transform = 
-        (const TransformComponent *)component_storage_get(&engine->scene.transforms, selected_entity);
 
-    if (selected_transform != NULL)
-    {
-        copy_vec3_xyz_to_float3(out_position, selected_transform->position);
-        copy_vec3_xyz_to_float3(out_rotation, selected_transform->rotation);
-        copy_vec3_xyz_to_float3(out_scale, selected_transform->scale);
-        return true;
-    }
-    return false;
-}
-
-static EditorSelectedLightType engine_get_selected_light(
-    struct EditorAppState *engine,
-    EntityId selected_entity,
-    float out_ambient[3], 
-    float out_diffuse[3],
-    float out_specular[3],
-    float out_direction[3],
-    float out_position[3]
-)
-{
-    if (!engine_entity_is_valid(engine, selected_entity))
-    {
-        return EDITOR_SELECTED_LIGHT_NONE;
-    }
-    DirectionalLightComponent *directional = component_storage_get(&engine->scene.directional_lights, selected_entity);
-    PointLightComponent *point = component_storage_get(&engine->scene.point_lights, selected_entity);
-    SpotLightComponent *spot = component_storage_get(&engine->scene.spot_lights, selected_entity);
-
-    EditorSelectedLightType selected_light_type = EDITOR_SELECTED_LIGHT_NONE;
-
-    if (directional != NULL)
-    {
-        selected_light_type = EDITOR_SELECTED_LIGHT_DIRECTIONAL;
-        copy_vec3_rgb_to_float3(out_ambient, directional->light.color.ambient);
-        copy_vec3_rgb_to_float3(out_diffuse, directional->light.color.diffuse);
-        copy_vec3_rgb_to_float3(out_specular, directional->light.color.specular);
-        copy_vec3_xyz_to_float3(out_direction, directional->light.direction);
-    }
-    else if (point != NULL)
-    {
-        selected_light_type = EDITOR_SELECTED_LIGHT_POINT;
-        copy_vec3_rgb_to_float3(out_ambient, point->light.color.ambient);
-        copy_vec3_rgb_to_float3(out_diffuse, point->light.color.diffuse);
-        copy_vec3_rgb_to_float3(out_specular, point->light.color.specular);
-        copy_vec3_xyz_to_float3(out_position, point->light.position);
-    }
-    else if (spot != NULL)
-    {
-        selected_light_type = EDITOR_SELECTED_LIGHT_SPOT;
-        copy_vec3_rgb_to_float3(out_ambient, spot->light.color.ambient);
-        copy_vec3_rgb_to_float3(out_diffuse, spot->light.color.diffuse);
-        copy_vec3_rgb_to_float3(out_specular, spot->light.color.specular);
-        copy_vec3_xyz_to_float3(out_direction, spot->light.direction);
-        copy_vec3_xyz_to_float3(out_position, spot->light.position);
-    }
-    return selected_light_type;
-}
-
-static void engine_delete_selected_entity(struct EditorAppState *engine, EntityId selected_entity)
-{
-    if (!engine_entity_is_valid(engine, selected_entity))
-    {
-        return;
-    }
-
-    ProgrammableMeshId programmable_mesh_id =
-        PROGRAMMABLE_MESH_ID_INVALID;
-
-    const MeshRendererComponent *mesh_renderer =
-        component_storage_get(
-            &engine->scene.mesh_renderers,
-            selected_entity
+    EngineRuntimeCommandResult result =
+        engine_runtime_execute_command(
+            engine->runtime, 
+            command, 
+            out_affected_entity_id
         );
 
-    if (mesh_renderer != NULL &&
-        mesh_renderer->source_type == MESH_SOURCE_PROGRAMMABLE)
+    if (result != ENGINE_RUNTIME_COMMAND_OK)
     {
-        programmable_mesh_id = mesh_renderer->programmable_mesh_id;
-    }
-    component_storage_remove(&engine->scene.names, selected_entity);
-    component_storage_remove(&engine->scene.transforms, selected_entity);
-    component_storage_remove(&engine->scene.mesh_renderers, selected_entity);
-    if (programmable_mesh_id != PROGRAMMABLE_MESH_ID_INVALID)
-    {
-        programmable_mesh_collection_remove(
-            &engine->scene.programmable_meshes, 
-            programmable_mesh_id
+        fprintf(
+            stderr,
+            "Runtime command failed: %d\n",
+            result
         );
-    }
-    component_storage_remove(&engine->scene.directional_lights, selected_entity);
-    component_storage_remove(&engine->scene.spot_lights, selected_entity);
-    component_storage_remove(&engine->scene.point_lights, selected_entity);
-    component_storage_remove(&engine->scene.cameras, selected_entity);
-                
-    entity_registry_destroy(&engine->scene.entities, selected_entity);
 
-    engine->selected_entity = INVALID_ENTITY_ID;
+        return false;
+    }
+
+    return true;
 }
-
-static void engine_duplicate_selected_entity(struct EditorAppState *engine, EntityId selected_entity)
-{
-    if (!engine_entity_is_valid(engine, selected_entity))
-    {
-        return;
-    }
-    TransformComponent *source_transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, selected_entity);
-                        
-    MeshRendererComponent *source_mesh = (MeshRendererComponent *)component_storage_get(&engine->scene.mesh_renderers, selected_entity);
-
-    if (source_transform != NULL && source_mesh != NULL)
-    {
-        if (source_mesh->source_type == MESH_SOURCE_PROGRAMMABLE)
-        {
-            const ProgrammableMesh *source_programmable_mesh =
-                programmable_mesh_collection_get_const(
-                    &engine->scene.programmable_meshes, 
-                    source_mesh->programmable_mesh_id
-                );
-
-            if (source_programmable_mesh == NULL ||
-                source_programmable_mesh->type !=
-                    PROGRAMMABLE_MESH_TYPE_PLANE
-               )
-            {
-                return;
-            }
-
-            TransformComponent duplicate_transform = *source_transform;
-            duplicate_transform.position.x += 1.0f;
-
-            EntityId duplicate =
-                scene_entity_factory_create_programmable_plane(
-                    &engine->scene, 
-                    "Duplicated Programmable Plane", 
-                    source_programmable_mesh->plane_width, 
-                    source_programmable_mesh->plane_depth, 
-                    &duplicate_transform
-                );
-
-            if (duplicate != INVALID_ENTITY_ID)
-            {
-                engine->selected_entity = duplicate;
-            }
-
-            return;
-        }
-
-        EntityId duplicate = engine_create_empty_entity(engine, "Duplicated Entity");
-
-        TransformComponent *duplicate_transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, duplicate);
-
-        if (duplicate_transform != NULL)
-        {
-            *duplicate_transform = *source_transform;
-            duplicate_transform->position.x += 1.0f;
-        }
-
-        MeshRendererComponent mesh_renderer = *source_mesh;
-
-        component_storage_add(&engine->scene.mesh_renderers, duplicate, &mesh_renderer);
-
-        engine->selected_entity = duplicate;
-    }
-}
-
-static void engine_rename_selected_entity(struct EditorAppState *engine, EntityId selected_entity, char* edited_name)
-{
-    if (!engine_entity_is_valid(engine, selected_entity))
-    {
-        return;
-    }
-    NameComponent *name = (NameComponent *)component_storage_get(&engine->scene.names, selected_entity);
-    if (name == NULL)
-    {
-        NameComponent new_name = {0};
-        snprintf(new_name.value, ENTITY_NAME_MAX_LENGTH, "%s", edited_name);
-        component_storage_add(&engine->scene.names, selected_entity, &new_name);
-    }
-    else
-    {
-        snprintf(name->value, ENTITY_NAME_MAX_LENGTH, "%s", edited_name);
-    }
-}
-
-static void engine_change_selected_transform(
-    struct EditorAppState *engine,
-    EntityId selected_entity,
-    float* new_position,
-    float* new_rotation,
-    float* new_scale
-)
-{
-    if (!engine_entity_is_valid(engine, selected_entity))
-    {
-        return;
-    }
-    TransformComponent *transform = (TransformComponent *)component_storage_get(&engine->scene.transforms, selected_entity);
-    if (transform != NULL)
-    {
-        vec3s new_position_vec;
-        copy_float3_to_vec3_xyz(&new_position_vec, new_position);
-        transform_component_set_position(
-            transform,
-            new_position_vec
-        );
-        vec3s new_rotation_vec;
-        copy_float3_to_vec3_xyz(&new_rotation_vec, new_rotation);
-        transform_component_set_rotation(
-            transform,
-            new_rotation_vec
-        );
-        vec3s new_scale_vec;
-        copy_float3_to_vec3_xyz(&new_scale_vec, new_scale);
-        transform_component_set_scale(
-            transform,
-            new_scale_vec
-        );
-    }
-}
-
-static void engine_modify_selected_light(
-    struct EditorAppState *engine,
-    EntityId selected_entity,
-    float* edited_ambient,
-    float* edited_diffuse,
-    float* edited_specular,
-    float* edited_direction,
-    float* edited_position
-)
-{
-    if (!engine_entity_is_valid(engine, selected_entity))
-    {
-        return;
-    }
-    DirectionalLightComponent *directional = component_storage_get(&engine->scene.directional_lights, selected_entity);
-    PointLightComponent *point = component_storage_get(&engine->scene.point_lights, selected_entity);
-    SpotLightComponent *spot = component_storage_get(&engine->scene.spot_lights, selected_entity);
-
-    vec3s ambient = {{
-        edited_ambient[0],
-        edited_ambient[1],
-        edited_ambient[2]
-    }};
-    vec3s diffuse = {{
-        edited_diffuse[0],
-        edited_diffuse[1],
-        edited_diffuse[2]
-    }};
-    vec3s specular = {{
-        edited_specular[0],
-        edited_specular[1],
-        edited_specular[2]
-    }};
-    vec3s direction = {0};
-    vec3s position = {0};
-
-    direction = (vec3s){{
-        edited_direction[0],
-        edited_direction[1],
-        edited_direction[2],
-    }};
-    position = (vec3s){{
-        edited_position[0],
-        edited_position[1],
-        edited_position[2],
-    }};
-    
-    if (directional != NULL)
-    {
-        directional->light.color.ambient = ambient;
-        directional->light.color.diffuse = diffuse;
-        directional->light.color.specular = specular;
-        directional->light.direction = direction;
-    }
-    else if (point != NULL)
-    {
-        point->light.color.ambient = ambient;
-        point->light.color.diffuse = diffuse;
-        point->light.color.specular = specular;
-        point->light.position = position;
-    }
-    else if (spot != NULL)
-    {
-        spot->light.color.ambient = ambient;
-        spot->light.color.diffuse = diffuse;
-        spot->light.color.specular = specular;
-        spot->light.direction = direction;
-        spot->light.position = position;
-    }
-}
-
 
 static void run_editor_app_loop(struct EditorAppState *engine)
 {
@@ -736,197 +370,51 @@ static void run_editor_app_loop(struct EditorAppState *engine)
 
         window_poll_events();
 
-        process_timer_begin(&engine->profile.engine_update_timer, glfwGetTime());
-        engine_update(engine);
-        process_timer_end(&engine->profile.engine_update_timer, glfwGetTime());
-        process_timer_log_report(&engine->profile.engine_update_timer, &engine->profile_log_config);
-
-        SceneRenderConfig scene_render_config = {0};
-
-        process_timer_begin(&engine->profile.scene_extract_timer, glfwGetTime()); 
-        scene_get_render_config(&engine->scene, &scene_render_config);
-        process_timer_end(&engine->profile.scene_extract_timer, glfwGetTime());
-        process_timer_log_report(&engine->profile.scene_extract_timer, &engine->profile_log_config);
-
-        size_t hierarchy_count = engine->scene.entities.count;
-        if (hierarchy_count > MAX_EDITOR_HIERARCHY_ITEMS)
-        {
-            hierarchy_count = (size_t)MAX_EDITOR_HIERARCHY_ITEMS;
-        }
-
-        EditorHierarchyItem hierarchy_items[MAX_EDITOR_HIERARCHY_ITEMS];
-
-        for(size_t i = 0; i < hierarchy_count; i++)
-        {
-            EntityId entity = engine->scene.entities.entities[i];
-            hierarchy_items[i].entity_id = entity;
-
-            const NameComponent *name = (const NameComponent *)component_storage_get(&engine->scene.names, entity);
-
-            if (name == NULL)
-            {
-                hierarchy_items[i].name = "Unnamed Entity";
-            }
-            else
-            {
-                hierarchy_items[i].name = name->value;
-            }
-        }
+        engine_update_editor_cursor_mode(engine);
 
         double delta_time = frame_clock_delta_time(&engine->clock);
 
-        bool has_selected_entity = entity_registry_is_alive(&engine->scene.entities, engine->selected_entity);
-
-        const char *selected_entity_name = "No entity selected";
-        bool selected_entity_has_transform = false;
-
-        float selected_position[3] = {0};
-        float selected_rotation[3] = {0};
-        float selected_scale[3] = {0};
-
-        bool selected_entity_is_renderable = false;
-        bool selected_entity_is_programmable_mesh = false;
-        unsigned int selected_programmable_mesh_id =
-            PROGRAMMABLE_MESH_ID_INVALID;
-        float selected_programmable_plane_width = 0.0f;
-        float selected_programmable_plane_depth = 0.0f;
-        bool selected_programmable_mesh_dirty = false;
-
-        if (has_selected_entity)
-        {
-            const NameComponent *selected_name = (const NameComponent *)component_storage_get(&engine->scene.names, engine->selected_entity);
-            selected_entity_name = selected_name != NULL ? selected_name->value : "Unnamed Entity";
-
-            const MeshRendererComponent *selected_mesh_renderer =
-                component_storage_get(
-                    &engine->scene.mesh_renderers, 
-                    engine->selected_entity
-                );
-
-            selected_entity_is_renderable = selected_mesh_renderer != NULL;
-
-            if (selected_mesh_renderer != NULL &&
-                selected_mesh_renderer->source_type ==
-                    MESH_SOURCE_PROGRAMMABLE)
-            {
-                const ProgrammableMesh *programmable_mesh =
-                    programmable_mesh_collection_get_const(
-                        &engine->scene.programmable_meshes, 
-                        selected_mesh_renderer->programmable_mesh_id
-                    );
-
-                if (programmable_mesh != NULL &&
-                    programmable_mesh->type ==
-                        PROGRAMMABLE_MESH_TYPE_PLANE)
-                {
-                    selected_entity_is_programmable_mesh = true;
-                    selected_programmable_mesh_id =
-                        selected_mesh_renderer->programmable_mesh_id;
-                    selected_programmable_plane_width =
-                        programmable_mesh->plane_width;
-                    selected_programmable_plane_depth =
-                        programmable_mesh->plane_depth;
-                    selected_programmable_mesh_dirty =
-                        programmable_mesh->dirty;
-                }
-            }
-
-            selected_entity_has_transform = engine_get_selected_transform(
-                engine, engine->selected_entity,
-                selected_position,
-                selected_rotation,
-                selected_scale
-            );
-        }
-
-        float selected_light_ambient[3] = {0};
-        float selected_light_diffuse[3] = {0};
-        float selected_light_specular[3] = {0};
-        float selected_light_direction[3] = {0};
-        float selected_light_position[3] = {0};
-
-        EditorSelectedLightType selected_light_type = engine_get_selected_light(
-            engine, engine->selected_entity,
-            selected_light_ambient,
-            selected_light_diffuse,
-            selected_light_specular,
-            selected_light_direction,
-            selected_light_position
-        );
-
-
-
-        RendererFrame frame = {
-            .camera = &engine->camera,
-            .viewport = {0},
-            .present_to_default_framebuffer = !engine->editor_enabled,
-            .renderables = scene_render_config.renderables,
-            .renderable_count = scene_render_config.renderable_count,
-            .directional_light = scene_render_config.directional_light,
-            .spot_lights = scene_render_config.spot_lights,
-            .point_lights = scene_render_config.point_lights,
-        };
-
-        RendererStats renderer_stats = renderer_get_frame_stats(engine->renderer, &frame);
+        EditorRuntimeFrameScratch runtime_frame_scratch = {0};
 
         EditorFrameData editor_frame = {
             .delta_time = delta_time,
             .fps = delta_time > 0.0 ? 1.0 / delta_time : 0.0,
-            .entity_count = engine->scene.entities.count,
-            .selected_entity_id = engine->selected_entity,
-            .has_selected_entity = has_selected_entity,
-            .selected_entity_has_transform = selected_entity_has_transform,
-            .selected_entity_name = selected_entity_name,
-            .selected_position = { selected_position[0], selected_position[1], selected_position[2] },
-            .selected_rotation = { selected_rotation[0], selected_rotation[1], selected_rotation[2] },
-            .selected_scale = { selected_scale[0], selected_scale[1], selected_scale[2] },
-            .selected_light_ambient = {selected_light_ambient[0],selected_light_ambient[1], selected_light_ambient[2]},
-            .selected_light_diffuse = {selected_light_diffuse[0],selected_light_diffuse[1], selected_light_diffuse[2]},
-            .selected_light_direction = {selected_light_direction[0],selected_light_direction[1], selected_light_direction[2]},
-            .selected_light_position = {selected_light_position[0],selected_light_position[1], selected_light_position[2]},
-            .selected_light_specular = {selected_light_specular[0],selected_light_specular[1], selected_light_specular[2]},
-            .selected_light_type = selected_light_type,
-            .selected_entity_is_renderable = selected_entity_is_renderable,
-            .selected_entity_is_programmable_mesh =
-                selected_entity_is_programmable_mesh,
-            .selected_programmable_mesh_id =
-                selected_programmable_mesh_id,
-            .selected_programmable_plane_width =
-                selected_programmable_plane_width,
-            .selected_programmable_plane_depth =
-                selected_programmable_plane_depth,
-            .selected_programmable_mesh_dirty =
-                selected_programmable_mesh_dirty,
-            .renderable_count = scene_render_config.renderable_count,
-            .renderer_mesh_count = renderer_stats.mesh_count,
-            .renderer_vertex_count = renderer_stats.vertex_count,
-            .renderer_triangle_count = renderer_stats.triangle_count,
-            .renderer_texture_count = renderer_stats.texture_count,
-            .renderer_submitted_draw_count = renderer_stats.submitted_draw_count,
-            .renderer_submitted_mesh_count = renderer_stats.submitted_mesh_count,
-            .renderer_submitted_vertex_count = renderer_stats.submitted_vertex_count,
-            .renderer_submitted_triangle_count = renderer_stats.submitted_triangle_count,
-            .renderer_missing_model_count = renderer_stats.missing_model_count,
-            .renderer_viewport_width = renderer_stats.viewport_width,
-            .renderer_viewport_height = renderer_stats.viewport_height,
-            .renderer_render_target_resize_count =
-                renderer_stats.render_target_resize_count,
-            .renderer_render_target_noop_count =
-                renderer_stats.render_target_noop_count,
-            .renderer_zero_size_viewport_count =
-                renderer_stats.zero_size_viewport_count,
             .editor_cursor_enabled = engine->editor_cursor_enabled,
-            .resolved_scene_texture =
-                renderer_get_resolved_scene_texture(engine->renderer),
-            .profile_engine_update_ms = engine->profile.engine_update_timer.last_ms,
-            .profile_scene_extract_ms = engine->profile.scene_extract_timer.last_ms,
-            .profile_editor_begin_ms = engine->profile.editor_begin_timer.last_ms,
-            .profile_renderer_ms = engine->profile.renderer_timer.last_ms,
-            .profile_editor_render_ms = engine->profile.editor_render_timer.last_ms,
-            .profile_present_ms = engine->profile.present_timer.last_ms,
-            .hierarchy_items = hierarchy_items,
-            .hierarchy_item_count = hierarchy_count,
+            .profile_engine_update_ms = 
+                engine->profile.engine_update_timer.last_ms,
+            .profile_scene_extract_ms =
+                engine->profile.scene_extract_timer.last_ms,
+            .profile_editor_begin_ms =
+                engine->profile.editor_begin_timer.last_ms,
+            .profile_renderer_ms =
+                engine->profile.renderer_timer.last_ms,
+            .profile_editor_render_ms =
+                engine->profile.editor_render_timer.last_ms,
+            .profile_present_ms =
+                engine->profile.present_timer.last_ms,
         };
+
+        process_timer_begin(
+            &engine->profile.scene_extract_timer, 
+            glfwGetTime()
+        );
+
+        editor_app_populate_runtime_frame(
+            engine->runtime, 
+            engine->selected_entity, 
+            &editor_frame, 
+            &runtime_frame_scratch
+        );
+
+        process_timer_end(
+            &engine->profile.scene_extract_timer, 
+            glfwGetTime()
+        );
+
+        process_timer_log_report(
+            &engine->profile.scene_extract_timer, 
+            &engine->profile_log_config
+        );
 
         int window_framebuffer_width = 0;
         int window_framebuffer_height = 0;
@@ -937,8 +425,8 @@ static void run_editor_app_loop(struct EditorAppState *engine)
             &window_framebuffer_height
         );
 
-        frame.viewport.width = window_framebuffer_width;
-        frame.viewport.height = window_framebuffer_height;
+        int runtime_framebuffer_width = window_framebuffer_width;
+        int runtime_framebuffer_height = window_framebuffer_height;
 
         if (engine->editor_enabled)
         {
@@ -948,112 +436,285 @@ static void run_editor_app_loop(struct EditorAppState *engine)
 
             engine->editor_scene_view_focused =
                 editor_result.viewport.focused;
-            engine_update_camera(engine);
-            frame.viewport.width = editor_result.viewport.framebuffer_width;
-            frame.viewport.height = editor_result.viewport.framebuffer_height;
+            editor_app_update_runtime(engine);
+
+            runtime_framebuffer_width = editor_result.viewport.framebuffer_width;
+            runtime_framebuffer_height = editor_result.viewport.framebuffer_height;
 
             process_timer_end(&engine->profile.editor_begin_timer, glfwGetTime());
             process_timer_log_report(&engine->profile.editor_begin_timer, &engine->profile_log_config);
 
-            EntityId result_entity = editor_frame.selected_entity_id;
-
-            bool result_entity_alive = entity_registry_is_alive(&engine->scene.entities, result_entity);
+            uint32_t affected_entity_id = ENGINE_RUNTIME_INVALID_ENTITY_ID;
+            EngineRuntimeCommand command = {0};
 
             if (editor_result.create_empty_entity)
-{
-                engine->selected_entity = engine_create_empty_entity(engine, "Empty Entity");
+            {
+                command.type =
+                    ENGINE_RUNTIME_COMMAND_CREATE_EMPTY_ENTITY;
+
+                snprintf(
+                    command.name, 
+                    ENGINE_RUNTIME_ENTITY_NAME_MAX_LENGTH, 
+                    "%s",
+                    "Empty Entity"
+                );
+
+                if (editor_app_execute_command(
+                        engine, 
+                        &command, 
+                        &affected_entity_id
+                    ))
+                {
+                    engine->selected_entity = affected_entity_id;
+                }
             }
 
             if (editor_result.create_renderable_entity)
             {
-                engine->selected_entity = engine_create_renderable_entity(engine, "Renderable Entity");
-            }   
-            if (editor_result.create_primitive_entity)
-            {
-                engine->selected_entity = engine_create_primitive_entity(
-                    engine, 
-                    editor_result.primitive_type_to_create
-                );
-            }
-            if (editor_result.create_programmable_plane)
-            {
-                EntityId entity = engine_create_programmable_plane_entity(
-                    engine
+                command = (EngineRuntimeCommand){0};
+                command.type =
+                    ENGINE_RUNTIME_COMMAND_CREATE_RENDERABLE_ENTITY;
+
+                snprintf(
+                    command.name,
+                    ENGINE_RUNTIME_ENTITY_NAME_MAX_LENGTH,
+                    "%s",
+                    "Renderable Entity"
                 );
 
-                if (entity != INVALID_ENTITY_ID)
+                if (editor_app_execute_command(
+                        engine, 
+                        &command, 
+                        &affected_entity_id
+                    ))
                 {
-                    engine->selected_entity = entity;
+                    engine->selected_entity = affected_entity_id;
                 }
             }
+
+            if (editor_result.create_primitive_entity)
+            {
+                command = (EngineRuntimeCommand){0};
+                command.type =
+                    ENGINE_RUNTIME_COMMAND_CREATE_PRIMITIVE_ENTITY;
+
+                bool primitive_is_valid = true;
+
+                switch (editor_result.primitive_type_to_create) 
+                {
+                    case BUILTIN_PRIMITIVE_CUBE:
+                        command.primitive_type =
+                            ENGINE_RUNTIME_PRIMITIVE_CUBE;
+                        break;
+
+                    case BUILTIN_PRIMITIVE_PLANE:
+                        command.primitive_type =
+                            ENGINE_RUNTIME_PRIMITIVE_PLANE;
+                        break;
+
+                    case BUILTIN_PRIMITIVE_QUAD:
+                        command.primitive_type =
+                            ENGINE_RUNTIME_PRIMITIVE_QUAD;
+                        break;
+
+                    case BUILTIN_PRIMITIVE_UV_SPHERE:
+                        command.primitive_type =
+                            ENGINE_RUNTIME_PRIMITIVE_UV_SPHERE;
+                        break;
+
+                    case BUILTIN_PRIMITIVE_CYLINDER:
+                        command.primitive_type =
+                            ENGINE_RUNTIME_PRIMITIVE_CYLINDER;
+                        break;
+
+                    default:
+                        command.type =
+                            ENGINE_RUNTIME_COMMAND_CREATE_EMPTY_ENTITY;
+                        primitive_is_valid = false;
+                        break;
+                }
+
+                if (primitive_is_valid &&
+                    editor_app_execute_command(
+                        engine, 
+                        &command, 
+                        &affected_entity_id
+                    ))
+                {
+                    engine->selected_entity = affected_entity_id;
+                }
+            }
+
+            if (editor_result.create_programmable_plane)
+            {
+               command = (EngineRuntimeCommand){0};
+               command.type =
+                   ENGINE_RUNTIME_COMMAND_CREATE_PROGRAMMABLE_PLANE;
+               command.programmable_plane_width = 2.0f;
+               command.programmable_plane_depth = 2.0f;
+
+               snprintf(
+                    command.name, 
+                    ENGINE_RUNTIME_ENTITY_NAME_MAX_LENGTH, 
+                    "%s",
+                    "Programmable Plane"
+                );
+                
+               if (editor_app_execute_command(
+                        engine,
+                        &command,
+                        &affected_entity_id
+                    ))
+                {
+                    engine->selected_entity = affected_entity_id;
+                }
+            }
+
             if (editor_result.save_scene)
             {
-                if (engine->has_current_scene_path)
+                command = (EngineRuntimeCommand) {
+                    .type = ENGINE_RUNTIME_COMMAND_SAVE_SCENE,
+                };
+
+                editor_app_execute_command(engine, &command, NULL);
+            }
+
+            if (editor_result.load_scene)
+            {
+                command = (EngineRuntimeCommand) {
+                    .type = ENGINE_RUNTIME_COMMAND_LOAD_SCENE,
+                };
+
+                if (editor_app_execute_command(engine, &command, NULL))
                 {
-                    SceneSaveResult save_result = scene_save_to_file(&engine->scene, engine->current_scene_path);
-                    if (save_result != SCENE_SAVE_OK)
+                    engine->selected_entity = ENGINE_RUNTIME_INVALID_ENTITY_ID;
+                }
+            }
+
+            if (editor_frame.has_selected_entity)
+            {
+                if (editor_result.delete_selected_entity)
+                {
+                    command = (EngineRuntimeCommand) {
+                        .type = ENGINE_RUNTIME_COMMAND_DELETE_ENTITY,
+                        .entity_id = editor_frame.selected_entity_id,
+                    };
+
+                    if (editor_app_execute_command(
+                            engine, 
+                            &command, 
+                            NULL
+                        ))
                     {
-                        fprintf(stderr, "Failed to save scene: %d\n", save_result);
+                        engine->selected_entity = ENGINE_RUNTIME_INVALID_ENTITY_ID;
                     }
                 }
                 else
                 {
-                    fprintf(stderr, "No current scene path set\n");
-                }
-
-            }
-            if (editor_result.load_scene)
-            {
-                if (engine->has_current_scene_path)
-                {
-                    SceneLoadResult load_result = scene_load_from_file(&engine->scene, engine->current_scene_path);
-                    if (load_result != SCENE_LOAD_OK)
-                    {
-                        fprintf(stderr, "Failed to load scene: %d\n", load_result);
-                    }
-                    else 
-                    {
-                        engine->selected_entity = INVALID_ENTITY_ID;
-                    }
-                }
-                else 
-                {
-                    fprintf(stderr, "No current scene path set\n");
-                }
-            }
-
-            if (result_entity_alive)
-            {
-                if (editor_result.delete_selected_entity)
-                {
-                    engine_delete_selected_entity(engine, result_entity);
-                }
-                else 
-                {
                     if (editor_result.duplicate_selected_entity)
                     {
-                        engine_duplicate_selected_entity(engine, result_entity);
+                        command = (EngineRuntimeCommand) {
+                            .type = ENGINE_RUNTIME_COMMAND_DUPLICATE_ENTITY,
+                            .entity_id = editor_frame.selected_entity_id,
+                        };
+
+                        if (editor_app_execute_command(
+                                engine, 
+                                &command, 
+                                &affected_entity_id
+                            ))
+                        {
+                            engine->selected_entity = affected_entity_id;
+                        }
                     }
 
                     if (editor_result.rename_selected_entity)
                     {
-                        engine_rename_selected_entity(engine, result_entity, editor_result.edited_name);
+                        command = (EngineRuntimeCommand) {
+                            .type = ENGINE_RUNTIME_COMMAND_RENAME_ENTITY,
+                            .entity_id =
+                                editor_frame.selected_entity_id,
+                        };
+
+                        snprintf(
+                            command.name, 
+                            ENGINE_RUNTIME_ENTITY_NAME_MAX_LENGTH, 
+                            "%s",
+                            editor_result.edited_name
+                        );
+
+                        editor_app_execute_command(
+                            engine, 
+                            &command, 
+                            NULL
+                        );
                     }
 
                     if (editor_result.transform_changed)
                     {
-                        engine_change_selected_transform(engine, result_entity, editor_result.edited_position, editor_result.edited_rotation, editor_result.edited_scale);
+                        command = (EngineRuntimeCommand) {
+                            .type = ENGINE_RUNTIME_COMMAND_SET_TRANSFORM,
+                            .entity_id = editor_frame.selected_entity_id,
+                            .position = {
+                                editor_result.edited_position[0],
+                                editor_result.edited_position[1],
+                                editor_result.edited_position[2],
+                            },
+                            .rotation = {
+                                editor_result.edited_rotation[0],
+                                editor_result.edited_rotation[1],
+                                editor_result.edited_rotation[2],
+                            },
+                            .scale = {
+                                editor_result.edited_scale[0],
+                                editor_result.edited_scale[1],
+                                editor_result.edited_scale[2],
+                            },
+                        };
+
+                        editor_app_execute_command(
+                            engine, 
+                            &command, 
+                            NULL
+                        );
                     }
+
                     if (editor_result.light_changed)
                     {
-                        engine_modify_selected_light(
-                            engine,
-                            result_entity,
-                            editor_result.edited_light_ambient,
-                            editor_result.edited_light_diffuse,
-                            editor_result.edited_light_specular,
-                            editor_result.edited_light_direction,
-                            editor_result.edited_light_position
+                        command = (EngineRuntimeCommand) {
+                            .type = ENGINE_RUNTIME_COMMAND_SET_LIGHT,
+                            .entity_id = editor_frame.selected_entity_id,
+                            .light_ambient = {
+                                editor_result.edited_light_ambient[0],
+                                editor_result.edited_light_ambient[1],
+                                editor_result.edited_light_ambient[2],
+                            },
+                            .light_diffuse = {
+                                editor_result.edited_light_diffuse[0],
+                                editor_result.edited_light_diffuse[1],
+                                editor_result.edited_light_diffuse[2],
+                            },
+                            .light_specular = {
+                                editor_result.edited_light_specular[0],
+                                editor_result.edited_light_specular[1],
+                                editor_result.edited_light_specular[2],
+                            },
+                            .light_direction = {
+                                editor_result.edited_light_direction[0],
+                                editor_result.edited_light_direction[1],
+                                editor_result.edited_light_direction[2],
+                            },
+                            .light_position = {
+                                editor_result.edited_light_position[0],
+                                editor_result.edited_light_position[1],
+                                editor_result.edited_light_position[2],
+                            },
+                        };
+
+                        editor_app_execute_command(
+                            engine, 
+                            &command, 
+                            NULL
                         );
                     }
                 }
@@ -1073,11 +734,19 @@ static void run_editor_app_loop(struct EditorAppState *engine)
             }
         }
         else {
-            engine_update_camera(engine);
+            editor_app_update_runtime(engine);
         }
         process_timer_begin(&engine->profile.renderer_timer, glfwGetTime());
 
-        renderer_render_frame(engine->renderer, &frame);
+        EngineRuntimeRenderTarget render_target = {
+            .framebuffer_width = runtime_framebuffer_width,
+            .framebuffer_height = runtime_framebuffer_height,
+            .type = engine->editor_enabled
+                ? ENGINE_RUNTIME_RENDER_TARGET_OFFSCREEN_TEXTURE
+                : ENGINE_RUNTIME_RENDER_TARGET_DEFAULT_FRAMEBUFFER,
+        };
+
+        engine_runtime_render(engine->runtime, &render_target);
 
         process_timer_end(&engine->profile.renderer_timer, glfwGetTime());
         process_timer_log_report(&engine->profile.renderer_timer, &engine->profile_log_config);
@@ -1127,11 +796,9 @@ int editor_app_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
     struct EditorAppState engine = {
         .window = window,
         .editor_enabled = true,
-        .has_current_scene_path = true,
-        .current_scene_path = ENGINE_DEFAULT_SCENE_PATH,
         .editor_cursor_enabled = true,
         .editor_camera_capture_active = false,
-        .selected_entity = INVALID_ENTITY_ID,
+        .selected_entity = ENGINE_RUNTIME_INVALID_ENTITY_ID,
         .fps_enabled = fps_enabled,
         .fps_title_countdown_time = 0.1,
         .tab_was_pressed = false,
@@ -1154,55 +821,32 @@ int editor_app_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
     glfwSetWindowUserPointer(window, &engine);
     glfwSetCursorPosCallback(window, mouse_callback);
 
-    engine.renderer = renderer_create();
+    int framebuffer_width = 0;
+    int framebuffer_height = 0;
 
-    if (engine.renderer == NULL)
+    window_get_framebuffer_size(
+        engine.window, 
+        &framebuffer_width, 
+        &framebuffer_height
+    );
+
+    EngineRuntimeCreateInfo runtime_create_info = {
+        .scene_path = ENGINE_DEFAULT_SCENE_PATH,
+        .framebuffer_width = framebuffer_width,
+        .framebuffer_height = framebuffer_height,
+    };
+
+    engine.runtime = engine_runtime_create(&runtime_create_info);
+
+    if (engine.runtime == NULL)
     {
+        fprintf(stderr, "Failed to initialize runtime\n");
         process_timer_log_config_close(&engine.profile_log_config);
         window_destroy(window);
         safe_exit();
         return 1;
     }
 
-    camera_init(&engine.camera);
-    camera_update(&engine.camera);
-
-    RendererViewport viewport = {0};
-
-    window_get_framebuffer_size(engine.window, &viewport.width, &viewport.height);
-
-    scene_init_default(&engine.scene);
-
-    SceneRenderConfig scene_render_config = {0};
-
-    scene_get_render_config(&engine.scene, &scene_render_config);
-
-    RendererConfig renderer_config = {
-        .viewport = viewport,
-        .camera = &engine.camera,
-        .model_path = scene_render_config.model_path,
-        .skybox_faces = {
-            scene_render_config.skybox_faces[0],
-            scene_render_config.skybox_faces[1],
-            scene_render_config.skybox_faces[2],
-            scene_render_config.skybox_faces[3],
-            scene_render_config.skybox_faces[4],
-            scene_render_config.skybox_faces[5],
-        },
-        .directional_light = scene_render_config.directional_light,
-        .point_lights = scene_render_config.point_lights,
-        .spot_lights = scene_render_config.spot_lights,
-    };
-
-    if (renderer_init(engine.renderer, &renderer_config) != 0)
-    {
-        fprintf(stderr, "Failed to initialize renderer\n");
-        renderer_destroy(engine.renderer);
-        scene_shutdown(&engine.scene);
-        window_destroy(window);
-        safe_exit();
-        return 1;
-    }
     if (engine.editor_enabled)
     { 
         if (editor_ui_init(engine.window) != 0)
@@ -1233,9 +877,8 @@ int editor_app_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
     run_editor_app_loop(&engine);
     process_timer_log_config_close(&engine.profile_log_config);
     
-    renderer_shutdown(engine.renderer);
-    renderer_destroy(engine.renderer);
-    scene_shutdown(&engine.scene);
+    engine_runtime_destroy(engine.runtime);
+
     if (engine.editor_enabled)
     {
         editor_ui_shutdown();

@@ -16,9 +16,9 @@ This file is the long-term initiative backlog for Bour Engine. It should stay hi
 
 Bour Engine is moving toward a C-first, editor-capable, scene-authored 3D engine where runtime ownership is explicit, saved scene data is reusable, renderer input comes from scene/ECS state, and higher-level gameplay/customization can eventually live above the core engine instead of inside renderer/debug scaffolding.
 
-The next concrete target is **First Game MVP**, building on commit 100's hierarchy-first editor. Scene authoring is an intermediate gate; the finish line is a short playable game that can be packaged and run without the editor or source checkout. `notes/backlog.md` owns acceptance criteria; `notes/first-game-mvp-plan.md` records the historical velocity forecast and stage gates.
+The next concrete target is **First Game MVP**: a short underwater exploration dive that can be authored, packaged, and run without the editor or source checkout. Scene authoring is an intermediate gate, not the finish line. `notes/backlog.md` owns acceptance criteria; `notes/first-game-mvp-plan.md` records the dependency plan and stage gates.
 
-Target December 2026 for a playable loop and rough package, and January–March 2027 for MVP completion. Minimal game-code integration, required movement/collision, game UI, Edit/Play separation, standalone execution, and one-platform packaging are promoted into scope. PBR, advanced SDF, terrain, general physics/scripting platforms, networking, and project-browser expansion remain deferred. Working behavior, explicit ownership, and a verified standalone package determine completion.
+The current Linear target is June 15, 2027. The MVP is one 10–20 minute dive site with roughly 8–12 discoverable species, 2–3 landmarks, and one showcase encounter. Minimal game-code integration, required movement/collision, game UI, audio, animation playback, asset references, Edit/Play separation, standalone execution, and one-platform packaging are promoted into scope. PBR, advanced SDF, terrain, general physics/scripting platforms, networking, project-browser expansion, full animation authoring, and generalized water simulation remain deferred. Working behavior, explicit ownership, and a verified standalone package determine completion.
 
 ## Initiative 1: Runtime Ownership And Scene Truth
 

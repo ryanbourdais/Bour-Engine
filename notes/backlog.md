@@ -6,17 +6,17 @@ Commit 100 proved the hierarchy-first editor foundation. First Game MVP targets 
 
 The north star: **author a small game, press Play to test it, build a distributable package, and let another person launch and finish it without the engine editor.** The engine remains C-first, with explicit ownership and narrow subsystem boundaries. Every implementation step stays small enough to understand and validate manually.
 
-Target a playable loop and rough standalone package by December 31, 2026, then MVP completion during January–March 2027, with March 31 as the planning deadline. This is approximately 9–12 months from the March 2026 project start, not 9–12 additional months. Historical velocity and staged scope are recorded in `notes/first-game-mvp-plan.md`.
+The current Linear target for MVP completion is June 15, 2027. Dates are planning signals, not acceptance criteria; reforecast after each major dependency gate using demonstrated work. Historical velocity and staged scope are recorded in `notes/first-game-mvp-plan.md`.
 
-Use [the First Game MVP calendar and acceptance tracker](first-game-mvp-schedule.md) to follow feature gates, including the explicit Game Scripting and Entity Behavior V0 workstream. Target a playable/rough-package proof by December and MVP completion during January–March.
+Use [the First Game MVP calendar and acceptance tracker](first-game-mvp-schedule.md) to follow feature gates, including the explicit Game Scripting and Entity Behavior V0 workstream.
 
 There is no commit-count finish line. The playable game, standalone package, and acceptance criteria determine completion.
 
 ## First Game MVP Demo
 
-- [ ] Ship one short, complete game loop: start, player action, objective, success/failure feedback, restart, and exit. Choose the exact game concept before adding gameplay-specific systems.
+- [ ] Ship one compact 10–20 minute underwater exploration dive: start, swim, discover/document marine life and landmarks, reach one showcase encounter, complete the survey, restart, and exit.
 - [ ] Keep game rules above the engine behind a narrow interface; exercise the planned Odin direction through a bounded integration trial, with any fallback decision documented.
-- [ ] Provide only the movement, collision/triggers, game UI, and feedback required by that game; avoid a general physics or scripting platform as an MVP prerequisite.
+- [ ] Provide only underwater diver movement, collision/query support, bounded wildlife behavior, game UI, audio, animation playback, and feedback required by the dive; avoid general physics, AI, or scripting platforms as MVP prerequisites.
 - [ ] Separate Edit and Play state, restore the authored scene on Stop, and run the game through a standalone entry mode without editor initialization.
 - [ ] Produce a repeatable package for one explicitly chosen desktop platform, including required runtime libraries, shaders, scenes, and permitted assets.
 - [ ] Launch the package outside the repository on a clean user environment without compilers, CMake, source paths, or the editor; complete and restart the game.
@@ -29,7 +29,7 @@ There is no commit-count finish line. The playable game, standalone package, and
 - [ ] Save, restart, load, and verify entity data, geometry definitions, camera state, lights, and supported asset references. Repeated loads preserve string/resource ownership.
 - [ ] Provide a short reproducible demo checklist, accurate loaded/submitted statistics, known limitations, and clear dev-only asset notes.
 
-Editor Foundation is the first stage. A full project browser, blank-project startup workflow, PBR, advanced SDF, terrain, general-purpose physics, full scripting tooling, multiplayer, installers/store integration, and multi-platform release are outside the required MVP. Minimal game-code integration, game-specific collision, standalone execution, and one-platform packaging are now explicitly in scope. The larger roadmap is not a promise that every deliverable lands for First Game MVP.
+Editor Foundation is the first stage. A full project browser, blank-project startup workflow, PBR, advanced SDF, terrain, general-purpose physics, full scripting tooling, multiplayer, installers/store integration, multi-platform release, full animation authoring, and generalized water/ocean simulation are outside the required MVP. Minimal game-code integration, game-specific collision/query support, standalone execution, one-platform packaging, runtime UI/audio, animation playback, asset references, and bounded underwater rendering are explicitly in scope. The larger roadmap is not a promise that every deliverable lands for First Game MVP.
 
 Progress reviewed against the working tree on 2026-09-07. A passing build confirms compilation, not graphical or round-trip correctness.
 

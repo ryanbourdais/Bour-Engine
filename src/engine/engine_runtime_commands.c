@@ -205,10 +205,17 @@ static EntityId engine_runtime_create_renderable_entity(
     TransformComponent transform;
     transform_component_init(&transform);
 
+    SceneRenderConfig scene_render_config = {0};
+
+    scene_get_render_config(
+        &runtime->scene, 
+        &scene_render_config
+    );
+
     return scene_entity_factory_create_asset(
         &runtime->scene,
         name,
-        runtime->scene.model_path,
+        scene_render_config.model_path,
         &transform
     );
 }
@@ -560,6 +567,12 @@ static void engine_runtime_set_current_scene_path(
         return;
     }
 
+    if (scene_path == runtime->current_scene_path)
+    {
+        runtime->has_current_scene_path = true;
+        return;
+    }
+
     snprintf(
         runtime->current_scene_path, 
         ENGINE_RUNTIME_SCENE_PATH_MAX_LENGTH, 
@@ -585,9 +598,18 @@ static EngineRuntimeCommandResult engine_runtime_save_scene(
         return ENGINE_RUNTIME_COMMAND_INVALID_ARGUMENT;
     }
 
-    if (scene_save_to_file(&runtime->scene, scene_path) !=
-            SCENE_SAVE_OK)
+    SceneSaveResult save_result =
+        scene_save_to_file(&runtime->scene, scene_path);
+
+    if (save_result != SCENE_SAVE_OK)
     {
+        fprintf(
+            stderr, 
+            "Failed to save scene '%s': %d\n",
+            scene_path,
+            save_result
+        );
+        
         return ENGINE_RUNTIME_COMMAND_SCENE_IO_FAILED;
     }
 
@@ -610,10 +632,19 @@ static EngineRuntimeCommandResult engine_runtime_load_scene(
         return ENGINE_RUNTIME_COMMAND_INVALID_ARGUMENT;
     }
 
-    if (scene_load_from_file(&runtime->scene, scene_path) !=
-            SCENE_LOAD_OK)
+    SceneLoadResult load_result =
+        scene_load_from_file(&runtime->scene, scene_path);
+
+    if (load_result != SCENE_SAVE_OK)
     {
-        return  ENGINE_RUNTIME_COMMAND_SCENE_IO_FAILED;
+        fprintf(
+            stderr, 
+            "Failed to load scene '%s': %d\n",
+            scene_path,
+            load_result
+        );
+
+        return ENGINE_RUNTIME_COMMAND_SCENE_IO_FAILED;
     }
 
     engine_runtime_set_current_scene_path(runtime, scene_path);
