@@ -1,7 +1,11 @@
 #include "scene.h"
 #include "entity_factory.h"
+#include "scene_serialization.h"
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 #define ACTIVE_SPOT_LIGHTS 2
 #define ACTIVE_POINT_LIGHTS 4
@@ -197,6 +201,178 @@ static void init_scene_ecs_storage(Scene *scene)
     component_storage_init(&scene->spot_lights, sizeof(SpotLightComponent));
     component_storage_init(&scene->cameras, sizeof(CameraComponent));
     component_storage_init(&scene->skyboxes, sizeof(SkyboxComponent));
+}
+
+static bool scene_clone_entities(
+    EntityRegistry *out_registry,
+    const EntityRegistry *source
+)
+{
+    if (out_registry == NULL || source == NULL)
+    {
+        return false;
+    }
+
+    for (size_t index = 0; index < source->count; index++)
+    {
+        if (!entity_registry_create_with_id(
+                out_registry, 
+                source->entities[index]
+            ))
+        {
+            return false;
+        }
+    }
+
+    out_registry->next_id = source->next_id;
+    return true;
+}
+
+static bool scene_clone_component_storage(
+    ComponentStorage *out_storage,
+    const ComponentStorage *source
+)
+{
+    if (out_storage == NULL || source == NULL)
+    {
+        return false;
+    }
+
+    for (size_t index = 0; index < source->count; index++)
+    {
+        EntityId entity = component_storage_entity_at(source, index);
+        const void *component =
+            component_storage_at_const(source, index);
+
+        if (component == NULL ||
+            !component_storage_add(
+                out_storage,
+                entity,
+                component
+            ))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+static const char *scene_clone_rebind_owned_path(
+    const char *source_path,
+    const char source_paths[][SCENE_PATH_MAX_LENGTH],
+    char cloned_paths[][SCENE_PATH_MAX_LENGTH],
+    size_t path_count
+)
+{
+    if (source_path == NULL)
+    {
+        return NULL;
+    }
+
+    for (size_t index = 0; index < path_count; index++)
+    {
+        if (source_path == source_paths[index])
+        {
+            return cloned_paths[index];
+        }
+    }
+
+    return source_path;
+}
+
+static void scene_clone_rebind_asset_paths(
+    Scene *clone,
+    const Scene *source
+)
+{
+    clone->model_path = scene_clone_rebind_owned_path(
+        source->model_path,
+        source->loaded_model_paths,
+        clone->loaded_model_paths,
+        source->loaded_model_path_count
+    );
+
+    for (size_t face = 0; face < 6; face++)
+    {
+        clone->skybox_faces[face] =
+            scene_clone_rebind_owned_path(
+                source->skybox_faces[face], 
+                source->loaded_skybox_faces, 
+                clone->loaded_skybox_faces, 
+                6
+            );
+    }
+
+    for (size_t index = 0;
+            index < source->mesh_renderers.count;
+            index++)
+    {
+        EntityId entity = component_storage_entity_at(
+            &source->mesh_renderers, 
+            index
+        );
+
+        const MeshRendererComponent *source_mesh =
+            component_storage_at_const(
+                &source->mesh_renderers, 
+                index
+            );
+
+        MeshRendererComponent *clone_mesh =
+            component_storage_get(
+                &clone->mesh_renderers, 
+                entity
+            );
+
+        if (source_mesh != NULL && clone_mesh != NULL)
+        {
+            clone_mesh->model_path =
+                scene_clone_rebind_owned_path(
+                    source_mesh->model_path, 
+                    source->loaded_model_paths, 
+                    clone->loaded_model_paths, 
+                    source->loaded_model_path_count
+                );
+        }
+    }
+
+    for (size_t index = 0;
+            index < source->skyboxes.count;
+            index++)
+    {
+        EntityId entity = component_storage_entity_at(
+            &source->skyboxes, 
+            index
+        );
+
+        const SkyboxComponent *source_skybox =
+            component_storage_at_const(
+                &source->skyboxes, 
+                index
+            );
+
+        SkyboxComponent *clone_skybox =
+            component_storage_get(
+                &clone->skyboxes, 
+                entity
+            );
+
+        if (source_skybox == NULL || clone_skybox == NULL)
+        {
+            continue;
+        }
+
+        for (size_t face = 0; face < 6; face++)
+        {
+            clone_skybox->faces[face] =
+                scene_clone_rebind_owned_path(
+                    source_skybox->faces[face], 
+                    source->loaded_skybox_faces, 
+                    clone->loaded_skybox_faces, 
+                    6
+                );
+        }
+    }
 }
 
 static void scene_extract_point_lights(Scene *scene)
@@ -421,6 +597,102 @@ void scene_init_empty(Scene *scene)
     spot_light_collection_init(&scene->legacy_spot_lights);
     point_light_collection_init(&scene->render_point_lights);
     spot_light_collection_init(&scene->render_spot_lights);
+}
+
+bool scene_clone(
+    Scene *out_scene,
+    const Scene *source
+)
+{
+    if (out_scene == NULL ||
+        source == NULL ||
+        out_scene == source ||
+        source->loaded_model_path_count > MAX_RENDERABLES)
+    {
+        return false;
+    }
+
+    scene_init_empty(out_scene);
+
+    out_scene->active_camera = source->active_camera;
+    out_scene->active_skybox = source->active_skybox;
+
+    out_scene->legacy_directional_light =
+        source->legacy_directional_light;
+    out_scene->legacy_point_lights =
+        source->legacy_point_lights;
+    out_scene->legacy_spot_lights =
+        source->legacy_spot_lights;
+
+    out_scene->model_path = source->model_path;
+    out_scene->loaded_model_path_count =
+        source->loaded_model_path_count;
+
+    memcpy(
+        out_scene->loaded_model_paths,
+        source->loaded_model_paths,
+        sizeof(out_scene->loaded_model_paths)
+    );
+
+    memcpy(
+       out_scene->loaded_skybox_faces,
+       source->loaded_skybox_faces,
+       sizeof(out_scene->loaded_skybox_faces)
+    );
+
+    for (size_t face = 0; face < 6; face++)
+    {
+        out_scene->skybox_faces[face] =
+            source->skybox_faces[face];
+    }
+
+    if (!scene_clone_entities(
+            &out_scene->entities, 
+            &source->entities
+            ) ||
+        !scene_clone_component_storage(
+            &out_scene->transforms,
+            &source->transforms
+            ) ||
+        !scene_clone_component_storage(
+            &out_scene->names,
+            &source->names
+            ) ||
+        !scene_clone_component_storage(
+            &out_scene->mesh_renderers, 
+            &source->mesh_renderers
+            ) ||
+        !programmable_mesh_collection_clone(
+            &out_scene->programmable_meshes,
+            &source->programmable_meshes
+            ) ||
+        !scene_clone_component_storage(
+            &out_scene->directional_lights,
+            &source->directional_lights
+            ) ||
+        !scene_clone_component_storage(
+            &out_scene->point_lights, 
+            &source->point_lights
+            ) ||
+        !scene_clone_component_storage(
+            &out_scene->spot_lights, 
+            &source->spot_lights
+            ) ||
+        !scene_clone_component_storage(
+            &out_scene->cameras, 
+            &source->cameras
+            ) ||
+        !scene_clone_component_storage(
+            &out_scene->skyboxes, 
+            &source->skyboxes
+            )
+       )
+       {
+           scene_shutdown(out_scene);
+           return false;
+       }
+    scene_clone_rebind_asset_paths(out_scene, source);
+    return true;
 }
 
 // Initializes built-in baseline scene

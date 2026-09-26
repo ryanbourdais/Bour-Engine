@@ -77,6 +77,8 @@ static void read_game_input(GameApplication *application)
         (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS ? 1.0f : 0.0f);
 
     application->input.camera_input_enabled = true;
+
+    application->input.simulation_update_enabled = true;
 }
 
 int main(int argc, char **argv)

@@ -215,6 +215,46 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
 
     ImGui::SameLine();
 
+    if (frame->simulation_mode == EDITOR_SIMULATION_MODE_EDIT)
+    {
+        if (ImGui::Button("Play"))
+        {
+            result.start_simulation = true;
+        }
+    }
+
+    else if (frame->simulation_mode == EDITOR_SIMULATION_MODE_PLAYING)
+    {
+        if (ImGui::Button("Pause"))
+        {
+            result.pause_simulation = true;
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Stop"))
+        {
+            result.stop_simulation = true;
+        }
+    }
+    
+    else 
+    {
+        if (ImGui::Button("Resume"))
+        {
+            result.resume_simulation = true;
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Stop"))
+        {
+            result.stop_simulation = true;
+        }
+    }
+
+    ImGui::SameLine();
+
     if (ImGui::BeginMenu("Scene"))
     {
          if (ImGui::BeginMenu("Create"))
@@ -275,11 +315,15 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
 
       ImGui::Separator();
 
-      if (ImGui::MenuItem("Save Scene"))
+      const bool scene_persistence_enabled =
+          frame != nullptr &&
+          frame->simulation_mode == EDITOR_SIMULATION_MODE_EDIT;
+
+      if (ImGui::MenuItem("Save Scene", nullptr, false, scene_persistence_enabled))
       {
           result.save_scene = true;
       }
-      if (ImGui::MenuItem("Load Scene"))
+      if (ImGui::MenuItem("Load Scene", nullptr, false, scene_persistence_enabled))
       {
           result.load_scene = true;
       }

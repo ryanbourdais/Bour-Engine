@@ -174,7 +174,9 @@ struct EditorAppState
 {
     GLFWwindow *window;
 
-    EngineRuntime *runtime;
+    EngineRuntime *authoring_runtime;
+    EngineRuntime *preview_runtime;
+    EditorSimulationMode simulation_mode;
     float pending_mouse_delta_x;
     float pending_mouse_delta_y;
 
@@ -191,7 +193,71 @@ struct EditorAppState
     double fps_title_countdown_time;
 
     bool tab_was_pressed;
+    bool stop_simulation_requested;
 };
+
+static EngineRuntime *editor_app_get_active_runtime(
+    struct EditorAppState *engine
+)
+{
+    if (engine == NULL)
+    {
+        return NULL;
+    }
+
+    if ((engine->simulation_mode ==
+                EDITOR_SIMULATION_MODE_PLAYING ||
+            engine->simulation_mode ==
+            EDITOR_SIMULATION_MODE_PAUSED) &&
+        engine->preview_runtime != NULL)
+    {
+        return engine->preview_runtime;
+    }
+
+    return engine->authoring_runtime;
+}
+
+static bool editor_app_start_simulation(
+    struct EditorAppState *engine,
+    int framebuffer_width,
+    int framebuffer_height
+)
+{
+    if (engine == NULL ||
+        engine->authoring_runtime == NULL ||
+        engine->preview_runtime != NULL ||
+        engine->simulation_mode != EDITOR_SIMULATION_MODE_EDIT)
+    {
+        return false;
+    }
+
+    EngineRuntime *preview = engine_runtime_create_preview(
+        engine->authoring_runtime, 
+        framebuffer_width, 
+        framebuffer_height
+    );
+
+    if (preview == NULL)
+    {
+        return false;
+    }
+
+    engine->preview_runtime = preview;
+    engine->simulation_mode = EDITOR_SIMULATION_MODE_PLAYING;
+    return true;
+}
+
+static void editor_app_stop_simulation(struct EditorAppState *engine)
+{
+    if (engine == NULL)
+    {
+        return;
+    }
+
+    engine_runtime_destroy(engine->preview_runtime);
+    engine->preview_runtime = NULL;
+    engine->simulation_mode = EDITOR_SIMULATION_MODE_EDIT;
+}
 
 static void safe_exit()
 {
@@ -259,7 +325,14 @@ static void editor_app_update_runtime(
     struct EditorAppState *engine
 )
 {
-    if (engine == NULL || engine->runtime == NULL)
+    if (engine == NULL)
+    {
+        return;
+    }
+
+    EngineRuntime *runtime = editor_app_get_active_runtime(engine);
+
+    if (runtime == NULL)
     {
         return;
     }
@@ -283,10 +356,12 @@ static void editor_app_update_runtime(
         .mouse_delta_x = engine->pending_mouse_delta_x,
         .mouse_delta_y = engine->pending_mouse_delta_y,
         .camera_input_enabled = camera_input_enabled,
+        .simulation_update_enabled =
+            engine->simulation_mode == EDITOR_SIMULATION_MODE_PLAYING,
     };
 
     engine_runtime_update(
-        engine->runtime, 
+        runtime, 
         frame_clock_delta_time(&engine->clock),
         &input
     );
@@ -323,14 +398,21 @@ static bool editor_app_execute_command(
     uint32_t *out_affected_entity_id
 )
 {
-    if (engine == NULL || engine->runtime == NULL || command == NULL)
+    if (engine == NULL || command == NULL)
+    {
+        return false;
+    }
+
+    EngineRuntime *runtime = editor_app_get_active_runtime(engine);
+
+    if (runtime == NULL)
     {
         return false;
     }
 
     EngineRuntimeCommandResult result =
         engine_runtime_execute_command(
-            engine->runtime, 
+            runtime, 
             command, 
             out_affected_entity_id
         );
@@ -392,6 +474,7 @@ static void run_editor_app_loop(struct EditorAppState *engine)
                 engine->profile.editor_render_timer.last_ms,
             .profile_present_ms =
                 engine->profile.present_timer.last_ms,
+            .simulation_mode = engine->simulation_mode,
         };
 
         process_timer_begin(
@@ -400,7 +483,7 @@ static void run_editor_app_loop(struct EditorAppState *engine)
         );
 
         editor_app_populate_runtime_frame(
-            engine->runtime, 
+            editor_app_get_active_runtime(engine), 
             engine->selected_entity, 
             &editor_frame, 
             &runtime_frame_scratch
@@ -436,10 +519,39 @@ static void run_editor_app_loop(struct EditorAppState *engine)
 
             engine->editor_scene_view_focused =
                 editor_result.viewport.focused;
-            editor_app_update_runtime(engine);
 
             runtime_framebuffer_width = editor_result.viewport.framebuffer_width;
             runtime_framebuffer_height = editor_result.viewport.framebuffer_height;
+
+            if (editor_result.start_simulation)
+            {
+                editor_app_start_simulation(
+                    engine, 
+                    runtime_framebuffer_width, 
+                    runtime_framebuffer_height
+                );
+            }
+
+            else if (editor_result.pause_simulation &&
+                    engine->simulation_mode == EDITOR_SIMULATION_MODE_PLAYING)
+            {
+                engine->simulation_mode = EDITOR_SIMULATION_MODE_PAUSED;
+            }
+
+            else if (editor_result.resume_simulation &&
+                    engine->simulation_mode == EDITOR_SIMULATION_MODE_PAUSED)
+            {
+                engine->simulation_mode = EDITOR_SIMULATION_MODE_PLAYING;
+            }
+            
+            else if (editor_result.stop_simulation &&
+                     engine->preview_runtime != NULL)
+            {
+                engine->simulation_mode = EDITOR_SIMULATION_MODE_PAUSED;
+                engine->stop_simulation_requested = true;
+            }
+
+            editor_app_update_runtime(engine);
 
             process_timer_end(&engine->profile.editor_begin_timer, glfwGetTime());
             process_timer_log_report(&engine->profile.editor_begin_timer, &engine->profile_log_config);
@@ -570,7 +682,8 @@ static void run_editor_app_loop(struct EditorAppState *engine)
                 }
             }
 
-            if (editor_result.save_scene)
+            if (editor_result.save_scene &&
+                engine->simulation_mode == EDITOR_SIMULATION_MODE_EDIT)
             {
                 command = (EngineRuntimeCommand) {
                     .type = ENGINE_RUNTIME_COMMAND_SAVE_SCENE,
@@ -579,7 +692,8 @@ static void run_editor_app_loop(struct EditorAppState *engine)
                 editor_app_execute_command(engine, &command, NULL);
             }
 
-            if (editor_result.load_scene)
+            if (editor_result.load_scene &&
+                engine->simulation_mode == EDITOR_SIMULATION_MODE_EDIT)
             {
                 command = (EngineRuntimeCommand) {
                     .type = ENGINE_RUNTIME_COMMAND_LOAD_SCENE,
@@ -746,7 +860,7 @@ static void run_editor_app_loop(struct EditorAppState *engine)
                 : ENGINE_RUNTIME_RENDER_TARGET_DEFAULT_FRAMEBUFFER,
         };
 
-        engine_runtime_render(engine->runtime, &render_target);
+        engine_runtime_render(editor_app_get_active_runtime(engine), &render_target);
 
         process_timer_end(&engine->profile.renderer_timer, glfwGetTime());
         process_timer_log_report(&engine->profile.renderer_timer, &engine->profile_log_config);
@@ -761,6 +875,12 @@ static void run_editor_app_loop(struct EditorAppState *engine)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             editor_ui_render();
+
+            if (engine->stop_simulation_requested)
+            {
+                editor_app_stop_simulation(engine);
+                engine->stop_simulation_requested = false;
+            }
 
             process_timer_end(&engine->profile.editor_render_timer, glfwGetTime());
             process_timer_log_report(&engine->profile.editor_render_timer, &engine->profile_log_config);
@@ -836,9 +956,10 @@ int editor_app_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
         .framebuffer_height = framebuffer_height,
     };
 
-    engine.runtime = engine_runtime_create(&runtime_create_info);
+    engine.authoring_runtime = engine_runtime_create(&runtime_create_info);
+    engine.simulation_mode = EDITOR_SIMULATION_MODE_EDIT;
 
-    if (engine.runtime == NULL)
+    if (engine.authoring_runtime == NULL)
     {
         fprintf(stderr, "Failed to initialize runtime\n");
         process_timer_log_config_close(&engine.profile_log_config);
@@ -877,7 +998,8 @@ int editor_app_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
     run_editor_app_loop(&engine);
     process_timer_log_config_close(&engine.profile_log_config);
     
-    engine_runtime_destroy(engine.runtime);
+    engine_runtime_destroy(engine.preview_runtime);
+    engine_runtime_destroy(engine.authoring_runtime);
 
     if (engine.editor_enabled)
     {

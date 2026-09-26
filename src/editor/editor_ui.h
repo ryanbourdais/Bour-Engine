@@ -23,6 +23,12 @@ typedef enum EditorSelectedLightType {
     EDITOR_SELECTED_LIGHT_SPOT,
 } EditorSelectedLightType;
 
+typedef enum EditorSimulationMode {
+    EDITOR_SIMULATION_MODE_EDIT = 0,
+    EDITOR_SIMULATION_MODE_PLAYING,
+    EDITOR_SIMULATION_MODE_PAUSED,
+} EditorSimulationMode;
+
 typedef struct EditorFrameData {
     double delta_time;
     double fps;
@@ -73,6 +79,8 @@ typedef struct EditorFrameData {
 
     bool editor_cursor_enabled;
     unsigned int resolved_scene_texture;
+
+    EditorSimulationMode simulation_mode;
 
     const EditorHierarchyItem *hierarchy_items;
     size_t hierarchy_item_count;
@@ -125,6 +133,11 @@ typedef struct EditorFrameResult {
     float edited_position[3];
     float edited_rotation[3];
     float edited_scale[3];
+
+    bool start_simulation;
+    bool pause_simulation;
+    bool resume_simulation;
+    bool stop_simulation;
 } EditorFrameResult;
 
 int editor_ui_init(struct GLFWwindow *window);

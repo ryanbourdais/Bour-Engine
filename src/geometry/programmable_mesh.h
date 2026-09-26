@@ -90,6 +90,11 @@ const ProgrammableMesh *programmable_mesh_collection_get_const(
     ProgrammableMeshId id 
 );
 
+bool programmable_mesh_collection_clone(
+    ProgrammableMeshCollection *out_collection,
+    const ProgrammableMeshCollection *source
+);
+
 bool programmable_mesh_collection_remove(
     ProgrammableMeshCollection *collection,
     ProgrammableMeshId id 
