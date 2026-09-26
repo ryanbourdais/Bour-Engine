@@ -1,8 +1,10 @@
 #include "programmable_mesh.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 void programmable_mesh_init(ProgrammableMesh *mesh)
 {
@@ -224,6 +226,127 @@ static bool programmable_mesh_collection_reserve(
 
     collection->slots = new_slots;
     collection->slot_capacity = new_capacity;
+
+    return true;
+}
+
+static bool programmable_mesh_clone(
+    ProgrammableMesh *out_mesh,
+    const ProgrammableMesh *source
+)
+{
+    if (out_mesh == NULL || source == NULL)
+    {
+        return false;
+    }
+
+    programmable_mesh_init(out_mesh);
+
+    out_mesh->type = source->type;
+    out_mesh->plane_width = source->plane_width;
+    out_mesh->plane_depth = source->plane_depth;
+    out_mesh->dirty = source->dirty;
+
+    if (source->vertex_count > 0)
+    {
+        out_mesh->vertices = malloc(
+            source->vertex_count * sizeof(*out_mesh->vertices)
+        );
+
+        if (out_mesh->vertices == NULL)
+        {
+            programmable_mesh_free(out_mesh);
+            return false;
+        }
+
+        memcpy(
+            out_mesh->vertices, 
+            source->vertices, 
+            source->vertex_count * sizeof(*out_mesh->vertices)
+        );
+
+        out_mesh->vertex_count = source->vertex_count;
+    }
+
+    if (source->index_count > 0)
+    {
+        out_mesh->indices = malloc(
+            source->index_count * sizeof(*out_mesh->indices)
+        );
+
+        if (out_mesh->indices == NULL)
+        {
+            programmable_mesh_free(out_mesh);
+            return false;
+        }
+
+        memcpy(
+            out_mesh->indices,
+            source->indices,
+            source->index_count * sizeof(*out_mesh->indices)
+        );
+
+        out_mesh->index_count = source->index_count;
+    }
+    
+    return true;
+}
+
+bool programmable_mesh_collection_clone(
+    ProgrammableMeshCollection *out_collection,
+    const ProgrammableMeshCollection *source
+)
+{
+    if (out_collection == NULL ||
+        source == NULL ||
+        out_collection == source )
+    {
+        return false;
+    }
+
+    programmable_mesh_collection_init(out_collection);
+
+    if (source->slot_count == 0)
+    {
+        out_collection->next_id = source->next_id;
+        return true;
+    }
+
+    out_collection->slots = calloc(
+        source->slot_count,
+        sizeof(*out_collection->slots)
+    );
+
+    if (out_collection->slots == NULL)
+    {
+        return false;
+    }
+
+    out_collection->slot_count = source->slot_count;
+    out_collection->slot_capacity = source->slot_count;
+    out_collection->next_id = source->next_id;
+
+    for (size_t index = 0; index < source->slot_count; index++)
+    {
+        const ProgrammableMeshSlot *source_slot =
+            &source->slots[index];
+        ProgrammableMeshSlot *out_slot =
+            &out_collection->slots[index];
+
+        out_slot->id = source_slot->id;
+        out_slot->in_use = source_slot->in_use;
+        programmable_mesh_init(&out_slot->mesh);
+
+        if (out_slot->in_use &&
+            !programmable_mesh_clone(
+                &out_slot->mesh,
+                &source_slot->mesh
+            ))
+        {
+            programmable_mesh_collection_free(out_collection);
+            return false;
+        }
+    }
 
     return true;
 }

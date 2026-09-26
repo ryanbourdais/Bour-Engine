@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdbool.h>
 
 #include "../renderer/data_types/lightObject.h"
 #include "../ecs/entity.h"
@@ -56,4 +57,8 @@ void scene_init_default(Scene *scene);
 void scene_init_empty(Scene *scene);
 void scene_get_render_config(Scene *scene, SceneRenderConfig *out_config);
 void scene_update(Scene *scene, double delta_time);
+bool scene_clone(
+    Scene *out_scene,
+    const Scene *source
+);
 void scene_shutdown(Scene *scene);

@@ -154,5 +154,11 @@ void upload_camera_ubo(GLuint camera_ubo, const Camera *camera, mat4 projection)
 
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUniformData), &data);
 
+    glBindBufferBase(
+        GL_UNIFORM_BUFFER,
+        CAMERA_UBO_BINDING,
+        camera_ubo
+    );
+
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }

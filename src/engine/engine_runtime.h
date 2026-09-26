@@ -142,6 +142,7 @@ typedef struct EngineRuntimeInput {
     float mouse_delta_x;
     float mouse_delta_y;
     bool camera_input_enabled;
+    bool simulation_update_enabled;
 } EngineRuntimeInput;
 
 typedef enum EngineRuntimeRenderTargetType {
@@ -157,6 +158,12 @@ typedef struct EngineRuntimeRenderTarget {
 
 EngineRuntime *engine_runtime_create(
     const EngineRuntimeCreateInfo *create_info
+);
+
+EngineRuntime *engine_runtime_create_preview(
+    const EngineRuntime *authoring_runtime,
+    int framebuffer_width,
+    int framebuffer_height
 );
 
 void engine_runtime_destroy(EngineRuntime *runtime);

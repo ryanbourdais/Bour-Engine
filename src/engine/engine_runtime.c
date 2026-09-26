@@ -1,10 +1,61 @@
 #include "engine_runtime.h"
 #include "engine_runtime_internal.h"
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "../scene/scene_serialization.h"
+
+static bool engine_runtime_initialize_renderer(
+    EngineRuntime *runtime,
+    int framebuffer_width,
+    int framebuffer_height
+)
+{
+    runtime->renderer = renderer_create();
+
+    if (runtime->renderer == NULL)
+    {
+        return false;
+    }
+
+    SceneRenderConfig scene_render_config = {0};
+
+    scene_get_render_config(
+        &runtime->scene, 
+        &scene_render_config
+    );
+
+    RendererConfig renderer_config = {
+        .viewport = {
+            .width = framebuffer_width,
+            .height = framebuffer_height,
+        },
+        .camera = &runtime->camera,
+        .model_path = scene_render_config.model_path,
+        .skybox_faces = {
+            scene_render_config.skybox_faces[0],
+            scene_render_config.skybox_faces[1],
+            scene_render_config.skybox_faces[2],
+            scene_render_config.skybox_faces[3],
+            scene_render_config.skybox_faces[4],
+            scene_render_config.skybox_faces[5],
+        },
+        .directional_light = scene_render_config.directional_light,
+        .point_lights = scene_render_config.point_lights,
+        .spot_lights = scene_render_config.spot_lights,
+    };
+
+    if (renderer_init(runtime->renderer, &renderer_config) != 0)
+    {
+        renderer_destroy(runtime->renderer);
+        runtime->renderer = NULL;
+        return false;
+    }
+
+    return true;
+}
 
 EngineRuntime *engine_runtime_create(
     const EngineRuntimeCreateInfo *create_info
@@ -50,47 +101,76 @@ EngineRuntime *engine_runtime_create(
         runtime->has_current_scene_path = true;
     }
 
-    runtime->renderer = renderer_create();
-
-    if (runtime->renderer == NULL)
+    if (!engine_runtime_initialize_renderer(
+            runtime, 
+            create_info->framebuffer_width, 
+            create_info->framebuffer_height
+        ))
     {
-        scene_shutdown(&runtime->scene);
-        free(runtime);
-        return NULL;
-    }
-
-    SceneRenderConfig scene_render_config = {0};
-    scene_get_render_config(&runtime->scene, &scene_render_config);
-
-    RendererConfig renderer_config = {
-        .viewport = {
-            .width = create_info->framebuffer_width,
-            .height = create_info->framebuffer_height,
-        },
-        .camera = &runtime->camera,
-        .model_path = scene_render_config.model_path,
-        .skybox_faces = {
-            scene_render_config.skybox_faces[0],
-            scene_render_config.skybox_faces[1],
-            scene_render_config.skybox_faces[2],
-            scene_render_config.skybox_faces[3],
-            scene_render_config.skybox_faces[4],
-            scene_render_config.skybox_faces[5],
-        },
-        .directional_light = scene_render_config.directional_light,
-        .point_lights = scene_render_config.point_lights,
-        .spot_lights = scene_render_config.spot_lights,
-    };
-
-    if (renderer_init(runtime->renderer, &renderer_config) != 0)
-    {
-        renderer_destroy(runtime->renderer);
         scene_shutdown(&runtime->scene);
         free(runtime);
         return NULL;
     }
 
     return runtime;
+}
+
+EngineRuntime *engine_runtime_create_preview(
+    const EngineRuntime *authoring_runtime,
+    int framebuffer_width,
+    int framebuffer_height
+)
+{
+    if (authoring_runtime == NULL ||
+        framebuffer_width <= 0 ||
+        framebuffer_height <= 0)
+    {
+        return NULL;
+    }
+
+    EngineRuntime *preview = calloc(1, sizeof(EngineRuntime));
+
+    if (preview == NULL)
+    {
+        return NULL;
+    }
+
+    preview->camera = authoring_runtime->camera;
+    camera_update(&preview->camera);
+
+    if (!scene_clone(
+            &preview->scene, 
+            &authoring_runtime->scene
+        ))
+    {
+        free(preview);
+        return NULL;
+    }
+
+    if (authoring_runtime->has_current_scene_path)
+    {
+        snprintf(
+            preview->current_scene_path, 
+            ENGINE_RUNTIME_SCENE_PATH_MAX_LENGTH, 
+            "%s",
+            authoring_runtime->current_scene_path
+        );
+
+        preview->has_current_scene_path = true;    
+    }
+
+    if (!engine_runtime_initialize_renderer(
+            preview, 
+            framebuffer_width, 
+            framebuffer_height
+        ))
+    {
+        scene_shutdown(&preview->scene);
+        free(preview);
+        return NULL;
+    }
+
+    return preview;
 }
 
 void engine_runtime_destroy(EngineRuntime *runtime)
@@ -118,7 +198,10 @@ void engine_runtime_update(
         return;
     }
 
-    scene_update(&runtime->scene, delta_time);
+    if (input == NULL || input->simulation_update_enabled)
+    {
+        scene_update(&runtime->scene, delta_time);
+    }
 
     if (input != NULL && input->camera_input_enabled)
     {
