@@ -100,6 +100,10 @@ typedef struct EditorViewport {
     bool hovered;
     bool focused;
 
+    bool primary_clicked;
+    float primary_click_u;
+    float primary_click_v;
+
     unsigned int resolved_scene_texture;
 } EditorViewport;
 

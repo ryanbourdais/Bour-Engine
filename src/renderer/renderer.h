@@ -31,6 +31,7 @@ typedef struct RendererConfig {
     const Camera *camera;
 
     const char *model_path;
+    bool entity_id_picking_enabled;
     const char *skybox_faces[6];
     const DirectionalLight *directional_light;
     const PointLightCollection *point_lights;
@@ -58,6 +59,11 @@ Renderer *renderer_create(void);
 int renderer_init(Renderer *renderer, const RendererConfig *config);
 void renderer_render_frame(Renderer *renderer, const RendererFrame *frame);
 unsigned int renderer_get_resolved_scene_texture(const Renderer *renderer);
+uint32_t renderer_pick_entity(
+    const Renderer *renderer,
+    float viewport_u,
+    float viewport_v
+);
 void renderer_shutdown(Renderer *renderer);
 void renderer_destroy(Renderer *renderer);
 RendererStats renderer_get_stats(const Renderer *renderer);

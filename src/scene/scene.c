@@ -433,6 +433,8 @@ static void scene_extract_renderables(Scene *scene, SceneRenderConfig *out_confi
         RenderableDrawData *renderable =
             &out_config->renderables[out_config->renderable_count];
 
+        renderable->entity_id = entity;
+
         switch (mesh_renderer->source_type) 
         {
             case MESH_SOURCE_ASSET:

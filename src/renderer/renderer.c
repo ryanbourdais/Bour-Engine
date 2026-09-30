@@ -2,12 +2,14 @@
 #include <GL/gl.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cglm/struct.h>
 #include <cglm/mat4.h>
 
+#include "camera.h"
 #include "data_types/mesh.h"
 #include "data_types/texture.h"
 #include "data_types/lightObject.h"
@@ -32,6 +34,7 @@ struct RendererState
 
     RenderTarget scene_target;
     MsaaRenderTarget scene_msaa_target;
+    EntityIdRenderTarget entity_id_target;
     size_t render_target_resize_count;
     size_t render_target_noop_count;
     size_t zero_size_viewport_count;
@@ -51,6 +54,11 @@ struct RendererState
     GLint point_light_count_location;
     GLint spot_light_count_location;
     GLint model_location;
+
+    GLuint entity_id_shader_program;
+    GLint entity_id_model_location;
+    GLint entity_id_value_location;
+    bool entity_id_picking_enabled;
 
     const char *loaded_model_path;
 };
@@ -287,6 +295,42 @@ static void draw_primitive_mesh(
     glDrawElements(GL_TRIANGLES, mesh->index_count, GL_UNSIGNED_INT, 0);
 }
 
+static void draw_entity_id_mesh(
+    struct RendererState *renderer,
+    const Mesh *mesh,
+    mat4s model_matrix,
+    uint32_t entity_id
+)
+{
+    if (renderer == NULL ||
+        mesh == NULL ||
+        !renderer->entity_id_picking_enabled)
+    {
+        return;
+    }
+
+    glUniformMatrix4fv(
+        renderer->entity_id_model_location,
+        1,
+        GL_FALSE,
+        (float *)model_matrix.raw
+    );
+
+    glUniform1ui(
+        renderer->entity_id_value_location,
+        entity_id
+    );
+
+    glEnable(GL_CULL_FACE);
+    glBindVertexArray(mesh->vao);
+    glDrawElements(
+        GL_TRIANGLES, 
+        mesh->index_count, 
+        GL_UNSIGNED_INT, 
+        0
+    );
+}
+
 static void renderer_update_projection(
     struct RendererState *renderer,
     const Camera *camera,
@@ -318,7 +362,10 @@ static bool renderer_resize_for_viewport(
     if (renderer->scene_target.width == viewport.width &&
         renderer->scene_target.height == viewport.height &&
         renderer->scene_msaa_target.width == viewport.width &&
-        renderer->scene_msaa_target.height == viewport.height)
+        renderer->scene_msaa_target.height == viewport.height &&
+        (!renderer->entity_id_picking_enabled ||
+            (renderer->entity_id_target.width == viewport.width &&
+             renderer->entity_id_target.height == viewport.height)))
     {
         renderer->render_target_noop_count++;
         return true;
@@ -342,6 +389,15 @@ static bool renderer_resize_for_viewport(
         return false;
     }
 
+    if (renderer->entity_id_picking_enabled &&
+        entity_id_render_target_resize(
+            &renderer->entity_id_target, 
+            viewport.width, 
+            viewport.height ) != 0)
+    {
+        return false;
+    }
+
     renderer_update_projection(
         renderer,
         camera,
@@ -361,6 +417,116 @@ unsigned int renderer_get_resolved_scene_texture(const Renderer *renderer)
     }
 
     return renderer->scene_target.color_texture;
+}
+
+uint32_t renderer_pick_entity(
+    const Renderer *renderer,
+    float viewport_u,
+    float viewport_v
+)
+{
+    if (renderer == NULL || !renderer->entity_id_picking_enabled)
+    {
+        return 0;
+    }
+
+    return entity_id_render_target_read(
+        &renderer->entity_id_target, 
+        viewport_u, 
+        viewport_v
+    );
+}
+
+static void renderer_render_entity_ids(
+    struct RendererState *renderer,
+    const RendererFrame *frame
+)
+{
+    if (renderer == NULL ||
+        frame == NULL ||
+        !renderer->entity_id_picking_enabled)
+    {
+        return;
+    }
+
+    entity_id_render_target_bind(&renderer->entity_id_target);
+
+    const GLuint clear_entity_id[] = {0};
+    glClearBufferuiv(GL_COLOR, 0, clear_entity_id);
+    glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    glEnable(GL_DEPTH_TEST);
+    glUseProgram(renderer->entity_id_shader_program);
+
+    upload_camera_ubo(
+        renderer->camera_ubo, 
+        frame->camera, 
+        renderer->projection
+    );
+
+    for (size_t index = 0; index < frame->renderable_count; index++)
+    {
+        const RenderableDrawData *renderable =
+            &frame->renderables[index];
+
+        switch (renderable->geometry_type)
+        {
+            case RENDERABLE_GEOMETRY_MODEL:
+                if (renderer->loaded_model_path == NULL ||
+                    renderable->model_path == NULL ||
+                    strcmp(
+                        renderer->loaded_model_path,
+                        renderable->model_path
+                    ) != 0)
+                {
+                    break;
+                }
+
+                mat4s model_matrix = renderable->model_matrix;
+                
+                draw_model_entity_id(
+                    &renderer->test_model, 
+                    renderer->entity_id_model_location, 
+                    renderer->entity_id_value_location, 
+                    renderable->entity_id, 
+                    model_matrix.raw
+                );
+                break;
+
+            case RENDERABLE_GEOMETRY_PRIMITIVE:
+            {
+               const Mesh *mesh = primitive_mesh_resources_get(
+                    &renderer->primitive_meshes,        
+                    renderable->primitive_type
+                ); 
+
+               draw_entity_id_mesh(
+                    renderer, 
+                    mesh,
+                    renderable->model_matrix,
+                    renderable->entity_id
+                );
+               break;
+            }
+
+            case RENDERABLE_GEOMETRY_PROGRAMMABLE:
+            {
+                const Mesh *mesh = programmable_mesh_resources_get(
+                    &renderer->programmable_meshes, 
+                    renderable->programmable_mesh_id
+                );
+
+                draw_entity_id_mesh(
+                    renderer,
+                    mesh,
+                    renderable->model_matrix,
+                    renderable->entity_id
+                );
+                break;
+            }
+        }
+    }
+    msaa_render_target_bind(&renderer->scene_msaa_target);
 }
 
 void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
@@ -468,6 +634,8 @@ void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
         }
     }
 
+    renderer_render_entity_ids(renderer, frame);
+
     programmable_mesh_resources_end_frame(
         &renderer->programmable_meshes
     );
@@ -526,6 +694,61 @@ static int init_shader_program(struct RendererState *renderer)
     }
 
     glUseProgram(renderer->shader_program);
+
+    return 0;
+}
+
+static int init_entity_id_shader_program(
+    struct RendererState *renderer
+)
+{
+    GLuint vertex_shader = 0;
+    GLuint fragment_shader = 0;
+
+    if (load_shaders(
+            &vertex_shader, 
+            &fragment_shader, 
+            "src/renderer/shaders/entity_id.vert", 
+            "src/renderer/shaders/entity_id.frag"
+        ) != 0)
+    {
+        return 1;
+    }
+
+    if (create_shader_program(
+            &vertex_shader, 
+            &fragment_shader, 
+            &renderer->entity_id_shader_program
+        ) != 0)
+    {
+        return 1;
+    }
+
+    if (bind_camera_uniform_block(renderer->entity_id_shader_program) != 0)
+    {
+        glDeleteProgram(renderer->entity_id_shader_program);
+        renderer->entity_id_shader_program = 0;
+        return 1;
+    }
+
+    renderer->entity_id_model_location = glGetUniformLocation(
+            renderer->entity_id_shader_program,
+            "model"
+    );
+
+    renderer->entity_id_value_location = glGetUniformLocation(
+            renderer->entity_id_shader_program,
+            "entity_id"
+    );
+
+    if (renderer->entity_id_model_location < 0 ||
+        renderer->entity_id_value_location < 0)
+    {
+        fprintf(stderr, "Failed to get entity ID shader uniforms\n");
+        glDeleteProgram(renderer->entity_id_shader_program);
+        renderer->entity_id_shader_program = 0;
+        return 1;
+    }
 
     return 0;
 }
@@ -650,7 +873,16 @@ static int renderer_state_init(struct RendererState *renderer, const RendererCon
 {
     primitive_mesh_resources_init(&renderer->primitive_meshes);
     programmable_mesh_resources_init(&renderer->programmable_meshes);
+
+    renderer->entity_id_picking_enabled = config->entity_id_picking_enabled;
+
     if (init_shader_program(renderer) != 0)
+    {
+        return 1;
+    }
+
+    if (renderer->entity_id_picking_enabled &&
+        init_entity_id_shader_program(renderer) != 0)
     {
         return 1;
     }
@@ -663,6 +895,15 @@ static int renderer_state_init(struct RendererState *renderer, const RendererCon
     }
 
     if (msaa_render_target_init(&renderer->scene_msaa_target, config->viewport.width, config->viewport.height, 4) != 0)
+    {
+        return 1;
+    }
+
+    if (renderer->entity_id_picking_enabled &&
+        entity_id_render_target_init(
+            &renderer->entity_id_target, 
+            config->viewport.width, 
+            config->viewport.height) != 0 )
     {
         return 1;
     }
@@ -744,6 +985,7 @@ static void renderer_state_shutdown(struct RendererState *renderer)
     // instanced_model_free(&renderer->instance_instances);
     skybox_free(&renderer->skybox);
 
+    entity_id_render_target_free(&renderer->entity_id_target);
     msaa_render_target_free(&renderer->scene_msaa_target);
     render_target_free(&renderer->scene_target);
 
@@ -766,6 +1008,12 @@ static void renderer_state_shutdown(struct RendererState *renderer)
     {
         glDeleteBuffers(1, &renderer->camera_ubo);
     }
+    
+    if (renderer->entity_id_shader_program != 0)
+    {
+        glDeleteProgram(renderer->entity_id_shader_program);
+    }
+
     glDeleteProgram(renderer->shader_program);
 }
 

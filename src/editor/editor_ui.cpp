@@ -354,7 +354,6 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
         (int)(viewport_size.x * io.DisplayFramebufferScale.x);
     result.viewport.framebuffer_height =
         (int)(viewport_size.y * io.DisplayFramebufferScale.y);
-    result.viewport.hovered = ImGui::IsWindowHovered();
     result.viewport.focused = ImGui::IsWindowFocused();
     result.viewport.resolved_scene_texture =
         frame != nullptr ? frame->resolved_scene_texture : 0;
@@ -373,6 +372,23 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
     else {
         ImGui::Dummy(viewport_size);
     }
+    
+    result.viewport.hovered = ImGui::IsItemHovered();
+
+    if (result.viewport.hovered &&
+        ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&
+        viewport_size.x > 0.0f &&
+        viewport_size.y > 0.0f)
+    {
+        const ImVec2 mouse_position = ImGui::GetMousePos();
+
+        result.viewport.primary_clicked = true;
+        result.viewport.primary_click_u =
+            (mouse_position.x - viewport_pos.x) / viewport_size.x;
+        result.viewport.primary_click_v =
+            (mouse_position.y - viewport_pos.y) / viewport_size.y;
+    }
+
     ImGui::End();
 
     ImGui::SetNextWindowPos(hierarchy_pos, ImGuiCond_Always);

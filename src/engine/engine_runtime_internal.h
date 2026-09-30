@@ -12,4 +12,5 @@ struct EngineRuntime {
     Scene scene;
     char current_scene_path[ENGINE_RUNTIME_SCENE_PATH_MAX_LENGTH];
     bool has_current_scene_path;
+    bool entity_id_picking_enabled;
 };

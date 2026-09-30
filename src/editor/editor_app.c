@@ -510,6 +510,9 @@ static void run_editor_app_loop(struct EditorAppState *engine)
 
         int runtime_framebuffer_width = window_framebuffer_width;
         int runtime_framebuffer_height = window_framebuffer_height;
+        bool viewport_pick_requested = false;
+        float viewport_pick_u = 0.0f;
+        float viewport_pick_v = 0.0f;
 
         if (engine->editor_enabled)
         {
@@ -522,6 +525,14 @@ static void run_editor_app_loop(struct EditorAppState *engine)
 
             runtime_framebuffer_width = editor_result.viewport.framebuffer_width;
             runtime_framebuffer_height = editor_result.viewport.framebuffer_height;
+
+            if (editor_result.viewport.primary_clicked &&
+                engine->editor_cursor_enabled)
+            {
+                viewport_pick_requested = true;
+                viewport_pick_u = editor_result.viewport.primary_click_u;
+                viewport_pick_v = editor_result.viewport.primary_click_v;
+            }
 
             if (editor_result.start_simulation)
             {
@@ -865,6 +876,15 @@ static void run_editor_app_loop(struct EditorAppState *engine)
         process_timer_end(&engine->profile.renderer_timer, glfwGetTime());
         process_timer_log_report(&engine->profile.renderer_timer, &engine->profile_log_config);
 
+        if (viewport_pick_requested)
+        {
+            engine->selected_entity = engine_runtime_pick_entity(
+                editor_app_get_active_runtime(engine),
+                viewport_pick_u,
+                viewport_pick_v
+            );
+        }
+
         if (engine->editor_enabled)
         {
             process_timer_begin(&engine->profile.editor_render_timer, glfwGetTime());
@@ -952,6 +972,7 @@ int editor_app_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
 
     EngineRuntimeCreateInfo runtime_create_info = {
         .scene_path = ENGINE_DEFAULT_SCENE_PATH,
+        .entity_id_picking_enabled = true,
         .framebuffer_width = framebuffer_width,
         .framebuffer_height = framebuffer_height,
     };

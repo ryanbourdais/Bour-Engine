@@ -132,6 +132,7 @@ typedef struct EngineRuntimeCommand {
 
 typedef struct EngineRuntimeCreateInfo {
     const char *scene_path;
+    bool entity_id_picking_enabled;
     int framebuffer_width;
     int framebuffer_height;
 } EngineRuntimeCreateInfo;
@@ -207,6 +208,12 @@ void engine_runtime_render(
 
 uint32_t engine_runtime_get_resolved_texture(
     const EngineRuntime *runtime
+);
+
+uint32_t engine_runtime_pick_entity(
+    const EngineRuntime *runtime,
+    float viewport_u,
+    float viewport_v
 );
 
 #ifdef __cplusplus
