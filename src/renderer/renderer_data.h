@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdint.h>
 #include <stddef.h>
 #include <cglm/struct.h>
 
@@ -21,4 +22,5 @@ typedef struct RenderableDrawData {
     unsigned int programmable_mesh_id;
     ProgrammableMesh *programmable_mesh;
     mat4s model_matrix;
+    uint32_t entity_id;
 } RenderableDrawData;

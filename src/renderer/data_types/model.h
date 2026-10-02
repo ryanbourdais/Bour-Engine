@@ -34,3 +34,10 @@ int model_load_gltf(Model *model, const char *path);
 void model_free(Model *model);
 void draw_model(Model *model, GLint model_location, MaterialUniforms *material_uniforms, mat4 model_matrix, const vec3 camera_position);
 void draw_model_instanced(Model *model, GLint model_location, MaterialUniforms *material_uniforms, mat4 model_matrix, GLuint instance_vbo, GLsizei instance_count);
+void draw_model_entity_id(
+    const Model *model,
+    GLint model_location,
+    GLint entity_id_location,
+    GLuint entity_id,
+    mat4 model_matrix
+);

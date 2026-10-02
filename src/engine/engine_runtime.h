@@ -77,6 +77,11 @@ typedef struct EngineRuntimeRenderStats {
     size_t zero_size_viewport_count;
 } EngineRuntimeRenderStats;
 
+typedef struct EngineRuntimeRenderCameraSnapshot {
+    float view_matrix[16];
+    float projection_matrix[16];
+} EngineRuntimeRenderCameraSnapshot;
+
 #define ENGINE_RUNTIME_SCENE_PATH_MAX_LENGTH 256
 typedef enum EngineRuntimePrimitiveType {
     ENGINE_RUNTIME_PRIMITIVE_CUBE = 0,
@@ -132,6 +137,7 @@ typedef struct EngineRuntimeCommand {
 
 typedef struct EngineRuntimeCreateInfo {
     const char *scene_path;
+    bool entity_id_picking_enabled;
     int framebuffer_width;
     int framebuffer_height;
 } EngineRuntimeCreateInfo;
@@ -184,6 +190,11 @@ bool engine_runtime_get_entity_snapshot(
     EngineRuntimeEntitySnapshot *snapshot
 );
 
+bool engine_runtime_get_render_camera_snapshot(
+    const EngineRuntime *runtime,
+    EngineRuntimeRenderCameraSnapshot *snapshot
+);
+
 EngineRuntimeRenderStats engine_runtime_get_render_stats(
     EngineRuntime *runtime
 );
@@ -207,6 +218,12 @@ void engine_runtime_render(
 
 uint32_t engine_runtime_get_resolved_texture(
     const EngineRuntime *runtime
+);
+
+uint32_t engine_runtime_pick_entity(
+    const EngineRuntime *runtime,
+    float viewport_u,
+    float viewport_v
 );
 
 #ifdef __cplusplus

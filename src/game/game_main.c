@@ -117,6 +117,7 @@ int main(int argc, char **argv)
 
     EngineRuntimeCreateInfo create_info = {
         .scene_path = argc == 2 ? argv[1] : NULL,
+        .entity_id_picking_enabled = false,
         .framebuffer_width = framebuffer_width,
         .framebuffer_height = framebuffer_height,
     };

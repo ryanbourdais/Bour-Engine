@@ -5,3 +5,6 @@
 	path = src/external/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "src/external/imguizmo"]
+	path = src/external/imguizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git

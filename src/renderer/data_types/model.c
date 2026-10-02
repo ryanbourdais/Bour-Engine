@@ -1,5 +1,7 @@
 #include "model.h"
+#include <GL/gl.h>
 #include <cgltf.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -594,6 +596,48 @@ static int process_node(Model *model, cgltf_node *node, const char *model_direct
     return 0;
 }
 
+static void draw_model_mesh_entity_id(
+    ModelMesh *model_mesh,
+    GLint model_location,
+    GLint entity_id_location,
+    GLuint entity_id,
+    mat4 model_matrix
+)
+{
+    mat4 final_model;
+    glm_mat4_mul(
+        model_matrix,
+        model_mesh->transform,
+        final_model
+    );
+
+    glUniformMatrix4fv(
+        model_location,
+        1,
+        GL_FALSE,
+        (float *)final_model
+    );
+
+    glUniform1ui(entity_id_location, entity_id);
+
+    if (model_mesh->material.double_sided)
+    {
+        glDisable(GL_CULL_FACE);
+    }
+    else
+    {
+        glEnable(GL_CULL_FACE);
+    }
+
+    glBindVertexArray(model_mesh->mesh.vao);
+    glDrawElements(
+        GL_TRIANGLES, 
+        model_mesh->mesh.index_count, 
+        GL_UNSIGNED_INT, 
+        0
+    );
+}
+
 static void draw_model_mesh(ModelMesh *model_mesh, GLint model_location, MaterialUniforms *material_uniforms, mat4 model_matrix)
 {
     mat4 final_model;
@@ -874,3 +918,31 @@ void draw_model(Model *model, GLint model_location, MaterialUniforms *material_u
 
     free(transparent_meshes);
 }
+
+void draw_model_entity_id(
+    const Model *model,
+    GLint model_location,
+    GLint entity_id_location,
+    GLuint entity_id,
+    mat4 model_matrix
+)
+{
+    if (model == NULL)
+    {
+        return;
+    }
+
+    for (size_t index = 0; index < model->count; index++)
+    {
+        draw_model_mesh_entity_id(
+            (ModelMesh *)&model->meshes[index], 
+            model_location, 
+            entity_id_location, 
+            entity_id, 
+            model_matrix
+        );
+    }
+}
+
+
+

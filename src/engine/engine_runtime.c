@@ -2,6 +2,7 @@
 #include "engine_runtime_internal.h"
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -33,6 +34,7 @@ static bool engine_runtime_initialize_renderer(
             .height = framebuffer_height,
         },
         .camera = &runtime->camera,
+        .entity_id_picking_enabled = runtime->entity_id_picking_enabled,
         .model_path = scene_render_config.model_path,
         .skybox_faces = {
             scene_render_config.skybox_faces[0],
@@ -79,6 +81,8 @@ EngineRuntime *engine_runtime_create(
     camera_update(&runtime->camera);
 
     scene_init_default(&runtime->scene);
+
+    runtime->entity_id_picking_enabled = create_info->entity_id_picking_enabled;
 
     if (create_info->scene_path != NULL &&
             scene_load_from_file(&runtime->scene, create_info->scene_path) !=
@@ -158,6 +162,8 @@ EngineRuntime *engine_runtime_create_preview(
 
         preview->has_current_scene_path = true;    
     }
+
+    preview->entity_id_picking_enabled = authoring_runtime->entity_id_picking_enabled;
 
     if (!engine_runtime_initialize_renderer(
             preview, 
@@ -271,6 +277,24 @@ uint32_t engine_runtime_get_resolved_texture(
     }
 
     return renderer_get_resolved_scene_texture(runtime->renderer);
+}
+
+uint32_t engine_runtime_pick_entity(
+    const EngineRuntime *runtime,
+    float viewport_u,
+    float viewport_v
+)
+{
+    if (runtime == NULL)
+    {
+        return ENGINE_RUNTIME_INVALID_ENTITY_ID;
+    }
+
+    return renderer_pick_entity(
+        runtime->renderer, 
+        viewport_u, 
+        viewport_v
+    );
 }
 
 EngineRuntimeRenderStats engine_runtime_get_render_stats(

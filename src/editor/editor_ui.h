@@ -52,6 +52,10 @@ typedef struct EditorFrameData {
     float selected_rotation[3];
     float selected_scale[3];
 
+    bool has_render_camera;
+    float render_camera_view_matrix[16];
+    float render_camera_projection_matrix[16];
+
     EditorSelectedLightType selected_light_type;
     float selected_light_ambient[3];
     float selected_light_diffuse[3];
@@ -77,7 +81,6 @@ typedef struct EditorFrameData {
     size_t renderer_render_target_noop_count;
     size_t renderer_zero_size_viewport_count;
 
-    bool editor_cursor_enabled;
     unsigned int resolved_scene_texture;
 
     EditorSimulationMode simulation_mode;
@@ -100,6 +103,11 @@ typedef struct EditorViewport {
     bool hovered;
     bool focused;
 
+    bool primary_clicked;
+    bool secondary_pressed;
+    float primary_click_u;
+    float primary_click_v;
+
     unsigned int resolved_scene_texture;
 } EditorViewport;
 
@@ -107,7 +115,6 @@ typedef struct EditorFrameResult {
     EditorViewport viewport;
     unsigned int selected_entity_id;
     bool selection_changed;
-    bool toggle_editor_cursor;
     bool save_scene;
     bool load_scene;
 

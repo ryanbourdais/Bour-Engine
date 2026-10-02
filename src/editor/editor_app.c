@@ -112,6 +112,27 @@ static void editor_app_populate_runtime_frame(
         render_stats.zero_size_viewport_count;
     frame->resolved_scene_texture =
         engine_runtime_get_resolved_texture(runtime);
+    
+    EngineRuntimeRenderCameraSnapshot render_camera = {0};
+
+    frame->has_render_camera =
+        engine_runtime_get_render_camera_snapshot(
+            runtime, 
+            &render_camera
+        );
+
+    if (frame->has_render_camera)
+    {
+        for (size_t index = 0; index < 16; index++)
+        {
+            frame->render_camera_view_matrix[index] =
+                render_camera.view_matrix[index];
+
+            frame->render_camera_projection_matrix[index] =
+                render_camera.projection_matrix[index];
+        }
+    }
+
     frame->hierarchy_items = scratch->hierarchy_items;
     frame->hierarchy_item_count = hierarchy_count;
 
@@ -185,14 +206,12 @@ struct EditorAppState
 
     uint32_t selected_entity;
     bool editor_enabled;
-    bool editor_cursor_enabled;
     bool editor_scene_view_focused;
     bool editor_camera_capture_active;
     bool fps_enabled;
     FrameClock clock;
     double fps_title_countdown_time;
 
-    bool tab_was_pressed;
     bool stop_simulation_requested;
 };
 
@@ -311,8 +330,7 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     vec2s offsets = input_get_mouse_offsets(xpos, ypos);
 
     if (engine->editor_enabled && 
-            (engine->editor_cursor_enabled || 
-             (!engine->editor_scene_view_focused && !engine->editor_camera_capture_active)))
+        !engine->editor_camera_capture_active)
     {
         return;
     }
@@ -338,16 +356,21 @@ static void editor_app_update_runtime(
     }
 
     bool camera_input_enabled =
-        !engine->editor_enabled ||
-        (!engine->editor_cursor_enabled &&
-            (engine->editor_scene_view_focused ||
-             engine->editor_camera_capture_active));
+            !engine->editor_enabled ||
+            engine->editor_scene_view_focused ||
+            engine->editor_camera_capture_active;
 
     vec2s movement_axis = {0};
 
     if (camera_input_enabled)
     {
-        movement_axis = input_get_movement_axis();
+        movement_axis.x =
+            (glfwGetKey(engine->window, GLFW_KEY_RIGHT) == GLFW_PRESS ? 1.0f : 0.0f) -
+            (glfwGetKey(engine->window, GLFW_KEY_LEFT) == GLFW_PRESS ? 1.0f : 0.0f);
+
+        movement_axis.y =
+            (glfwGetKey(engine->window, GLFW_KEY_UP) == GLFW_PRESS ? 1.0f : 0.0f) -
+            (glfwGetKey(engine->window, GLFW_KEY_DOWN) == GLFW_PRESS ? 1.0f : 0.0f);
     }
 
     EngineRuntimeInput input = {
@@ -370,26 +393,40 @@ static void editor_app_update_runtime(
     engine->pending_mouse_delta_y = 0.0f;
 }
 
-static void engine_update_editor_cursor_mode(struct EditorAppState *engine)
+static void editor_app_update_camera_capture(
+    struct EditorAppState *engine,
+    bool begin_capture
+)
 {
     if (!engine->editor_enabled)
     {
         return;
     }
 
-    bool tab_is_pressed = glfwGetKey(engine->window, GLFW_KEY_TAB) == GLFW_PRESS;
-
-    if (tab_is_pressed && 
-            !engine->tab_was_pressed &&
-            (!engine->editor_cursor_enabled || engine->editor_scene_view_focused))
+    if (engine->editor_camera_capture_active &&
+        glfwGetMouseButton(
+            engine->window, 
+            GLFW_MOUSE_BUTTON_RIGHT
+        ) != GLFW_PRESS)
     {
-        engine->editor_cursor_enabled = !engine->editor_cursor_enabled;
-
         engine->editor_camera_capture_active = false;
-
-        glfwSetInputMode(engine->window, GLFW_CURSOR, engine->editor_cursor_enabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+        glfwSetInputMode(
+            engine->window, 
+            GLFW_CURSOR, 
+            GLFW_CURSOR_NORMAL
+        );
+        return;
     }
-    engine->tab_was_pressed = tab_is_pressed;
+
+    if (!engine->editor_camera_capture_active && begin_capture)
+    {
+        engine->editor_camera_capture_active = true;
+        glfwSetInputMode(
+            engine->window, 
+            GLFW_CURSOR, 
+            GLFW_CURSOR_DISABLED
+        );
+    }
 }
 
 static bool editor_app_execute_command(
@@ -452,7 +489,7 @@ static void run_editor_app_loop(struct EditorAppState *engine)
 
         window_poll_events();
 
-        engine_update_editor_cursor_mode(engine);
+        editor_app_update_camera_capture(engine, false);
 
         double delta_time = frame_clock_delta_time(&engine->clock);
 
@@ -461,7 +498,6 @@ static void run_editor_app_loop(struct EditorAppState *engine)
         EditorFrameData editor_frame = {
             .delta_time = delta_time,
             .fps = delta_time > 0.0 ? 1.0 / delta_time : 0.0,
-            .editor_cursor_enabled = engine->editor_cursor_enabled,
             .profile_engine_update_ms = 
                 engine->profile.engine_update_timer.last_ms,
             .profile_scene_extract_ms =
@@ -510,6 +546,9 @@ static void run_editor_app_loop(struct EditorAppState *engine)
 
         int runtime_framebuffer_width = window_framebuffer_width;
         int runtime_framebuffer_height = window_framebuffer_height;
+        bool viewport_pick_requested = false;
+        float viewport_pick_u = 0.0f;
+        float viewport_pick_v = 0.0f;
 
         if (engine->editor_enabled)
         {
@@ -520,8 +559,20 @@ static void run_editor_app_loop(struct EditorAppState *engine)
             engine->editor_scene_view_focused =
                 editor_result.viewport.focused;
 
+            editor_app_update_camera_capture(
+                engine, 
+                editor_result.viewport.secondary_pressed
+            );
+
             runtime_framebuffer_width = editor_result.viewport.framebuffer_width;
             runtime_framebuffer_height = editor_result.viewport.framebuffer_height;
+
+            if (editor_result.viewport.primary_clicked)
+            {
+                viewport_pick_requested = true;
+                viewport_pick_u = editor_result.viewport.primary_click_u;
+                viewport_pick_v = editor_result.viewport.primary_click_v;
+            }
 
             if (editor_result.start_simulation)
             {
@@ -834,14 +885,6 @@ static void run_editor_app_loop(struct EditorAppState *engine)
                 }
             }
 
-            if (editor_result.toggle_editor_cursor)
-            {
-                engine->editor_cursor_enabled = !engine->editor_cursor_enabled;
-
-                engine->editor_camera_capture_active = !engine->editor_cursor_enabled;
-                glfwSetInputMode(engine->window,GLFW_CURSOR,engine->editor_cursor_enabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
-            }
-
             if (editor_result.selection_changed)
             {
                 engine->selected_entity = editor_result.selected_entity_id;
@@ -864,6 +907,15 @@ static void run_editor_app_loop(struct EditorAppState *engine)
 
         process_timer_end(&engine->profile.renderer_timer, glfwGetTime());
         process_timer_log_report(&engine->profile.renderer_timer, &engine->profile_log_config);
+
+        if (viewport_pick_requested)
+        {
+            engine->selected_entity = engine_runtime_pick_entity(
+                editor_app_get_active_runtime(engine),
+                viewport_pick_u,
+                viewport_pick_v
+            );
+        }
 
         if (engine->editor_enabled)
         {
@@ -916,12 +968,10 @@ int editor_app_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
     struct EditorAppState engine = {
         .window = window,
         .editor_enabled = true,
-        .editor_cursor_enabled = true,
         .editor_camera_capture_active = false,
         .selected_entity = ENGINE_RUNTIME_INVALID_ENTITY_ID,
         .fps_enabled = fps_enabled,
         .fps_title_countdown_time = 0.1,
-        .tab_was_pressed = false,
         .profile_log_config = {
             .report_interval_samples = 300,
             .log_average_reports = true,
@@ -931,9 +981,7 @@ int editor_app_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
     glfwSetInputMode(
         engine.window,
         GLFW_CURSOR,
-        engine.editor_enabled && engine.editor_cursor_enabled
-        ? GLFW_CURSOR_NORMAL
-        : GLFW_CURSOR_DISABLED
+        GLFW_CURSOR_NORMAL
     );
 
     frame_clock_init(&engine.clock, glfwGetTime());
@@ -952,6 +1000,7 @@ int editor_app_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
 
     EngineRuntimeCreateInfo runtime_create_info = {
         .scene_path = ENGINE_DEFAULT_SCENE_PATH,
+        .entity_id_picking_enabled = true,
         .framebuffer_width = framebuffer_width,
         .framebuffer_height = framebuffer_height,
     };
