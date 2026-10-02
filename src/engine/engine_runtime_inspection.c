@@ -1,3 +1,4 @@
+#include "engine_runtime.h"
 #include "engine_runtime_internal.h"
 
 #include <stdio.h>
@@ -238,4 +239,30 @@ bool engine_runtime_get_entity_snapshot(
 
     return true;
 }
+
+bool engine_runtime_get_render_camera_snapshot(
+    const EngineRuntime *runtime,
+    EngineRuntimeRenderCameraSnapshot *snapshot
+)
+{
+    if (runtime == NULL ||
+        snapshot == NULL ||
+        runtime->renderer == NULL)
+    {
+        return false;
+    }
+
+    memcpy(
+        snapshot->view_matrix,
+        runtime->camera.view.raw,
+        sizeof(snapshot->view_matrix)
+    );
+
+    return renderer_copy_projection_matrix(
+        runtime->renderer, 
+        snapshot->projection_matrix
+    );
+}
+
+
 

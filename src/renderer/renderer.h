@@ -64,6 +64,10 @@ uint32_t renderer_pick_entity(
     float viewport_u,
     float viewport_v
 );
+bool renderer_copy_projection_matrix(
+    const Renderer *renderer,
+    float out_projection[16]
+);
 void renderer_shutdown(Renderer *renderer);
 void renderer_destroy(Renderer *renderer);
 RendererStats renderer_get_stats(const Renderer *renderer);

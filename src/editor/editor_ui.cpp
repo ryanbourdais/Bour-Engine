@@ -8,6 +8,7 @@
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
+#include "ImGuizmo.h"
 
 #include "../utils/math_utils.h"
 
@@ -32,9 +33,13 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+    ImGuizmo::BeginFrame();
 
     ImGuiIO &io = ImGui::GetIO();
     ImVec2 display_size = io.DisplaySize;
+
+    static ImGuizmo::OPERATION gizmo_operation =
+        ImGuizmo::TRANSLATE;
 
     const float margin = 10.0f;
 
@@ -142,7 +147,6 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
     EditorFrameResult result = {
         .selected_entity_id = frame != nullptr ? frame->selected_entity_id : 0,
         .selection_changed = false,
-        .toggle_editor_cursor = false,
         .save_scene = false,
         .load_scene = false,
         .rename_selected_entity = false,
@@ -195,22 +199,32 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
             ImGuiWindowFlags_NoScrollbar
     );
 
-    if (frame != nullptr)
+    if (ImGui::RadioButton(
+            "Move",
+            gizmo_operation == ImGuizmo::TRANSLATE
+        ))
     {
-        ImGui::Text(
-            "Mouse: %s",
-            frame->editor_cursor_enabled ? "Editor" : "Camera"
-        );
-        ImGui::SameLine();
+        gizmo_operation = ImGuizmo::TRANSLATE;
+    }
 
-        if (ImGui::Button(
-                frame->editor_cursor_enabled
-                    ? "Use Camera Mouse"
-                    : "Use Editor Mouse"
-            ))
-        {
-            result.toggle_editor_cursor = true;
-        }
+    ImGui::SameLine();
+
+    if (ImGui::RadioButton(
+            "Rotate",
+            gizmo_operation == ImGuizmo::ROTATE
+        ))
+    {
+        gizmo_operation = ImGuizmo::ROTATE;
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::RadioButton(
+            "Scale",
+            gizmo_operation == ImGuizmo::SCALE
+        ))
+    {
+        gizmo_operation = ImGuizmo::SCALE;
     }
 
     ImGui::SameLine();
@@ -387,6 +401,53 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
             (mouse_position.x - viewport_pos.x) / viewport_size.x;
         result.viewport.primary_click_v =
             (mouse_position.y - viewport_pos.y) / viewport_size.y;
+    }
+
+    result.viewport.secondary_pressed =
+        result.viewport.hovered &&
+        ImGui::IsMouseClicked(ImGuiMouseButton_Right);
+
+    if (frame != nullptr &&
+        frame->has_selected_entity &&
+        frame->selected_entity_has_transform &&
+        frame->has_render_camera &&
+        viewport_size.x > 0.0f &&
+        viewport_size.y > 0.0f)
+    {
+        float model_matrix[16];
+
+        ImGuizmo::RecomposeMatrixFromComponents(
+            frame->selected_position,
+            frame->selected_rotation,
+            frame->selected_scale,
+            model_matrix
+        );
+
+        ImGuizmo::SetDrawlist();
+        ImGuizmo::SetRect(
+            viewport_pos.x,
+            viewport_pos.y,
+            viewport_size.x,
+            viewport_size.y
+        );
+
+        if (ImGuizmo::Manipulate(
+            frame->render_camera_view_matrix,
+            frame->render_camera_projection_matrix,
+            gizmo_operation,
+            ImGuizmo::WORLD,
+            model_matrix
+            ))
+        {
+            result.transform_changed = true;
+
+            ImGuizmo::DecomposeMatrixToComponents(
+                model_matrix,
+                result.edited_position,
+                result.edited_rotation,
+                result.edited_scale
+            );
+        }
     }
 
     ImGui::End();

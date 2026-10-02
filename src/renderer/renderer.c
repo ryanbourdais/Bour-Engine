@@ -437,6 +437,25 @@ uint32_t renderer_pick_entity(
     );
 }
 
+bool renderer_copy_projection_matrix(
+    const Renderer *renderer,
+    float *out_projection
+)
+{
+    if (renderer == NULL || out_projection == NULL)
+    {
+        return false;
+    }
+
+    memcpy(
+        out_projection,
+        renderer->projection,
+        sizeof(renderer->projection)
+    );
+
+    return true;
+}
+
 static void renderer_render_entity_ids(
     struct RendererState *renderer,
     const RendererFrame *frame

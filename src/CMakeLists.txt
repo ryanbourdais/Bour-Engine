@@ -116,6 +116,7 @@ add_executable(bour_editor
     renderer/window.c
     controller/input.c
     editor/editor_ui.cpp
+    external/imguizmo/src/ImGuizmo.cpp
     external/imgui/imgui.cpp
     external/imgui/imgui_draw.cpp
     external/imgui/imgui_tables.cpp
@@ -130,6 +131,7 @@ target_include_directories(bour_editor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/external/jsmn
     ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/backends
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/imguizmo/src
 )
 
 target_link_libraries(bour_editor PRIVATE
