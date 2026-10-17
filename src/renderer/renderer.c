@@ -19,6 +19,7 @@
 #include "data_types/renderTarget.h"
 #include "data_types/primitive_mesh_resources.h"
 #include "data_types/programmable_mesh_resources.h"
+#include "data_types/model_resources.h"
 
 #include "renderer_data.h"
 #include "shaders.h"
@@ -26,7 +27,7 @@
 struct RendererState
 {
     mat4 projection;
-    Model test_model;
+    ModelResources model_resources;
     PrimitiveMeshResources primitive_meshes;
     ProgrammableMeshResources programmable_meshes;
     Material primitive_material;
@@ -59,8 +60,6 @@ struct RendererState
     GLint entity_id_model_location;
     GLint entity_id_value_location;
     bool entity_id_picking_enabled;
-
-    const char *loaded_model_path;
 };
 
 static void draw_screen_quad(struct RendererState *renderer)
@@ -90,20 +89,35 @@ RendererStats renderer_get_stats(const Renderer *renderer)
         return stats;
     }
 
-    stats.mesh_count = renderer->test_model.count;
-    stats.texture_count = renderer->test_model.texture_cache_count;
-
     if (renderer->primitive_material.diffuse_texture != 0)
     {
         stats.texture_count++;
     }
 
-    for (size_t i = 0; i < renderer->test_model.count; i++)
+    for (size_t resource_index = 0;
+        resource_index < renderer->model_resources.resource_count;
+        resource_index++)
     {
-        const ModelMesh *mesh = &renderer->test_model.meshes[i];
+        const ModelResource *resource =
+            &renderer->model_resources.resources[resource_index];
 
-        stats.vertex_count += mesh->mesh.vertex_count;
-        stats.triangle_count += mesh->mesh.index_count / 3;
+        if (!resource->loaded)
+        {
+            continue;
+        }
+
+        const Model *model = &resource->model;
+
+        stats.mesh_count += model->count;
+        stats.texture_count += model->texture_cache_count;
+
+        for (size_t mesh_index = 0; mesh_index < model->count; mesh_index++)
+        {
+            const ModelMesh *mesh = &model->meshes[mesh_index];
+
+            stats.vertex_count += mesh->mesh.vertex_count;
+            stats.triangle_count += mesh->mesh.index_count / 3;
+        }
     }
 
     for (size_t i = 0; i < BUILTIN_PRIMITIVE_COUNT; i++)
@@ -152,19 +166,23 @@ static bool renderer_get_model_stats(const Renderer *renderer, const char *model
         return false;
     }
 
-    if (renderer->loaded_model_path == NULL || model_path == NULL || strcmp(renderer->loaded_model_path, model_path) != 0)
+    const Model *model = model_resources_get(
+        &renderer->model_resources,
+        model_path
+    );
+
+    if (model == NULL)
     {
         return false;
     }
 
     *out_stats = (RendererStats){0};
+    out_stats->mesh_count = model->count;
+    out_stats->texture_count = model->texture_cache_count;
 
-    out_stats->mesh_count = renderer->test_model.count;
-    out_stats->texture_count = renderer->test_model.texture_cache_count;
-
-    for (size_t i = 0; i < renderer->test_model.count; i++)
+    for (size_t index = 0; index < model->count; index++)
     {
-        const ModelMesh *mesh = &renderer->test_model.meshes[i];
+        const ModelMesh *mesh = &model->meshes[index];
 
         out_stats->vertex_count += mesh->mesh.vertex_count;
         out_stats->triangle_count += mesh->mesh.index_count / 3;
@@ -172,8 +190,6 @@ static bool renderer_get_model_stats(const Renderer *renderer, const char *model
 
     return true;
 }
-
-
 
 RendererStats renderer_get_frame_stats(const Renderer *renderer, const RendererFrame *frame)
 {
@@ -491,26 +507,28 @@ static void renderer_render_entity_ids(
         switch (renderable->geometry_type)
         {
             case RENDERABLE_GEOMETRY_MODEL:
-                if (renderer->loaded_model_path == NULL ||
-                    renderable->model_path == NULL ||
-                    strcmp(
-                        renderer->loaded_model_path,
-                        renderable->model_path
-                    ) != 0)
+            {
+                const Model *model = model_resources_get(
+                    &renderer->model_resources,
+                    renderable->model_path
+                );
+
+                if (model == NULL)
                 {
                     break;
                 }
 
                 mat4s model_matrix = renderable->model_matrix;
-                
+
                 draw_model_entity_id(
-                    &renderer->test_model, 
+                    model,
                     renderer->entity_id_model_location, 
                     renderer->entity_id_value_location, 
                     renderable->entity_id, 
                     model_matrix.raw
                 );
                 break;
+            }
 
             case RENDERABLE_GEOMETRY_PRIMITIVE:
             {
@@ -595,21 +613,26 @@ void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
         switch (renderable->geometry_type)
         {
             case RENDERABLE_GEOMETRY_MODEL:
-                if (renderer->loaded_model_path == NULL ||
-                    renderable->model_path == NULL ||
-                    strcmp(renderer->loaded_model_path, renderable->model_path) != 0)
+            {
+                Model *model = model_resources_get_or_load(
+                    &renderer->model_resources, 
+                    renderable->model_path
+                );
+
+                if (model == NULL)
                 {
                     break;
                 }
 
                 draw_model(
-                    &renderer->test_model,
+                    model,
                     renderer->model_location,
                     &renderer->material_uniforms,
                     model_matrix.raw,
                     frame->camera->cameraPos.raw
                 );
                 break;
+            }
 
             case RENDERABLE_GEOMETRY_PRIMITIVE:
             {
@@ -891,6 +914,7 @@ static void init_lights(struct RendererState *renderer, const RendererConfig *co
 static int renderer_state_init(struct RendererState *renderer, const RendererConfig *config)
 {
     primitive_mesh_resources_init(&renderer->primitive_meshes);
+    model_resources_init(&renderer->model_resources);
     programmable_mesh_resources_init(&renderer->programmable_meshes);
 
     renderer->entity_id_picking_enabled = config->entity_id_picking_enabled;
@@ -930,18 +954,6 @@ static int renderer_state_init(struct RendererState *renderer, const RendererCon
     if (init_screen_quad(renderer) != 0)
     {
         return 1;
-    }
-
-    renderer->loaded_model_path = NULL;
-
-    if (config->model_path != NULL && config->model_path[0] != '\0')
-    {
-        if (model_load_gltf(&renderer->test_model, config->model_path))
-        {
-            return 1;
-        }
-
-        renderer->loaded_model_path = config->model_path;
     }
 
     init_camera_projection(renderer, config);
@@ -1000,7 +1012,7 @@ static void renderer_state_shutdown(struct RendererState *renderer)
         renderer->primitive_material.diffuse_texture = 0;
     }
 
-    model_free(&renderer->test_model);
+    model_resources_free(&renderer->model_resources);
     // instanced_model_free(&renderer->instance_instances);
     skybox_free(&renderer->skybox);
 

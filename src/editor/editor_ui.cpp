@@ -529,6 +529,24 @@ EditorFrameResult editor_ui_begin_frame(const EditorFrameData *frame)
             ImGui::Text("No transform component");
         }
 
+        if (frame->selected_entity_is_renderable)
+        {
+            ImGui::Separator();
+            ImGui::Text("Mesh Renderer");
+            ImGui::Text(
+                "Source: %s",
+                frame->selected_mesh_source_name
+            );
+
+            if (frame->selected_mesh_model_path[0] != '\0')
+            {
+                ImGui::TextWrapped(
+                    "Asset: %s",
+                    frame->selected_mesh_model_path
+                );
+            }
+        }
+
         if (frame->selected_entity_is_programmable_mesh)
         {
             ImGui::Separator();

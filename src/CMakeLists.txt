@@ -14,6 +14,8 @@ set(BOUR_ENGINE_SOURCES
       engine/engine_runtime.c
       engine/engine_runtime_inspection.c
       engine/engine_runtime_commands.c
+      engine/engine_runtime_assets.c
+      engine/project_paths.c
       external/glad/src/glad.c
       external/stb/stb_image.c
       external/cgltf/cgltf.c
@@ -26,6 +28,7 @@ set(BOUR_ENGINE_SOURCES
       renderer/data_types/lightObject.c
       renderer/data_types/material.c
       renderer/data_types/model.c
+      renderer/data_types/model_resources.c
       renderer/data_types/skybox.c
       renderer/data_types/renderTarget.c
       renderer/data_types/primitive_mesh.c
@@ -45,6 +48,7 @@ set(BOUR_ENGINE_SOURCES
   set(BOUR_ENGINE_BOUNDARY_HEADERS
       engine/engine_runtime.h
       engine/engine_runtime_internal.h
+      engine/project_paths.h
   )
 
   set(BOUR_ENGINE_BOUNDARY_FILES

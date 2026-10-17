@@ -6,6 +6,7 @@
 
 #include "../scene/entity_factory.h"
 #include "../scene/scene_serialization.h"
+#include "project_paths.h"
 
 
 static bool engine_runtime_entity_is_valid(
@@ -598,8 +599,24 @@ static EngineRuntimeCommandResult engine_runtime_save_scene(
         return ENGINE_RUNTIME_COMMAND_INVALID_ARGUMENT;
     }
 
+    char resolved_scene_path[
+        ENGINE_RUNTIME_PROJECT_ROOT_MAX_LENGTH +
+        ENGINE_RUNTIME_SCENE_PATH_MAX_LENGTH
+    ];
+
+    if (project_path_resolve(
+            runtime->project_root, 
+            scene_path, 
+            resolved_scene_path, 
+            sizeof(resolved_scene_path)
+        ) != PROJECT_PATH_OK)
+    {
+        fprintf(stderr, "Invalid scene path: %s\n", scene_path);
+        return ENGINE_RUNTIME_COMMAND_INVALID_ARGUMENT;
+    }
+
     SceneSaveResult save_result =
-        scene_save_to_file(&runtime->scene, scene_path);
+        scene_save_to_file(&runtime->scene, resolved_scene_path);
 
     if (save_result != SCENE_SAVE_OK)
     {
@@ -632,10 +649,26 @@ static EngineRuntimeCommandResult engine_runtime_load_scene(
         return ENGINE_RUNTIME_COMMAND_INVALID_ARGUMENT;
     }
 
-    SceneLoadResult load_result =
-        scene_load_from_file(&runtime->scene, scene_path);
+    char resolved_scene_path[
+        ENGINE_RUNTIME_PROJECT_ROOT_MAX_LENGTH +
+        ENGINE_RUNTIME_SCENE_PATH_MAX_LENGTH
+    ];
 
-    if (load_result != SCENE_SAVE_OK)
+    if (project_path_resolve(
+            runtime->project_root, 
+            scene_path, 
+            resolved_scene_path, 
+            sizeof(resolved_scene_path)
+        ) != PROJECT_PATH_OK)
+    {
+        fprintf(stderr, "Invalid scene path: %s", scene_path);
+        return ENGINE_RUNTIME_COMMAND_INVALID_ARGUMENT;
+    }
+
+    SceneLoadResult load_result =
+        scene_load_from_file(&runtime->scene, resolved_scene_path);
+
+    if (load_result != SCENE_LOAD_OK)
     {
         fprintf(
             stderr, 

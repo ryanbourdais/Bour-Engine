@@ -13,6 +13,7 @@ typedef struct EngineRuntime EngineRuntime;
 #define ENGINE_RUNTIME_INVALID_ENTITY_ID 0
 #define ENGINE_RUNTIME_ENTITY_NAME_MAX_LENGTH 64
 #define ENGINE_RUNTIME_MAX_HIERARCHY_ITEMS 256
+#define ENGINE_RUNTIME_PROJECT_ROOT_MAX_LENGTH 1024
 
 typedef struct EngineRuntimeHierarchyItem {
     uint32_t entity_id;
@@ -26,6 +27,20 @@ typedef enum EngineRuntimeLightType {
     ENGINE_RUNTIME_LIGHT_SPOT,
 } EngineRuntimeLightType;
 
+#define ENGINE_RUNTIME_MODEL_PATH_MAX_LENGTH 256
+
+typedef enum EngineRuntimeMeshSourceType {
+    ENGINE_RUNTIME_MESH_SOURCE_NONE = 0,
+    ENGINE_RUNTIME_MESH_SOURCE_ASSET,
+    ENGINE_RUNTIME_MESH_SOURCE_PRIMITIVE,
+    ENGINE_RUNTIME_MESH_SOURCE_PROGRAMMABLE,
+} EngineRuntimeMeshSourceType;
+
+typedef struct EngineRuntimeKnownAsset {
+    const char *display_name;
+    const char *model_path;
+} EngineRuntimeKnownAsset;
+
 typedef struct EngineRuntimeEntitySnapshot {
     uint32_t entity_id;
     char name[ENGINE_RUNTIME_ENTITY_NAME_MAX_LENGTH];
@@ -36,6 +51,8 @@ typedef struct EngineRuntimeEntitySnapshot {
     float scale[3];
 
     bool has_mesh_renderer;
+    EngineRuntimeMeshSourceType mesh_source_type;
+    char mesh_model_path[ENGINE_RUNTIME_MODEL_PATH_MAX_LENGTH];
     bool is_programmable_mesh;
     uint32_t programmable_mesh_id;
     float programmable_plane_width;
@@ -137,6 +154,7 @@ typedef struct EngineRuntimeCommand {
 
 typedef struct EngineRuntimeCreateInfo {
     const char *scene_path;
+    const char *project_root;
     bool entity_id_picking_enabled;
     int framebuffer_width;
     int framebuffer_height;
@@ -218,6 +236,17 @@ void engine_runtime_render(
 
 uint32_t engine_runtime_get_resolved_texture(
     const EngineRuntime *runtime
+);
+
+size_t engine_runtime_get_known_asset_count(void);
+
+bool engine_runtime_get_known_asset(
+    size_t index,
+    EngineRuntimeKnownAsset *out_asset
+);
+
+bool engine_runtime_is_known_asset_path(
+    const char *model_path
 );
 
 uint32_t engine_runtime_pick_entity(

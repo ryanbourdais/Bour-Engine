@@ -30,7 +30,6 @@ typedef struct RendererConfig {
     RendererViewport viewport;
     const Camera *camera;
 
-    const char *model_path;
     bool entity_id_picking_enabled;
     const char *skybox_faces[6];
     const DirectionalLight *directional_light;

@@ -11,6 +11,7 @@ struct EngineRuntime {
     Renderer *renderer;
     Scene scene;
     char current_scene_path[ENGINE_RUNTIME_SCENE_PATH_MAX_LENGTH];
+    char project_root[ENGINE_RUNTIME_PROJECT_ROOT_MAX_LENGTH];
     bool has_current_scene_path;
     bool entity_id_picking_enabled;
 };

@@ -43,6 +43,8 @@ typedef struct EditorFrameData {
     bool selected_entity_has_transform;
     const char *selected_entity_name;
     bool selected_entity_is_renderable;
+    const char *selected_mesh_source_name;
+    const char *selected_mesh_model_path;
     bool selected_entity_is_programmable_mesh;
     unsigned int selected_programmable_mesh_id;
     float selected_programmable_plane_width;

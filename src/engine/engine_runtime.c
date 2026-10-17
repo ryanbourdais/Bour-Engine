@@ -5,8 +5,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "../scene/scene_serialization.h"
+#include "project_paths.h"
 
 static bool engine_runtime_initialize_renderer(
     EngineRuntime *runtime,
@@ -35,7 +37,6 @@ static bool engine_runtime_initialize_renderer(
         },
         .camera = &runtime->camera,
         .entity_id_picking_enabled = runtime->entity_id_picking_enabled,
-        .model_path = scene_render_config.model_path,
         .skybox_faces = {
             scene_render_config.skybox_faces[0],
             scene_render_config.skybox_faces[1],
@@ -77,6 +78,28 @@ EngineRuntime *engine_runtime_create(
         return NULL;
     }
 
+    const char *project_root = create_info->project_root;
+
+    if (project_root == NULL || project_root[0] == '\0')
+    {
+        project_root = ".";
+    }
+
+    int project_root_length = snprintf(
+        runtime->project_root,
+        sizeof(runtime->project_root),
+        "%s",
+        project_root
+    );
+
+    if (project_root_length < 0 ||
+        (size_t)project_root_length >= sizeof(runtime->project_root))
+    {
+        fprintf(stderr, "Project root path is too long\n");
+        free(runtime);
+        return NULL;
+    }
+
     camera_init(&runtime->camera);
     camera_update(&runtime->camera);
 
@@ -84,13 +107,42 @@ EngineRuntime *engine_runtime_create(
 
     runtime->entity_id_picking_enabled = create_info->entity_id_picking_enabled;
 
-    if (create_info->scene_path != NULL &&
-            scene_load_from_file(&runtime->scene, create_info->scene_path) !=
-                SCENE_LOAD_OK)
+    if (create_info->scene_path != NULL)
     {
-        scene_shutdown(&runtime->scene);
-        free(runtime);
-        return NULL;
+        if (strlen(create_info->scene_path) >=
+            sizeof(runtime->current_scene_path))
+        {
+            fprintf(stderr, "Scene path is too long: %s\n", create_info->scene_path);
+            scene_shutdown(&runtime->scene);
+            free(runtime);
+            return NULL;
+        }
+
+        char resolved_scene_path[
+            ENGINE_RUNTIME_PROJECT_ROOT_MAX_LENGTH +
+            ENGINE_RUNTIME_SCENE_PATH_MAX_LENGTH
+        ];
+
+        if (project_path_resolve(
+                runtime->project_root, 
+                create_info->scene_path, 
+                resolved_scene_path, 
+                sizeof(resolved_scene_path)
+            ) != PROJECT_PATH_OK)
+        {
+            fprintf(stderr, "Invalid scene path: %s\n", create_info->scene_path);
+            scene_shutdown(&runtime->scene);
+            free(runtime);
+            return NULL;
+        }
+
+        if (scene_load_from_file(&runtime->scene, resolved_scene_path) !=
+            SCENE_LOAD_OK)
+        {
+            scene_shutdown(&runtime->scene);
+            free(runtime);
+            return NULL;
+        }
     }
 
     if (create_info->scene_path != NULL)
@@ -138,6 +190,13 @@ EngineRuntime *engine_runtime_create_preview(
     {
         return NULL;
     }
+
+   snprintf(
+        preview->project_root, 
+        sizeof(preview->project_root), 
+        "%s",
+        authoring_runtime->project_root
+    ); 
 
     preview->camera = authoring_runtime->camera;
     camera_update(&preview->camera);

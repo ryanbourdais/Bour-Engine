@@ -5,6 +5,25 @@
 #include <string.h>
 
 
+static EngineRuntimeMeshSourceType engine_runtime_mesh_source_type_from_scene(
+    MeshSourceType source_type
+)
+{
+    switch (source_type)
+    {
+        case MESH_SOURCE_ASSET:
+            return ENGINE_RUNTIME_MESH_SOURCE_ASSET;
+        
+        case MESH_SOURCE_PRIMITIVE:
+            return ENGINE_RUNTIME_MESH_SOURCE_PRIMITIVE;
+        
+        case MESH_SOURCE_PROGRAMMABLE:
+            return ENGINE_RUNTIME_MESH_SOURCE_PROGRAMMABLE;
+    }
+
+    return ENGINE_RUNTIME_MESH_SOURCE_NONE;
+}
+
 size_t engine_runtime_get_entity_count(
     const EngineRuntime *runtime
 )
@@ -116,6 +135,22 @@ bool engine_runtime_get_entity_snapshot(
     if (mesh_renderer != NULL)
     {
         snapshot->has_mesh_renderer = true;
+
+        snapshot->mesh_source_type =
+            engine_runtime_mesh_source_type_from_scene(
+                mesh_renderer->source_type
+            );
+
+        if (mesh_renderer->source_type == MESH_SOURCE_ASSET &&
+            mesh_renderer->model_path != NULL)
+        {
+            snprintf(
+                snapshot->mesh_model_path, 
+                sizeof(snapshot->mesh_model_path), 
+                "%s",
+                mesh_renderer->model_path
+            );
+        }
 
         if (mesh_renderer->source_type == MESH_SOURCE_PROGRAMMABLE)
         {

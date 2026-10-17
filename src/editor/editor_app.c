@@ -54,6 +54,26 @@ static EditorSelectedLightType editor_app_light_type_from_runtime(
     }
 }
 
+static const char *editor_app_mesh_source_name_from_runtime(
+    EngineRuntimeMeshSourceType source_type
+)
+{
+    switch (source_type)
+    {
+        case ENGINE_RUNTIME_MESH_SOURCE_ASSET:
+            return "Asset";
+
+        case ENGINE_RUNTIME_MESH_SOURCE_PRIMITIVE:
+            return "Primitive";
+
+        case ENGINE_RUNTIME_MESH_SOURCE_PROGRAMMABLE:
+            return "Programmable";
+
+        default:
+            return "Unknown";
+    }
+}
+
 static void editor_app_populate_runtime_frame(
     EngineRuntime *runtime,
     uint32_t selected_entity_id,
@@ -155,6 +175,12 @@ static void editor_app_populate_runtime_frame(
         scratch->selected_entity.has_transform;
     frame->selected_entity_is_renderable =
         scratch->selected_entity.has_mesh_renderer;
+    frame->selected_mesh_source_name =
+        editor_app_mesh_source_name_from_runtime(
+            scratch->selected_entity.mesh_source_type
+        );
+    frame->selected_mesh_model_path =
+        scratch->selected_entity.mesh_model_path;
     frame->selected_entity_is_programmable_mesh =
         scratch->selected_entity.is_programmable_mesh;
     frame->selected_programmable_mesh_id =
@@ -946,7 +972,12 @@ static void run_editor_app_loop(struct EditorAppState *engine)
     }
 }
 
-int editor_app_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
+int editor_app_run(
+    bool fullscreen,
+    bool fps_enabled,
+    bool vsync_enabled,
+    const char *project_root
+)
 {
     initialize_glfw();
     if (!glfwInit())
@@ -1003,6 +1034,7 @@ int editor_app_run(bool fullscreen, bool fps_enabled, bool vsync_enabled)
         .entity_id_picking_enabled = true,
         .framebuffer_width = framebuffer_width,
         .framebuffer_height = framebuffer_height,
+        .project_root = project_root,
     };
 
     engine.authoring_runtime = engine_runtime_create(&runtime_create_info);

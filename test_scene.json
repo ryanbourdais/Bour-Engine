@@ -56,8 +56,8 @@
       "id": 4,
       "name": "Primitive UV Sphere",
       "transform": {
-        "position": [0.000, 1.000, -3.000],
-        "rotation": [0.000, 0.000, 0.000],
+        "position": [0.000, 1.395, -3.000],
+        "rotation": [0.000, -0.000, 0.000],
         "scale": [1.000, 1.000, 1.000]
       },
       "mesh_renderer": {
@@ -71,8 +71,8 @@
       "id": 5,
       "name": "Primitive Cylinder",
       "transform": {
-        "position": [0.000, 1.000, 1.000],
-        "rotation": [0.000, 0.000, 0.000],
+        "position": [0.000, -0.419, 1.000],
+        "rotation": [0.000, -0.000, 0.000],
         "scale": [1.000, 1.000, 1.000]
       },
       "mesh_renderer": {
@@ -93,6 +93,21 @@
       "mesh_renderer": {
         "source_type": "asset",
         "model_path": "assets/models/supply_crate/supply_crate.gltf",
+        "material": null,
+        "lod": null
+      }
+    },
+    {
+      "id": 16,
+      "name": "Outpost Canister",
+      "transform": {
+        "position": [-2.000, 0.000, 0.000],
+        "rotation": [0.000, 0.000, 0.000],
+        "scale": [1.000, 1.000, 1.000]
+      },
+      "mesh_renderer": {
+        "source_type": "asset",
+        "model_path": "assets/models/outpost_kit/canister.gltf",
         "material": null,
         "lod": null
       }
