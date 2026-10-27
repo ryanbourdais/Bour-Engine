@@ -15,7 +15,7 @@ set(BOUR_ENGINE_SOURCES
       engine/engine_runtime_inspection.c
       engine/engine_runtime_commands.c
       engine/engine_runtime_assets.c
-      engine/project_paths.c
+      core/project_paths.c
       external/glad/src/glad.c
       external/stb/stb_image.c
       external/cgltf/cgltf.c
@@ -48,7 +48,7 @@ set(BOUR_ENGINE_SOURCES
   set(BOUR_ENGINE_BOUNDARY_HEADERS
       engine/engine_runtime.h
       engine/engine_runtime_internal.h
-      engine/project_paths.h
+      core/project_paths.h
   )
 
   set(BOUR_ENGINE_BOUNDARY_FILES

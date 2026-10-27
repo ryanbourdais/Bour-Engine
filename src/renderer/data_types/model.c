@@ -201,6 +201,12 @@ static void inspect_primitive(cgltf_primitive *primitive)
 }
 static bool model_add_cached_texture(Model *model, const char *path, GLuint texture)
 {
+    if (strlen(path) >= sizeof(model->texture_cache[0].path))
+    {
+        fprintf(stderr, "Texture cache path is too long: %s\n", path);
+        return false;
+    }
+
     if (model->texture_cache_count == model->texture_cache_capacity)
     {
         size_t  new_capacity = model->texture_cache_capacity * 2;
@@ -521,15 +527,29 @@ static int create_mesh_from_primitive(Model *model, cgltf_primitive *primitive, 
 
             char texture_path[512] = {0};
 
-            snprintf(
-                texture_path,
-                sizeof(texture_path),
+            int texture_path_length = snprintf(
+                texture_path, 
+                sizeof(texture_path), 
                 "%s/%s",
                 model_directory,
                 diffuse_texture->image->uri
             );
 
-            if (model_load_cached_texture(model, texture_path, &engine_material.diffuse_texture) != 0)
+            if (texture_path_length < 0 ||
+                (size_t)texture_path_length >= sizeof(texture_path))
+            {
+                fprintf(
+                    stderr, 
+                    "Texture path is too long for model directory '%s': %s\n",
+                    model_directory,
+                    diffuse_texture->image->uri
+                );
+            }
+            else if (model_load_cached_texture(
+                        model,
+                        texture_path,
+                        &engine_material.diffuse_texture
+                    ) != 0)
             {
                 fprintf(stderr, "Failed to load base color texture %s\n", texture_path);
             }
@@ -823,6 +843,13 @@ int model_load_gltf(Model *model, const char *path)
     if (last_slash)
     {
         size_t directory_length = (size_t)(last_slash - path);
+
+        if (directory_length >= sizeof(model_directory))
+        {
+            fprintf(stderr, "Model directory path is too long: %s\n", path);
+            return 1;
+        }
+
         snprintf(model_directory, sizeof(model_directory), "%.*s", (int)directory_length, path);
     }
     else {

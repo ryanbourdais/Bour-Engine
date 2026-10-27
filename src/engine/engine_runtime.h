@@ -14,6 +14,7 @@ typedef struct EngineRuntime EngineRuntime;
 #define ENGINE_RUNTIME_ENTITY_NAME_MAX_LENGTH 64
 #define ENGINE_RUNTIME_MAX_HIERARCHY_ITEMS 256
 #define ENGINE_RUNTIME_PROJECT_ROOT_MAX_LENGTH 1024
+#define ENGINE_RUNTIME_RENDERER_SHADER_DIRECTORY_MAX_LENGTH 1024
 
 typedef struct EngineRuntimeHierarchyItem {
     uint32_t entity_id;
@@ -155,6 +156,7 @@ typedef struct EngineRuntimeCommand {
 typedef struct EngineRuntimeCreateInfo {
     const char *scene_path;
     const char *project_root;
+    const char *renderer_shader_directory;
     bool entity_id_picking_enabled;
     int framebuffer_width;
     int framebuffer_height;

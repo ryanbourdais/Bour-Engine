@@ -27,6 +27,12 @@ typedef struct RendererFrame {
 } RendererFrame;
 
 typedef struct RendererConfig {
+    /*Must remain valid until the renderer is destroyed */
+    const char *project_root;
+
+    /*Must remain valid until the renderer is destroyed. */
+    const char *shader_directory;
+
     RendererViewport viewport;
     const Camera *camera;
 

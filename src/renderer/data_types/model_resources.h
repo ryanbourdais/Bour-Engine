@@ -30,7 +30,8 @@ const Model *model_resources_get(
 
 Model *model_resources_get_or_load(
     ModelResources *resources,
-    const char *path
+    const char *path,
+    const char *project_root
 );
 
 void model_resources_free(

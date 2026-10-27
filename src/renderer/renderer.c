@@ -20,13 +20,18 @@
 #include "data_types/primitive_mesh_resources.h"
 #include "data_types/programmable_mesh_resources.h"
 #include "data_types/model_resources.h"
+#include "../core/project_paths.h"
 
 #include "renderer_data.h"
 #include "shaders.h"
 
+#define RENDERER_RESOLVED_RESOURCE_PATH_MAX_LENGTH 1280
+
 struct RendererState
 {
     mat4 projection;
+    const char *project_root;
+    const char *shader_directory;
     ModelResources model_resources;
     PrimitiveMeshResources primitive_meshes;
     ProgrammableMeshResources programmable_meshes;
@@ -35,7 +40,7 @@ struct RendererState
 
     RenderTarget scene_target;
     MsaaRenderTarget scene_msaa_target;
-    EntityIdRenderTarget entity_id_target;
+   EntityIdRenderTarget entity_id_target;
     size_t render_target_resize_count;
     size_t render_target_noop_count;
     size_t zero_size_viewport_count;
@@ -614,9 +619,11 @@ void renderer_render_frame(Renderer *renderer, const RendererFrame *frame)
         {
             case RENDERABLE_GEOMETRY_MODEL:
             {
+
                 Model *model = model_resources_get_or_load(
                     &renderer->model_resources, 
-                    renderable->model_path
+                    renderable->model_path,
+                    renderer->project_root
                 );
 
                 if (model == NULL)
@@ -716,11 +723,51 @@ static int bind_camera_uniform_block(GLuint shader_program)
     return 0;
 }
 
+static bool renderer_resolve_shader_path(
+    const struct RendererState *renderer,
+    const char *filename,
+    char *out_path,
+    size_t out_path_capacity
+)
+{
+    if (project_path_resolve(
+            renderer->shader_directory, 
+            filename, 
+            out_path, 
+            out_path_capacity
+        ) != PROJECT_PATH_OK)
+    {
+        fprintf(stderr, "Invalid renderer shader path: %s\n", filename);
+        return false;
+    }
+
+    return true;
+}
+
 static int init_shader_program(struct RendererState *renderer)
 {
     GLuint vs, fs;
 
-    if (load_shaders(&vs, &fs, "src/renderer/shaders/light.vert", "src/renderer/shaders/light.frag") != 0)
+    char vertex_path[RENDERER_RESOLVED_RESOURCE_PATH_MAX_LENGTH];
+    char fragment_path[RENDERER_RESOLVED_RESOURCE_PATH_MAX_LENGTH];
+
+    if (!renderer_resolve_shader_path(
+            renderer, 
+            "light.vert", 
+            vertex_path, 
+            sizeof(vertex_path)
+        ) ||
+        !renderer_resolve_shader_path(
+        renderer,
+        "light.frag", 
+        fragment_path, 
+        sizeof(fragment_path)
+    ))
+    {
+        return 1;
+    }
+
+    if (load_shaders(&vs, &fs, vertex_path, fragment_path) != 0)
     {
         return 1;
     }
@@ -747,11 +794,30 @@ static int init_entity_id_shader_program(
     GLuint vertex_shader = 0;
     GLuint fragment_shader = 0;
 
+    char vertex_path[RENDERER_RESOLVED_RESOURCE_PATH_MAX_LENGTH];
+    char fragment_path[RENDERER_RESOLVED_RESOURCE_PATH_MAX_LENGTH];
+
+    if (!renderer_resolve_shader_path(
+            renderer, 
+            "entity_id.vert", 
+            vertex_path, 
+            sizeof(vertex_path)
+        ) ||
+        !renderer_resolve_shader_path(
+            renderer, 
+            "entity_id.frag",   
+            fragment_path, 
+            sizeof(fragment_path)
+        ))
+    {
+        return 1;
+    }
+
     if (load_shaders(
-            &vertex_shader, 
-            &fragment_shader, 
-            "src/renderer/shaders/entity_id.vert", 
-            "src/renderer/shaders/entity_id.frag"
+            &vertex_shader,
+            &fragment_shader,
+            vertex_path,
+            fragment_path
         ) != 0)
     {
         return 1;
@@ -856,7 +922,26 @@ static int init_screen_quad(struct RendererState *renderer)
 
     GLuint vs, fs;
 
-    if (load_shaders(&vs, &fs, "src/renderer/shaders/screen.vert", "src/renderer/shaders/screen.frag") != 0)
+    char vertex_path[RENDERER_RESOLVED_RESOURCE_PATH_MAX_LENGTH];
+    char fragment_path[RENDERER_RESOLVED_RESOURCE_PATH_MAX_LENGTH];
+
+    if (!renderer_resolve_shader_path(
+            renderer, 
+            "screen.vert", 
+            vertex_path, 
+            sizeof(vertex_path)
+        ) ||
+        !renderer_resolve_shader_path(
+            renderer, 
+            "screen.frag", 
+            fragment_path, 
+            sizeof(fragment_path)
+        ))
+    {
+        return 1;
+    }
+
+    if (load_shaders(&vs, &fs, vertex_path, fragment_path) != 0)
     {
         return 1;
     }
@@ -918,6 +1003,8 @@ static int renderer_state_init(struct RendererState *renderer, const RendererCon
     programmable_mesh_resources_init(&renderer->programmable_meshes);
 
     renderer->entity_id_picking_enabled = config->entity_id_picking_enabled;
+    renderer->project_root = config->project_root;
+    renderer->shader_directory = config->shader_directory;
 
     if (init_shader_program(renderer) != 0)
     {
@@ -986,7 +1073,34 @@ static int renderer_state_init(struct RendererState *renderer, const RendererCon
         return 1;
     }
 
-    if (skybox_init(&renderer->skybox, config->skybox_faces) != 0)
+    char resolved_skybox_faces[6][1280];
+    const char *resolved_skybox_face_pointers[6];
+
+    for (size_t face = 0; face < 6; face++)
+    {
+        if (project_path_resolve(
+                config->project_root, 
+                config->skybox_faces[face], 
+                resolved_skybox_faces[face],
+                sizeof(resolved_skybox_faces[face])
+            ) != PROJECT_PATH_OK)
+        {
+            fprintf(
+                stderr, 
+                "Invalid skybox face reference: %s\n",
+                config->skybox_faces[face]
+            );
+            return 1;
+        }
+
+        resolved_skybox_face_pointers[face] = resolved_skybox_faces[face];
+    }
+
+    if (skybox_init(
+            &renderer->skybox,
+            resolved_skybox_face_pointers,
+            renderer->shader_directory
+        ) != 0)
     {
         fprintf(stderr, "Failed to initialize skybox\n");
         return 1;

@@ -5,6 +5,9 @@
 
 #include "../../external/stb/stb_image.h"
 #include "../shaders.h"
+#include "../../core/project_paths.h"
+
+#define SKYBOX_RESOLVED_RESOURCE_PATH_MAX_LENGTH 1280
 
 static float skybox_vertices[] = {
     -1.0f,  1.0f, -1.0f,
@@ -110,14 +113,34 @@ static int load_cubemap(GLuint *out_texture, const char *const faces[6])
     return 0;
 }
 
-int skybox_init(Skybox *skybox, const char *const faces[6])
+int skybox_init(Skybox *skybox, const char *const faces[6], const char *shader_directory)
 {
     memset(skybox, 0, sizeof(Skybox));
 
     GLuint vs;
     GLuint fs;
 
-    if (load_shaders(&vs, &fs, "src/renderer/shaders/skybox.vert", "src/renderer/shaders/skybox.frag") != 0)
+    char vertex_path[SKYBOX_RESOLVED_RESOURCE_PATH_MAX_LENGTH];
+    char fragment_path[SKYBOX_RESOLVED_RESOURCE_PATH_MAX_LENGTH];
+
+    if (project_path_resolve(
+            shader_directory, 
+            "skybox.vert", 
+            vertex_path, 
+            sizeof(vertex_path)
+        ) != PROJECT_PATH_OK ||
+        project_path_resolve(
+            shader_directory,
+            "skybox.frag",
+            fragment_path,
+            sizeof(fragment_path)
+        ) != PROJECT_PATH_OK)
+    {
+        fprintf(stderr, "Invalid skybox shader directory\n");
+        return 1;
+    }
+
+    if (load_shaders(&vs, &fs, vertex_path, fragment_path) != 0)
     {
         return 1;
     }

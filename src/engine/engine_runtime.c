@@ -2,13 +2,14 @@
 #include "engine_runtime_internal.h"
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "../scene/scene_serialization.h"
-#include "project_paths.h"
+#include "../core/project_paths.h"
 
 static bool engine_runtime_initialize_renderer(
     EngineRuntime *runtime,
@@ -35,6 +36,8 @@ static bool engine_runtime_initialize_renderer(
             .width = framebuffer_width,
             .height = framebuffer_height,
         },
+        .project_root = runtime->project_root,
+        .shader_directory = runtime->renderer_shader_directory,
         .camera = &runtime->camera,
         .entity_id_picking_enabled = runtime->entity_id_picking_enabled,
         .skybox_faces = {
@@ -100,6 +103,30 @@ EngineRuntime *engine_runtime_create(
         return NULL;
     }
 
+    const char *renderer_shader_directory = create_info->renderer_shader_directory;
+
+    if (renderer_shader_directory == NULL ||
+        renderer_shader_directory[0] == '\0')
+    {
+        renderer_shader_directory = "src/renderer/shaders";
+    }
+
+    int renderer_shader_directory_length = snprintf(
+        runtime->renderer_shader_directory, 
+        sizeof(runtime->renderer_shader_directory), 
+        "%s",
+        renderer_shader_directory
+    );
+
+    if (renderer_shader_directory_length < 0 ||
+        (size_t)renderer_shader_directory_length >=
+            sizeof(runtime->renderer_shader_directory))
+    {
+        fprintf(stderr, "Renderer shader directory is too long\n");
+        free(runtime);
+        return NULL;
+    }
+
     camera_init(&runtime->camera);
     camera_update(&runtime->camera);
 
@@ -136,9 +163,18 @@ EngineRuntime *engine_runtime_create(
             return NULL;
         }
 
-        if (scene_load_from_file(&runtime->scene, resolved_scene_path) !=
-            SCENE_LOAD_OK)
+        SceneLoadResult scene_load_result =
+            scene_load_from_file(&runtime->scene, resolved_scene_path);
+
+        if (scene_load_result != SCENE_LOAD_OK)
         {
+            fprintf(
+                stderr, 
+                "Failed to load scene '%s' from project root '%s': %d\n",
+                create_info->scene_path,
+                runtime->project_root,
+                scene_load_result
+            );
             scene_shutdown(&runtime->scene);
             free(runtime);
             return NULL;
@@ -197,6 +233,13 @@ EngineRuntime *engine_runtime_create_preview(
         "%s",
         authoring_runtime->project_root
     ); 
+
+   snprintf(
+        preview->renderer_shader_directory, 
+        sizeof(preview->renderer_shader_directory), 
+        "%s",
+        authoring_runtime->renderer_shader_directory
+    );
 
     preview->camera = authoring_runtime->camera;
     camera_update(&preview->camera);

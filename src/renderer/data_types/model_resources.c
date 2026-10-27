@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "../../core/project_paths.h"
+
 static ModelResource *model_resources_find(
     ModelResources *resources,
     const char *path
@@ -82,10 +84,12 @@ const Model *model_resources_get(
 
 Model *model_resources_get_or_load(
     ModelResources *resources,
-    const char *path
+    const char *path,
+    const char *project_root
 )
 {
-    if (resources == NULL || path == NULL || path[0] == '\0')
+    if (resources == NULL || path == NULL || path[0] == '\0' ||
+        project_root == NULL || project_root[0] == '\0')
     {
         return NULL;
     }
@@ -117,7 +121,20 @@ Model *model_resources_get_or_load(
 
     snprintf(resource->path, sizeof(resource->path), "%s", path);
 
-    if (model_load_gltf(&resource->model, resource->path) != 0)
+    char filesystem_path[1280];
+
+    if (project_path_resolve(
+            project_root, 
+            path, 
+            filesystem_path, 
+            sizeof(filesystem_path)
+        ) != PROJECT_PATH_OK)
+    {
+        fprintf(stderr, "Invalid model reference: %s\n", path);
+        return NULL;
+    }
+
+    if (model_load_gltf(&resource->model, filesystem_path) != 0)
     {
         fprintf(stderr, "Failed to load model resource: %s\n", path);
         return NULL;

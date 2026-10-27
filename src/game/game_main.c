@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../engine/engine_runtime.h"
 #include "../renderer/window.h"
@@ -81,11 +82,83 @@ static void read_game_input(GameApplication *application)
     application->input.simulation_update_enabled = true;
 }
 
+static void print_usage(void)
+{
+    fprintf(
+        stderr,
+        "Usage: bour_game "
+        "[--project-root <path>] "
+        "[--renderer-shader-directory <path>] "
+        "[scene-path]\n"
+    );
+}
+
+static bool parse_game_arguments(
+    int argc,
+    char **argv,
+    const char **out_project_root,
+    const char **out_renderer_shader_directory,
+    const char **out_scene_path
+)
+{
+    *out_project_root = NULL;
+    *out_renderer_shader_directory = NULL;
+    *out_scene_path = NULL;
+
+    for (int index = 1; index < argc; index++)
+    {
+        const char *argument = argv[index];
+
+        if (strcmp(argument, "--project-root") == 0)
+        {
+            if (*out_project_root != NULL ||
+                index + 1 >= argc ||
+                strncmp(argv[index + 1], "--", 2) == 0)
+            {
+                return false;
+            }
+
+            *out_project_root = argv[++index]; 
+        }
+        else if (strcmp(argument, "--renderer-shader-directory") == 0)
+        {
+            if (*out_renderer_shader_directory != NULL ||
+                index + 1 >= argc ||
+                strncmp(argv[index + 1], "--", 2) == 0)
+            {
+                return false;
+            }
+
+            *out_renderer_shader_directory = argv[++index];
+        }
+        else if (strncmp(argument, "--", 2) == 0 ||
+                 *out_scene_path != NULL)
+        {
+            return false;
+        }
+        else {
+            *out_scene_path = argument;
+        }
+    }
+
+    return true;
+}
+
 int main(int argc, char **argv)
 {
-    if (argc > 2)
+    const char *project_root = NULL;
+    const char *renderer_shader_directory = NULL;
+    const char *scene_path = NULL;
+
+    if (!parse_game_arguments(
+            argc, 
+            argv, 
+            &project_root, 
+            &renderer_shader_directory, 
+            &scene_path
+        ))
     {
-        fprintf(stderr, "Usage: bour_game [scene-path]\n");
+        print_usage();
         return EXIT_FAILURE;
     }
 
@@ -116,7 +189,9 @@ int main(int argc, char **argv)
     );
 
     EngineRuntimeCreateInfo create_info = {
-        .scene_path = argc == 2 ? argv[1] : NULL,
+        .scene_path = scene_path,
+        .project_root = project_root,
+        .renderer_shader_directory = renderer_shader_directory,
         .entity_id_picking_enabled = false,
         .framebuffer_width = framebuffer_width,
         .framebuffer_height = framebuffer_height,

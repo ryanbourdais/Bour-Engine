@@ -6,7 +6,7 @@
 
 #include "../scene/entity_factory.h"
 #include "../scene/scene_serialization.h"
-#include "project_paths.h"
+#include "../core/project_paths.h"
 
 
 static bool engine_runtime_entity_is_valid(
